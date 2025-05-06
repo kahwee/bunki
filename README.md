@@ -32,7 +32,7 @@ curl -fsSL https://bun.sh/install | bash
 bun --version
 ```
 
-### From npm (Coming soon)
+### From bun
 
 ```bash
 # Install globally
