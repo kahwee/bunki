@@ -1,0 +1,158 @@
+name: Publish to npm
+
+on:
+  push:
+    branches:
+      - main
+    # Only trigger if package.json changes or version tag is pushed
+    paths:
+      - "package.json"
+    tags:
+      - "v*"
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      force-publish:
+        description: "Force publish to npm"
+        required: false
+        default: "false"
+
+jobs:
+  # First run tests and build
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.11
+
+      # Cache bun dependencies
+      - name: Cache Bun dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Verify TypeScript compilation
+      - name: TypeScript check
+        run: bunx tsc --noEmit
+
+      # Run tests with coverage
+      - name: Run tests with coverage
+        run: bun test:coverage
+
+      # Build the project
+      - name: Build
+        run: bun run build
+
+      # Create and verify example site
+      - name: Create and verify example site
+        run: |
+          mkdir -p test-site
+          cd test-site
+          ../dist/cli.js init
+          ../dist/cli.js generate
+
+          # Verify site generation
+          if [ ! -f "dist/index.html" ]; then
+            echo "Site generation failed"
+            exit 1
+          fi
+
+      # Upload build artifacts for the publish job
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+  # Then publish to npm if tests pass
+  publish:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    # Skip this job if a PR (not needed for PRs)
+    if: ${{ (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || contains(github.event.head_commit.message, '[publish]'))) || github.event.inputs.force-publish == 'true' }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.11
+
+      # Download the previously built artifacts
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: dist
+          path: dist/
+
+      # Verify package version
+      - name: Check version
+        id: check
+        run: |
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "Package version: $PACKAGE_VERSION"
+          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
+
+          # Check if this version already exists on npm
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://registry.npmjs.org/bunki/$PACKAGE_VERSION)
+
+          if [ "$HTTP_STATUS" == "200" ]; then
+            echo "Version $PACKAGE_VERSION already exists on npm"
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "Version $PACKAGE_VERSION is new"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+
+          # Always publish for manual trigger with force-publish=true
+          if [ "${{ github.event.inputs.force-publish }}" == "true" ]; then
+            echo "Force publish enabled, will publish anyway"
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
+
+      # Setup npm authentication
+      - name: Setup npm authentication
+        if: steps.check.outputs.should_publish == 'true'
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      # Publish to npm
+      - name: Publish to npm
+        if: steps.check.outputs.should_publish == 'true'
+        run: |
+          # Ensure dist directory is ready for publishing
+          find dist -type f | sort
+
+          # Use Bun to publish instead of npm
+          bun install && bun publish --access public
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Create GitHub Release for tags
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Release ${{ steps.check.outputs.package_version }}
+          body: |
+            Release of version ${{ steps.check.outputs.package_version }}
+
+            Please see the [changelog](https://github.com/kahwee/bunki/blob/main/CHANGELOG.md) for details.
+          draft: false
+          prerelease: false
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
