@@ -103,3 +103,49 @@ export interface Site {
   /** Map of tag names to tag data */
   tags: Record<string, TagData>;
 }
+
+/**
+ * Interface for uploaders (different services can implement this)
+ */
+export interface Uploader {
+  upload(sourcePath: string, config: SiteConfig): Promise<void>;
+}
+
+/**
+ * Interface for image uploaders
+ */
+export interface ImageUploader {
+  uploadImage(imagePath: string, domainName: string): Promise<string>;
+  uploadImages(
+    imagesDir: string,
+    domainName: string,
+  ): Promise<Record<string, string>>;
+}
+
+/**
+ * R2 configuration type
+ */
+export interface R2Config {
+  accountId: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucket: string;
+  publicUrl: string;
+}
+
+/**
+ * Options for image upload
+ */
+export interface ImageUploadOptions {
+  domain?: string;
+  images?: string;
+  type?: string;
+  outputJson?: string;
+}
+
+/**
+ * Options for initializing image directories
+ */
+export interface InitImagesOptions {
+  images?: string;
+}

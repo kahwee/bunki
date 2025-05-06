@@ -2,7 +2,6 @@
 
 [![GitHub license](https://img.shields.io/github/license/kahwee/bunki)](https://github.com/kahwee/bunki/blob/main/LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/kahwee/bunki)](https://github.com/kahwee/bunki/issues)
-[![Coverage Status](https://coveralls.io/repos/github/kahwee/bunki/badge.svg?branch=main)](https://coveralls.io/github/kahwee/bunki?branch=main)
 
 Bunki is an opinionated static site generator built with Bun. It's designed for creating blogs and simple websites with sensible defaults and minimal configuration.
 
@@ -17,6 +16,7 @@ Bunki is an opinionated static site generator built with Bun. It's designed for 
 - Sitemap generation
 - Local development server
 - Simple CLI interface
+- Cloud image uploading via Cloudflare R2
 
 ## Installation
 
@@ -124,6 +124,27 @@ The `bunki.config.json` file contains the configuration for your site:
 }
 ```
 
+### Image Upload Configuration
+
+To configure image uploading to Cloudflare R2, you need to set the following environment variables:
+
+```
+R2_ACCOUNT_ID=your-cloudflare-account-id
+R2_ACCESS_KEY_ID=your-r2-access-key-id
+R2_SECRET_ACCESS_KEY=your-r2-secret-access-key
+R2_PUBLIC_URL=https://your-r2-public-url.com
+```
+
+You can add these to a `.env` file in your project root. The bucket name will be automatically generated from your domain name (e.g., `example.com` becomes `example-com`).
+
+For domain-specific custom domains, you can optionally set:
+
+```
+R2_CUSTOM_DOMAIN_EXAMPLE_COM=cdn.example.com
+```
+
+This will use `https://cdn.example.com/` as the base URL for all uploaded images.
+
 ## Directory Structure
 
 ```
@@ -143,6 +164,8 @@ The `bunki.config.json` file contains the configuration for your site:
 │       └── main.css
 ├── public/             # Static files to copy to the site
 │   └── favicon.ico
+├── images/             # Image storage directory
+│   └── example.com/    # Domain-specific images
 └── dist/               # Generated site
     ├── index.html
     ├── css/
@@ -170,6 +193,8 @@ Commands:
   new [options] <title> Create a new blog post
   generate [options]    Generate static site from markdown content
   serve [options]       Start a local development server
+  init-images [options] Initialize directory structure for storing images
+  upload-images [options] Upload images to remote storage (e.g., Cloudflare R2)
   help [command]        display help for command
 ```
 
@@ -228,9 +253,38 @@ Options:
   -h, --help           display help for command
 ```
 
+### Initialize Images Command
+
+```
+Usage: bunki init-images [options]
+
+Initialize directory structure for storing images
+
+Options:
+  -i, --images <dir>   Images directory path (default: "images")
+  -h, --help           display help for command
+```
+
+### Upload Images Command
+
+```
+Usage: bunki upload-images [options]
+
+Upload images to remote storage (e.g., Cloudflare R2)
+
+Options:
+  -d, --domain <domain>     Domain name (defaults to domain in bunki.config.json)
+  -i, --images <dir>        Images directory path (default: "images")
+  -t, --type <type>         Upload storage type (currently only r2 is supported) (default: "r2")
+  --output-json <file>      Output URL mapping to JSON file
+  -h, --help                display help for command
+```
+
 ## Programmatic Usage
 
 You can also use Bunki programmatically in your own Bun scripts:
+
+### Site Generation
 
 ```javascript
 import { SiteGenerator, loadConfig } from "bunki";
@@ -257,6 +311,32 @@ async function generate() {
 generate().catch(console.error);
 ```
 
+### Image Uploading
+
+```javascript
+import { uploadImages, initImages, DEFAULT_IMAGES_DIR } from "bunki";
+import path from "path";
+
+// Initialize image directories
+async function setupImages() {
+  await initImages({
+    images: path.join(process.cwd(), "images"),
+  });
+
+  // Upload images
+  const imageUrlMap = await uploadImages({
+    domain: "example.com",
+    images: DEFAULT_IMAGES_DIR,
+    type: "r2",
+    outputJson: "image-urls.json",
+  });
+
+  console.log("Image URLs:", imageUrlMap);
+}
+
+setupImages().catch(console.error);
+```
+
 > **Note**: Bunki's programmatic API is designed specifically for Bun and utilizes Bun's native APIs for optimal performance. It will not work in Node.js environments.
 
 ## Development
@@ -280,7 +360,7 @@ bun test --watch
 bun test:coverage
 ```
 
-Code coverage reports are automatically generated and displayed on GitHub through a badge at the top of this README. You can also view detailed coverage reports on [Coveralls](https://coveralls.io/github/kahwee/bunki).
+Code coverage reports are automatically generated during testing.
 
 Tests are written using Bun's native test runner and verify all core functionality of Bunki, including:
 

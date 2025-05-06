@@ -32,3 +32,16 @@ export {
   ensureDir,
   copyFile,
 } from "./utils/file-utils";
+
+// Export image uploader functions
+export {
+  uploadImages,
+  initImages,
+  getUploaderConfig,
+  DEFAULT_IMAGES_DIR,
+} from "./utils/image-uploader";
+export {
+  createUploader,
+  uploadDomainImages,
+  uploadSites,
+} from "./utils/uploader";

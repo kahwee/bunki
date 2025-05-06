@@ -5,9 +5,12 @@ import {
   DEFAULT_CONTENT_DIR,
   DEFAULT_OUTPUT_DIR,
   DEFAULT_TEMPLATES_DIR,
+  DEFAULT_IMAGES_DIR,
   loadConfig,
   createDefaultConfig,
-} from "./config";
+  uploadImages,
+  initImages,
+} from "./index";
 import { SiteGenerator } from "./site-generator";
 import { startServer } from "./server";
 import { ensureDir } from "./utils/file-utils";
@@ -650,6 +653,51 @@ program
       startServer(outputDir, port);
     } catch (error) {
       console.error("Error starting dev server:", error);
+      process.exit(1);
+    }
+  });
+
+// Initialize image directories command
+program
+  .command("init-images")
+  .description("Initialize directory structure for storing images")
+  .option("-i, --images <dir>", "Images directory path", DEFAULT_IMAGES_DIR)
+  .action(async (options) => {
+    try {
+      await initImages({
+        images: options.images,
+      });
+    } catch (error) {
+      console.error("Error initializing image directories:", error);
+      process.exit(1);
+    }
+  });
+
+// Upload images command
+program
+  .command("upload-images")
+  .description("Upload images to remote storage (e.g., Cloudflare R2)")
+  .option(
+    "-d, --domain <domain>",
+    "Domain name (defaults to domain in bunki.config.json)",
+  )
+  .option("-i, --images <dir>", "Images directory path", DEFAULT_IMAGES_DIR)
+  .option(
+    "-t, --type <type>",
+    "Upload storage type (currently only r2 is supported)",
+    "r2",
+  )
+  .option("--output-json <file>", "Output URL mapping to JSON file")
+  .action(async (options) => {
+    try {
+      await uploadImages({
+        domain: options.domain,
+        images: options.images,
+        type: options.type,
+        outputJson: options.outputJson,
+      });
+    } catch (error) {
+      console.error("Error uploading images:", error);
       process.exit(1);
     }
   });
