@@ -19,6 +19,17 @@ Bunki is an opinionated static site generator built with Bun. It's designed for 
 
 ## Installation
 
+> **IMPORTANT**: Bunki requires Bun v1.2.11 or later as its runtime. It is not compatible with Node.js and will not work with npm, yarn, or pnpm.
+
+### Prerequisites
+```bash
+# Install Bun if you don't have it
+curl -fsSL https://bun.sh/install | bash
+
+# Verify Bun version (should be 1.2.11 or later)
+bun --version
+```
+
 ### From npm (Coming soon)
 ```bash
 # Install globally
@@ -214,7 +225,7 @@ Options:
 
 ## Programmatic Usage
 
-You can also use Bunki programmatically in your own Node.js or Bun scripts:
+You can also use Bunki programmatically in your own Bun scripts:
 
 ```javascript
 import { SiteGenerator, loadConfig } from 'bunki';
@@ -240,6 +251,8 @@ async function generate() {
 
 generate().catch(console.error);
 ```
+
+> **Note**: Bunki's programmatic API is designed specifically for Bun and utilizes Bun's native APIs for optimal performance. It will not work in Node.js environments.
 
 ## License
 
