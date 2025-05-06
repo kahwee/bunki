@@ -2,6 +2,7 @@
 
 [![GitHub license](https://img.shields.io/github/license/kahwee/bunki)](https://github.com/kahwee/bunki/blob/main/LICENSE)
 [![GitHub issues](https://img.shields.io/github/issues/kahwee/bunki)](https://github.com/kahwee/bunki/issues)
+[![Coverage Status](https://coveralls.io/repos/github/kahwee/bunki/badge.svg?branch=main)](https://coveralls.io/github/kahwee/bunki?branch=main)
 
 Bunki is an opinionated static site generator built with Bun. It's designed for creating blogs and simple websites with sensible defaults and minimal configuration.
 
@@ -272,8 +273,10 @@ bun test utils/markdown
 bun test --watch
 
 # Run tests with coverage
-bun test --coverage
+bun test:coverage
 ```
+
+Code coverage reports are automatically generated and displayed on GitHub through a badge at the top of this README. You can also view detailed coverage reports on [Coveralls](https://coveralls.io/github/kahwee/bunki).
 
 Tests are written using Bun's native test runner and verify all core functionality of Bunki, including:
 

@@ -1,0 +1,45 @@
+name: Code Coverage
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.2.11
+
+      # Cache bun dependencies
+      - name: Cache Bun dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # Run tests with coverage
+      - name: Generate coverage report
+        run: bun test --coverage
+
+      # Generate a coverage badge
+      - name: Generate coverage badge
+        uses: coverallsapp/github-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          format: lcov
+          file: coverage/lcov.info

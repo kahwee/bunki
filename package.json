@@ -10,7 +10,9 @@
     "build": "bun build.js",
     "dev": "bun run --watch src/index.ts",
     "test": "bun test",
-    "format": "prettier --write ."
+    "test:coverage": "bun test --coverage",
+    "format": "prettier --write .",
+    "coverage": "bun scripts/check-coverage.js"
   },
   "bin": {
     "bunki": "./dist/cli.js"

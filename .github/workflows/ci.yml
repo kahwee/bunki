@@ -40,9 +40,9 @@ jobs:
       - name: Check formatting
         run: bunx prettier --check .
 
-      # Run tests when implemented
-      - name: Run tests
-        run: bun test || echo "No tests implemented yet"
+      # Run tests with coverage
+      - name: Run tests with coverage
+        run: bun test:coverage
 
       # Build the project
       - name: Build
