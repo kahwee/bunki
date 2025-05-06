@@ -37,7 +37,6 @@
   "homepage": "https://github.com/kahwee/bunki#readme",
   "dependencies": {
     "commander": "^11.1.0",
-    "fs-extra": "^11.2.0",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.9.0",
     "marked": "^9.1.5",
@@ -47,7 +46,6 @@
     "slugify": "^1.6.6"
   },
   "devDependencies": {
-    "@types/fs-extra": "^11.0.4",
     "@types/marked": "^5.0.2",
     "@types/nunjucks": "^3.2.5",
     "@types/sanitize-html": "^2.9.5",

@@ -1,5 +1,4 @@
 import path from "path";
-import fs from "fs-extra";
 import { SiteConfig } from "./types";
 
 export const DEFAULT_CONTENT_DIR = path.join(process.cwd(), "content");
@@ -13,15 +12,17 @@ export const DEFAULT_CONFIG_FILE = path.join(
 export function configExists(
   configPath: string = DEFAULT_CONFIG_FILE,
 ): boolean {
-  return fs.existsSync(configPath);
+  return Bun.file(configPath).size > 0;
 }
 
-export function loadConfig(
+export async function loadConfig(
   configPath: string = DEFAULT_CONFIG_FILE,
-): SiteConfig {
-  if (fs.existsSync(configPath)) {
+): Promise<SiteConfig> {
+  const configFile = Bun.file(configPath);
+  if (await configFile.exists()) {
     try {
-      return fs.readJSONSync(configPath);
+      const configText = await configFile.text();
+      return JSON.parse(configText);
     } catch (error) {
       console.error(`Error loading config file ${configPath}:`, error);
       return getDefaultConfig();
@@ -40,10 +41,11 @@ export function getDefaultConfig(): SiteConfig {
   };
 }
 
-export function createDefaultConfig(
+export async function createDefaultConfig(
   configPath: string = DEFAULT_CONFIG_FILE,
-): boolean {
-  if (fs.existsSync(configPath)) {
+): Promise<boolean> {
+  const configFile = Bun.file(configPath);
+  if (await configFile.exists()) {
     console.log(`Config file already exists at ${configPath}`);
     return false;
   }
@@ -56,7 +58,7 @@ export function createDefaultConfig(
   };
 
   try {
-    fs.writeJSONSync(configPath, defaultConfig, { spaces: 2 });
+    await Bun.write(configPath, JSON.stringify(defaultConfig, null, 2));
     console.log(`Created default config file at ${configPath}`);
     return true;
   } catch (error) {
@@ -65,12 +67,12 @@ export function createDefaultConfig(
   }
 }
 
-export function saveConfig(
+export async function saveConfig(
   config: SiteConfig,
   configPath: string = DEFAULT_CONFIG_FILE,
-): boolean {
+): Promise<boolean> {
   try {
-    fs.writeJSONSync(configPath, config, { spaces: 2 });
+    await Bun.write(configPath, JSON.stringify(config, null, 2));
     console.log(`Saved config file to ${configPath}`);
     return true;
   } catch (error) {

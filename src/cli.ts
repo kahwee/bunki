@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 import { Command } from "commander";
 import path from "path";
-import fs from "fs-extra";
 import {
   DEFAULT_CONTENT_DIR,
   DEFAULT_OUTPUT_DIR,
@@ -11,6 +10,7 @@ import {
 } from "./config";
 import { SiteGenerator } from "./site-generator";
 import { startServer } from "./server";
+import { ensureDir } from "./utils/file-utils";
 
 const program = new Command();
 
@@ -36,14 +36,14 @@ program
         console.log("Creating directory structure...");
 
         // Create content directory
-        await fs.mkdirp(DEFAULT_CONTENT_DIR);
+        await ensureDir(DEFAULT_CONTENT_DIR);
 
         // Create templates directory
-        await fs.mkdirp(DEFAULT_TEMPLATES_DIR);
-        await fs.mkdirp(path.join(DEFAULT_TEMPLATES_DIR, "styles"));
+        await ensureDir(DEFAULT_TEMPLATES_DIR);
+        await ensureDir(path.join(DEFAULT_TEMPLATES_DIR, "styles"));
 
         // Create public directory
-        await fs.mkdirp(path.join(process.cwd(), "public"));
+        await ensureDir(path.join(process.cwd(), "public"));
 
         // Create basic templates
         const templates = {
@@ -267,10 +267,7 @@ program
 
         // Create each template file
         for (const [filename, content] of Object.entries(templates)) {
-          await fs.writeFile(
-            path.join(DEFAULT_TEMPLATES_DIR, filename),
-            content,
-          );
+          await Bun.write(path.join(DEFAULT_TEMPLATES_DIR, filename), content);
         }
 
         // Create a default CSS file
@@ -473,7 +470,7 @@ footer {
   font-size: 0.9rem;
 }`;
 
-        await fs.writeFile(
+        await Bun.write(
           path.join(DEFAULT_TEMPLATES_DIR, "styles", "main.css"),
           defaultCss,
         );
@@ -531,7 +528,7 @@ function hello() {
 5. Run \`bunki serve\` to preview your site locally
 `;
 
-        await fs.writeFile(
+        await Bun.write(
           path.join(DEFAULT_CONTENT_DIR, "welcome.md"),
           samplePost,
         );
@@ -589,7 +586,7 @@ tags: [${tags.join(", ")}]
       const filePath = path.join(DEFAULT_CONTENT_DIR, `${slug}.md`);
 
       // Write file
-      await fs.writeFile(filePath, frontmatter);
+      await Bun.write(filePath, frontmatter);
 
       console.log(`Created new post: ${filePath}`);
     } catch (error) {
