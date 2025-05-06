@@ -29,7 +29,7 @@ program
       const configPath = path.resolve(options.config);
 
       // Create config file
-      const configCreated = createDefaultConfig(configPath);
+      const configCreated = await createDefaultConfig(configPath);
 
       if (configCreated) {
         // Create directory structure
@@ -617,7 +617,7 @@ program
       console.log(`- Templates directory: ${templatesDir}`);
 
       // Load configuration
-      const config = loadConfig(configPath);
+      const config = await loadConfig(configPath);
 
       const generator = new SiteGenerator({
         contentDir,
