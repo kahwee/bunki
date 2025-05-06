@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 
-import { spawn } from "child_process";
 import { join } from "path";
 
 async function buildProject() {
@@ -42,26 +41,20 @@ async function buildProject() {
 }
 
 async function runCommand(command, args) {
-  return new Promise((resolve, reject) => {
-    console.log(`Running: ${command} ${args.join(" ")}`);
+  console.log(`Running: ${command} ${args.join(" ")}`);
 
-    const proc = spawn(command, args, {
-      stdio: "inherit",
-      shell: true,
-    });
-
-    proc.on("close", (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`Command failed with exit code ${code}`));
+  const proc = Bun.spawn([command, ...args], {
+    stdout: "inherit",
+    stderr: "inherit",
+    stdin: "inherit",
+    onExit(proc, exitCode, signalCode, error) {
+      if (exitCode !== 0) {
+        throw new Error(`Command failed with exit code ${exitCode}`);
       }
-    });
-
-    proc.on("error", (err) => {
-      reject(err);
-    });
+    },
   });
+
+  return proc.exited;
 }
 
 async function prependShebangToCLI(filePath) {

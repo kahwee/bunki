@@ -1,6 +1,5 @@
 #!/usr/bin/env bun
 
-import { spawn } from "child_process";
 import { join } from "path";
 
 // Configuration
@@ -13,39 +12,25 @@ const OUTPUT_DIR = join(FIXTURES_DIR, "dist");
  * @param {string[]} args Command arguments
  * @returns {Promise<string>} Command output
  */
-function runCommand(cmd, args) {
-  return new Promise((resolve, reject) => {
-    console.log(`Running: ${cmd} ${args.join(" ")}`);
+async function runCommand(cmd, args) {
+  console.log(`Running: ${cmd} ${args.join(" ")}`);
 
-    const proc = spawn(cmd, args, {
-      cwd: FIXTURES_DIR,
-      stdio: ["ignore", "pipe", "pipe"],
-      shell: true,
-    });
-
-    let stdout = "";
-    let stderr = "";
-
-    proc.stdout.on("data", (data) => {
-      stdout += data.toString();
-    });
-
-    proc.stderr.on("data", (data) => {
-      stderr += data.toString();
-    });
-
-    proc.on("close", (code) => {
-      if (code === 0) {
-        resolve(stdout);
-      } else {
-        reject(new Error(`Command failed with exit code ${code}\n${stderr}`));
-      }
-    });
-
-    proc.on("error", (err) => {
-      reject(err);
-    });
+  const proc = Bun.spawn([cmd, ...args], {
+    cwd: FIXTURES_DIR,
+    stdout: "pipe",
+    stderr: "pipe",
   });
+
+  const output = await new Response(proc.stdout).text();
+  const stderr = await new Response(proc.stderr).text();
+
+  const exitCode = await proc.exited;
+
+  if (exitCode !== 0) {
+    throw new Error(`Command failed with exit code ${exitCode}\n${stderr}`);
+  }
+
+  return output;
 }
 
 /**
@@ -87,11 +72,10 @@ async function runFixtureTests() {
     const serveStart = performance.now();
 
     // Start the server in the background
-    const server = spawn("bunki", ["serve", "--port", "3457"], {
+    const server = Bun.spawn(["bunki", "serve", "--port", "3457"], {
       cwd: FIXTURES_DIR,
-      stdio: "pipe",
-      shell: true,
-      detached: true,
+      stdout: "pipe",
+      stderr: "pipe",
     });
 
     // Wait a moment for the server to start
@@ -107,7 +91,7 @@ async function runFixtureTests() {
     }
 
     // Kill the server
-    process.kill(-server.pid);
+    server.kill();
 
     const serveTime = performance.now() - serveStart;
     console.log(`✅ Server test completed in ${serveTime.toFixed(2)}ms`);
