@@ -505,7 +505,7 @@ Create new markdown files in the \`content\` directory with frontmatter like thi
 \`\`\`markdown
 ---
 title: Your Post Title
-date: 2023-01-01T12:00:00Z
+date: 2025-01-01T12:00:00Z
 tags: [tag1, tag2]
 ---
 

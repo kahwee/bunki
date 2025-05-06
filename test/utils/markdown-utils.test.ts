@@ -10,7 +10,7 @@ const FIXTURES_DIR = path.join(import.meta.dir, "../../fixtures");
 const SAMPLE_FILE = path.join(
   FIXTURES_DIR,
   "content",
-  "2024",
+  "2025",
   "test-post-1.md",
 );
 

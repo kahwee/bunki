@@ -125,7 +125,7 @@ describe("SiteGenerator", () => {
     expect(await fileExists(cssPath)).toBeTrue();
 
     // Check that at least one post page exists
-    const postDirExists = await fileExists(path.join(OUTPUT_DIR, "2024"));
+    const postDirExists = await fileExists(path.join(OUTPUT_DIR, "2025"));
     expect(postDirExists).toBeTrue();
 
     // Check that tags directory exists

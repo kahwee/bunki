@@ -1,6 +1,6 @@
 ---
 title: "Migrating from Gatsby to Bunki"
-date: 2024-03-05T14:15:00-07:00
+date: 2025-03-05T14:15:00-07:00
 tags: [web development, gatsby, migration, bun]
 excerpt: A comprehensive guide to migrating your blog or static site from Gatsby to Bunki. Learn about the key differences, migration strategies, and performance benefits you can expect when moving to this Bun-powered static site generator.
 ---
@@ -31,7 +31,7 @@ The first step is to migrate your content:
    ```markdown
    ---
    title: "Your Post Title"
-   date: 2024-03-05T14:15:00-07:00
+   date: 2025-03-05T14:15:00-07:00
    tags: [tag1, tag2]
    excerpt: A brief summary of your post.
    ---

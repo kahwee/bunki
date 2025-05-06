@@ -1,15 +1,15 @@
 import { expect, test, describe } from "bun:test";
-import { parseMarkdownDirectory, parseMarkdownFile } from "../src/parser";
-import { parseMarkdownFile as parseMarkdownFileUtil } from "../src/utils/markdown-utils";
+import { parseMarkdownDirectory } from "../src/parser";
+import { parseMarkdownFile } from "../src/utils/markdown-utils";
 import path from "path";
 
 const FIXTURES_DIR = path.join(import.meta.dir, "../fixtures");
 const CONTENT_DIR = path.join(FIXTURES_DIR, "content");
-const SAMPLE_FILE = path.join(CONTENT_DIR, "2024", "test-post-1.md");
+const SAMPLE_FILE = path.join(CONTENT_DIR, "2025", "test-post-1.md");
 
 describe("Markdown Parser", () => {
   test("parseMarkdownFile should parse a single markdown file", async () => {
-    const post = await parseMarkdownFileUtil(SAMPLE_FILE);
+    const post = await parseMarkdownFile(SAMPLE_FILE);
 
     expect(post).not.toBeNull();
     expect(post).toHaveProperty(

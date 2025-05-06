@@ -1,6 +1,6 @@
 ---
 title: "Testing Bunki: A New Static Site Generator"
-date: 2024-01-15T09:00:00-07:00
+date: 2025-01-15T09:00:00-07:00
 tags: [technology, web development, open source]
 excerpt: Bunki is a fast, opinionated static site generator built with Bun. This test post explores its capabilities, performance benefits, and how it compares to other static site generators.
 ---

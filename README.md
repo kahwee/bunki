@@ -82,7 +82,7 @@ Create markdown files in the `content` directory with frontmatter:
 ```markdown
 ---
 title: Your Post Title
-date: 2023-01-01T12:00:00Z
+date: 2025-01-01T12:00:00Z
 tags: [tag1, tag2]
 ---
 
@@ -300,7 +300,7 @@ The fixture directory includes:
 fixtures/
 ├── bunki.config.json   # Test configuration file
 ├── content/            # Sample markdown content
-│   └── 2024/
+│   └── 2025/
 │       ├── test-post-1.md
 │       ├── performance-optimization.md
 │       └── migrating-from-gatsby.md
