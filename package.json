@@ -1,0 +1,64 @@
+{
+  "name": "bunki",
+  "version": "0.1.0",
+  "description": "An opinionated static site generator built with Bun",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "build": "bun build ./src/index.ts --outdir ./dist --target node",
+    "dev": "bun run --watch src/index.ts",
+    "test": "bun test",
+    "format": "prettier --write ."
+  },
+  "bin": {
+    "bunki": "./dist/cli.js"
+  },
+  "keywords": [
+    "static-site-generator",
+    "markdown",
+    "blog",
+    "bun",
+    "typescript"
+  ],
+  "author": "KahWee Teng",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kahwee/bunki.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kahwee/bunki/issues"
+  },
+  "homepage": "https://github.com/kahwee/bunki#readme",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "fs-extra": "^11.2.0",
+    "gray-matter": "^4.0.3",
+    "highlight.js": "^11.9.0",
+    "marked": "^9.1.5",
+    "marked-highlight": "^2.0.7",
+    "nunjucks": "^3.2.4",
+    "sanitize-html": "^2.11.0",
+    "slugify": "^1.6.6"
+  },
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
+    "@types/marked": "^5.0.2",
+    "@types/node": "^20.10.0",
+    "@types/nunjucks": "^3.2.5",
+    "@types/sanitize-html": "^2.9.5",
+    "bun-types": "latest",
+    "prettier": "^3.1.0",
+    "typescript": "^5.2.2"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "engines": {
+    "bun": ">=1.0.0"
+  }
+}
