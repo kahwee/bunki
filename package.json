@@ -1,6 +1,6 @@
 {
   "name": "bunki",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "An opinionated static site generator built with Bun",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -12,7 +12,9 @@
     "test": "bun test",
     "test:coverage": "bun test --coverage",
     "format": "prettier --write .",
-    "coverage": "bun scripts/check-coverage.js"
+    "coverage": "bun scripts/check-coverage.js",
+    "prepare": "husky",
+    "lint-staged": "lint-staged"
   },
   "bin": {
     "bunki": "./dist/cli.js"
@@ -51,6 +53,8 @@
     "@types/nunjucks": "^3.2.5",
     "@types/sanitize-html": "^2.9.5",
     "bun-types": "^1.2.11",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.1",
     "prettier": "^3.1.0",
     "typescript": "^5.2.2"
   },
@@ -62,5 +66,8 @@
   "engines": {
     "bun": ">=1.2.11"
   },
-  "engineStrict": true
+  "engineStrict": true,
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
+  }
 }
