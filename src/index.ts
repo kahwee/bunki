@@ -15,7 +15,6 @@ export {
   loadConfig,
   createDefaultConfig,
   configExists,
-  getSiteConfig,
   saveConfig
 } from './config';
 
@@ -23,7 +22,6 @@ export {
 export { extractExcerpt, convertMarkdownToHtml, parseMarkdownFile } from './utils/markdown-utils';
 export { 
   findFilesByPattern, 
-  scanDomainMarkdownFiles, 
   fileExists, 
   readFileAsText, 
   getBaseFilename,
