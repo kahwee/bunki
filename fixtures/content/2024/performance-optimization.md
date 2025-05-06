@@ -30,8 +30,8 @@ Bunki processes files in parallel whenever possible:
 
 ```javascript
 // Parse all markdown files in parallel
-const postsPromises = markdownFiles.map(filePath => 
-  parseMarkdownFile(filePath)
+const postsPromises = markdownFiles.map((filePath) =>
+  parseMarkdownFile(filePath),
 );
 
 const posts = await Promise.all(postsPromises);
@@ -48,7 +48,7 @@ Template rendering is often a bottleneck in static site generators. Bunki uses a
 const env = nunjucks.configure(templatesDir, {
   autoescape: true,
   watch: false, // Disable watching for production builds
-  noCache: false // Enable template caching
+  noCache: false, // Enable template caching
 });
 
 // Custom template loader with memory cache
@@ -61,12 +61,12 @@ class OptimizedLoader extends nunjucks.Loader {
 
 Here are some benchmark results comparing Bunki to other popular static site generators:
 
-| Operation             | Bunki   | Hugo    | Gatsby  | Jekyll  |
-|-----------------------|---------|---------|---------|---------|
-| Parse 100 MD files    | 0.12s   | 0.27s   | 1.20s   | 0.98s   |
-| Render 100 pages      | 0.18s   | 0.43s   | 2.30s   | 2.75s   |
-| Generate site         | 0.45s   | 0.92s   | 5.20s   | 4.50s   |
-| Memory peak           | 32MB    | 67MB    | 512MB   | 128MB   |
+| Operation          | Bunki | Hugo  | Gatsby | Jekyll |
+| ------------------ | ----- | ----- | ------ | ------ |
+| Parse 100 MD files | 0.12s | 0.27s | 1.20s  | 0.98s  |
+| Render 100 pages   | 0.18s | 0.43s | 2.30s  | 2.75s  |
+| Generate site      | 0.45s | 0.92s | 5.20s  | 4.50s  |
+| Memory peak        | 32MB  | 67MB  | 512MB  | 128MB  |
 
 ## Future Optimizations
 

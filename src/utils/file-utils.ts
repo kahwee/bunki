@@ -1,17 +1,17 @@
-import { Glob } from 'bun';
-import path from 'path';
+import { Glob } from "bun";
+import path from "path";
 
 export async function findFilesByPattern(
   pattern: string,
   directory: string,
-  absolute: boolean = true
+  absolute: boolean = true,
 ): Promise<string[]> {
   const glob = new Glob(pattern);
   const files: string[] = [];
 
   for await (const file of glob.scan({
     cwd: directory,
-    absolute
+    absolute,
   })) {
     files.push(file);
   }
@@ -39,7 +39,10 @@ export async function readFileAsText(filePath: string): Promise<string | null> {
   }
 }
 
-export function getBaseFilename(filePath: string, extension: string = '.md'): string {
+export function getBaseFilename(
+  filePath: string,
+  extension: string = ".md",
+): string {
   return path.basename(filePath, extension);
 }
 
@@ -51,12 +54,18 @@ export async function ensureDir(dirPath: string): Promise<void> {
   }
 }
 
-export async function copyFile(sourcePath: string, targetPath: string): Promise<void> {
+export async function copyFile(
+  sourcePath: string,
+  targetPath: string,
+): Promise<void> {
   try {
     const sourceFile = Bun.file(sourcePath);
     const content = await sourceFile.arrayBuffer();
     await Bun.write(targetPath, content);
   } catch (error) {
-    console.error(`Error copying file from ${sourcePath} to ${targetPath}:`, error);
+    console.error(
+      `Error copying file from ${sourcePath} to ${targetPath}:`,
+      error,
+    );
   }
 }

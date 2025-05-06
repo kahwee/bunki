@@ -1,53 +1,53 @@
 #!/usr/bin/env bun
-import { Command } from 'commander';
-import path from 'path';
-import fs from 'fs-extra';
-import { 
-  DEFAULT_CONTENT_DIR, 
-  DEFAULT_OUTPUT_DIR, 
+import { Command } from "commander";
+import path from "path";
+import fs from "fs-extra";
+import {
+  DEFAULT_CONTENT_DIR,
+  DEFAULT_OUTPUT_DIR,
   DEFAULT_TEMPLATES_DIR,
   loadConfig,
-  createDefaultConfig
-} from './config';
-import { SiteGenerator } from './site-generator';
-import { startServer } from './server';
+  createDefaultConfig,
+} from "./config";
+import { SiteGenerator } from "./site-generator";
+import { startServer } from "./server";
 
 const program = new Command();
 
 program
-  .name('bunki')
-  .description('An opinionated static site generator built with Bun')
-  .version('0.1.0');
+  .name("bunki")
+  .description("An opinionated static site generator built with Bun")
+  .version("0.1.0");
 
 // Init command - create a new site
 program
-  .command('init')
-  .description('Initialize a new site with default structure')
-  .option('-c, --config <file>', 'Path to config file', 'bunki.config.json')
+  .command("init")
+  .description("Initialize a new site with default structure")
+  .option("-c, --config <file>", "Path to config file", "bunki.config.json")
   .action(async (options) => {
     try {
       const configPath = path.resolve(options.config);
-      
+
       // Create config file
       const configCreated = createDefaultConfig(configPath);
-      
+
       if (configCreated) {
         // Create directory structure
-        console.log('Creating directory structure...');
-        
+        console.log("Creating directory structure...");
+
         // Create content directory
         await fs.mkdirp(DEFAULT_CONTENT_DIR);
-        
+
         // Create templates directory
         await fs.mkdirp(DEFAULT_TEMPLATES_DIR);
-        await fs.mkdirp(path.join(DEFAULT_TEMPLATES_DIR, 'styles'));
-        
+        await fs.mkdirp(path.join(DEFAULT_TEMPLATES_DIR, "styles"));
+
         // Create public directory
-        await fs.mkdirp(path.join(process.cwd(), 'public'));
-        
+        await fs.mkdirp(path.join(process.cwd(), "public"));
+
         // Create basic templates
         const templates = {
-          'base.njk': `<!DOCTYPE html>
+          "base.njk": `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -81,7 +81,7 @@ program
   </footer>
 </body>
 </html>`,
-          'index.njk': `{% extends "base.njk" %}
+          "index.njk": `{% extends "base.njk" %}
 
 {% block content %}
   <h1>Latest Posts</h1>
@@ -124,7 +124,7 @@ program
     <p>No posts yet!</p>
   {% endif %}
 {% endblock %}`,
-          'post.njk': `{% extends "base.njk" %}
+          "post.njk": `{% extends "base.njk" %}
 
 {% block title %}{{ post.title }} | {{ site.title }}{% endblock %}
 {% block description %}{{ post.excerpt }}{% endblock %}
@@ -150,7 +150,7 @@ program
     </div>
   </article>
 {% endblock %}`,
-          'tag.njk': `{% extends "base.njk" %}
+          "tag.njk": `{% extends "base.njk" %}
 
 {% block title %}{{ tag.name }} | {{ site.title }}{% endblock %}
 {% block description %}Posts tagged with {{ tag.name }} on {{ site.title }}{% endblock %}
@@ -193,7 +193,7 @@ program
     <p>No posts with this tag yet!</p>
   {% endif %}
 {% endblock %}`,
-          'tags.njk': `{% extends "base.njk" %}
+          "tags.njk": `{% extends "base.njk" %}
 
 {% block title %}Tags | {{ site.title }}{% endblock %}
 {% block description %}Browse all tags on {{ site.title }}{% endblock %}
@@ -217,7 +217,7 @@ program
     <p>No tags found!</p>
   {% endif %}
 {% endblock %}`,
-          'archive.njk': `{% extends "base.njk" %}
+          "archive.njk": `{% extends "base.njk" %}
 
 {% block title %}Archive {{ year }} | {{ site.title }}{% endblock %}
 {% block description %}Posts from {{ year }} on {{ site.title }}{% endblock %}
@@ -262,14 +262,17 @@ program
   {% else %}
     <p>No posts from {{ year }}!</p>
   {% endif %}
-{% endblock %}`
+{% endblock %}`,
         };
-        
+
         // Create each template file
         for (const [filename, content] of Object.entries(templates)) {
-          await fs.writeFile(path.join(DEFAULT_TEMPLATES_DIR, filename), content);
+          await fs.writeFile(
+            path.join(DEFAULT_TEMPLATES_DIR, filename),
+            content,
+          );
         }
-        
+
         // Create a default CSS file
         const defaultCss = `/* Reset & base styles */
 * {
@@ -469,9 +472,12 @@ footer {
   color: #6c757d;
   font-size: 0.9rem;
 }`;
-        
-        await fs.writeFile(path.join(DEFAULT_TEMPLATES_DIR, 'styles', 'main.css'), defaultCss);
-        
+
+        await fs.writeFile(
+          path.join(DEFAULT_TEMPLATES_DIR, "styles", "main.css"),
+          defaultCss,
+        );
+
         // Create a sample blog post
         const samplePost = `---
 title: Welcome to Bunki
@@ -524,125 +530,138 @@ function hello() {
 4. Run \`bunki generate\` to build your site
 5. Run \`bunki serve\` to preview your site locally
 `;
-        
-        await fs.writeFile(path.join(DEFAULT_CONTENT_DIR, 'welcome.md'), samplePost);
-        
-        console.log('\nInitialization complete! Here are the next steps:');
-        console.log('1. Edit bunki.config.json to configure your site');
-        console.log('2. Add markdown files to the content directory');
+
+        await fs.writeFile(
+          path.join(DEFAULT_CONTENT_DIR, "welcome.md"),
+          samplePost,
+        );
+
+        console.log("\nInitialization complete! Here are the next steps:");
+        console.log("1. Edit bunki.config.json to configure your site");
+        console.log("2. Add markdown files to the content directory");
         console.log('3. Run "bunki generate" to build your site');
         console.log('4. Run "bunki serve" to preview your site locally');
       } else {
-        console.log('\nSkipped initialization because the config file already exists');
+        console.log(
+          "\nSkipped initialization because the config file already exists",
+        );
       }
     } catch (error) {
-      console.error('Error initializing site:', error);
+      console.error("Error initializing site:", error);
       process.exit(1);
     }
   });
 
 // New post command
 program
-  .command('new')
-  .description('Create a new blog post')
-  .argument('<title>', 'Title of the post')
-  .option('-t, --tags <tags>', 'Comma-separated list of tags', '')
+  .command("new")
+  .description("Create a new blog post")
+  .argument("<title>", "Title of the post")
+  .option("-t, --tags <tags>", "Comma-separated list of tags", "")
   .action(async (title, options) => {
     try {
       // Create slug from title
-      const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-      
+      const slug = title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+
       // Format date in ISO format
       const date = new Date().toISOString();
-      
+
       // Parse tags
-      const tags = options.tags ? options.tags.split(',').map((tag: string) => tag.trim()) : [];
-      
+      const tags = options.tags
+        ? options.tags.split(",").map((tag: string) => tag.trim())
+        : [];
+
       // Create frontmatter
       const frontmatter = `---
 title: ${title}
 date: ${date}
-tags: [${tags.join(', ')}]
+tags: [${tags.join(", ")}]
 ---
 
 # ${title}
 
 `;
-      
+
       // Create file path
       const filePath = path.join(DEFAULT_CONTENT_DIR, `${slug}.md`);
-      
+
       // Write file
       await fs.writeFile(filePath, frontmatter);
-      
+
       console.log(`Created new post: ${filePath}`);
     } catch (error) {
-      console.error('Error creating new post:', error);
+      console.error("Error creating new post:", error);
       process.exit(1);
     }
   });
 
 // Generate command
 program
-  .command('generate')
-  .description('Generate static site from markdown content')
-  .option('-c, --config <file>', 'Config file path', 'bunki.config.json')
-  .option('-c, --content <dir>', 'Content directory', DEFAULT_CONTENT_DIR)
-  .option('-o, --output <dir>', 'Output directory', DEFAULT_OUTPUT_DIR)
-  .option('-t, --templates <dir>', 'Templates directory', DEFAULT_TEMPLATES_DIR)
+  .command("generate")
+  .description("Generate static site from markdown content")
+  .option("-c, --config <file>", "Config file path", "bunki.config.json")
+  .option("-c, --content <dir>", "Content directory", DEFAULT_CONTENT_DIR)
+  .option("-o, --output <dir>", "Output directory", DEFAULT_OUTPUT_DIR)
+  .option("-t, --templates <dir>", "Templates directory", DEFAULT_TEMPLATES_DIR)
   .action(async (options) => {
     try {
       const configPath = path.resolve(options.config);
       const contentDir = path.resolve(options.content);
       const outputDir = path.resolve(options.output);
       const templatesDir = path.resolve(options.templates);
-      
-      console.log('Generating site with:');
+
+      console.log("Generating site with:");
       console.log(`- Config file: ${configPath}`);
       console.log(`- Content directory: ${contentDir}`);
       console.log(`- Output directory: ${outputDir}`);
       console.log(`- Templates directory: ${templatesDir}`);
-      
+
       // Load configuration
       const config = loadConfig(configPath);
-      
+
       const generator = new SiteGenerator({
         contentDir,
         outputDir,
         templatesDir,
-        config
+        config,
       });
-      
+
       await generator.initialize();
       await generator.generate();
-      
-      console.log('Site generation completed successfully!');
+
+      console.log("Site generation completed successfully!");
     } catch (error) {
-      console.error('Error generating site:', error);
+      console.error("Error generating site:", error);
       process.exit(1);
     }
   });
 
 // Serve command
 program
-  .command('serve')
-  .description('Start a local development server')
-  .option('-o, --output <dir>', 'Output directory', DEFAULT_OUTPUT_DIR)
-  .option('-p, --port <number>', 'Port number', '3000')
+  .command("serve")
+  .description("Start a local development server")
+  .option("-o, --output <dir>", "Output directory", DEFAULT_OUTPUT_DIR)
+  .option("-p, --port <number>", "Port number", "3000")
   .action((options) => {
     try {
       const outputDir = path.resolve(options.output);
       const port = parseInt(options.port, 10);
-      
+
       startServer(outputDir, port);
     } catch (error) {
-      console.error('Error starting dev server:', error);
+      console.error("Error starting dev server:", error);
       process.exit(1);
     }
   });
 
 // When called directly (not imported)
 // This ensures it works both as ESM import and when executed directly
-if (import.meta.url === Bun.main || process.argv[1] === import.meta.url.substring(7)) {
+if (
+  import.meta.url === Bun.main ||
+  process.argv[1] === import.meta.url.substring(7)
+) {
   program.parse(process.argv);
 }

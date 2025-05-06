@@ -23,6 +23,7 @@ Bunki is an opinionated static site generator built with Bun. It's designed for 
 > **IMPORTANT**: Bunki requires Bun v1.2.11 or later as its runtime. It is not compatible with Node.js and will not work with npm, yarn, or pnpm.
 
 ### Prerequisites
+
 ```bash
 # Install Bun if you don't have it
 curl -fsSL https://bun.sh/install | bash
@@ -32,6 +33,7 @@ bun --version
 ```
 
 ### From npm (Coming soon)
+
 ```bash
 # Install globally
 bun install -g bunki
@@ -41,6 +43,7 @@ bun install bunki
 ```
 
 ### From GitHub
+
 ```bash
 # Clone the repository
 git clone git@github.com:kahwee/bunki.git
@@ -66,6 +69,7 @@ bunki init
 ```
 
 This will:
+
 - Create a default configuration file (`bunki.config.json`)
 - Set up the required directory structure
 - Create default templates
@@ -229,25 +233,25 @@ Options:
 You can also use Bunki programmatically in your own Bun scripts:
 
 ```javascript
-import { SiteGenerator, loadConfig } from 'bunki';
-import path from 'path';
+import { SiteGenerator, loadConfig } from "bunki";
+import path from "path";
 
 // Load configuration
-const config = loadConfig('bunki.config.json');
+const config = loadConfig("bunki.config.json");
 
 // Create a generator
 const generator = new SiteGenerator({
-  contentDir: path.join(process.cwd(), 'content'),
-  outputDir: path.join(process.cwd(), 'dist'),
-  templatesDir: path.join(process.cwd(), 'templates'),
-  config
+  contentDir: path.join(process.cwd(), "content"),
+  outputDir: path.join(process.cwd(), "dist"),
+  templatesDir: path.join(process.cwd(), "templates"),
+  config,
 });
 
 // Generate site
 async function generate() {
   await generator.initialize();
   await generator.generate();
-  console.log('Site generation complete!');
+  console.log("Site generation complete!");
 }
 
 generate().catch(console.error);
@@ -296,7 +300,7 @@ The fixture directory includes:
 fixtures/
 ├── bunki.config.json   # Test configuration file
 ├── content/            # Sample markdown content
-│   └── 2024/           
+│   └── 2024/
 │       ├── test-post-1.md
 │       ├── performance-optimization.md
 │       └── migrating-from-gatsby.md

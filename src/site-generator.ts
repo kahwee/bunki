@@ -1,28 +1,48 @@
-import path from 'path';
-import nunjucks from 'nunjucks';
-import slugify from 'slugify';
-import { Glob } from 'bun';
-import { GeneratorOptions, PaginationData, Post, SiteConfig, TagData, Site } from './types';
-import { parseMarkdownDirectory } from './parser';
-import { ensureDir, copyFile } from './utils/file-utils';
+import path from "path";
+import nunjucks from "nunjucks";
+import slugify from "slugify";
+import { Glob } from "bun";
+import {
+  GeneratorOptions,
+  PaginationData,
+  Post,
+  SiteConfig,
+  TagData,
+  Site,
+} from "./types";
+import { parseMarkdownDirectory } from "./parser";
+import { ensureDir, copyFile } from "./utils/file-utils";
 
 export class SiteGenerator {
   private options: GeneratorOptions;
   private site: Site;
-  
+
   private formatRSSDate(date: string): string {
-    const pacificDate = new Date(new Date(date).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    const pacificDate = new Date(
+      new Date(date).toLocaleString("en-US", {
+        timeZone: "America/Los_Angeles",
+      }),
+    );
     return pacificDate.toUTCString();
   }
-  
+
   private getPacificDate(date: string | Date): Date {
-    return new Date(new Date(date).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    return new Date(
+      new Date(date).toLocaleString("en-US", {
+        timeZone: "America/Los_Angeles",
+      }),
+    );
   }
-  
-  private createPagination(items: any[], currentPage: number, pageSize: number, pagePath: string): PaginationData {
+
+  private createPagination(
+    items: any[],
+    currentPage: number,
+    pageSize: number,
+    pagePath: string,
+  ): PaginationData {
     const totalItems = items.length;
     const totalPages = Math.ceil(totalItems / pageSize);
-    
+
     return {
       currentPage,
       totalPages,
@@ -32,102 +52,119 @@ export class SiteGenerator {
       prevPage: currentPage > 1 ? currentPage - 1 : null,
       pageSize,
       totalItems,
-      pagePath
+      pagePath,
     };
   }
-  
+
   constructor(options: GeneratorOptions) {
     this.options = options;
     this.site = {
       name: options.config.domain,
       posts: [],
-      tags: {}
+      tags: {},
     };
-    
+
     const env = nunjucks.configure(this.options.templatesDir, {
       autoescape: true,
-      watch: false
+      watch: false,
     });
-    
-    env.addFilter('date', function(date, format) {
-      const pstDate = new Date(date).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
+
+    env.addFilter("date", function (date, format) {
+      const pstDate = new Date(date).toLocaleString("en-US", {
+        timeZone: "America/Los_Angeles",
+      });
       const d = new Date(pstDate);
-      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      
-      if (format === 'YYYY') {
+      const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+
+      if (format === "YYYY") {
         return d.getFullYear();
-      } else if (format === 'MMMM D, YYYY') {
+      } else if (format === "MMMM D, YYYY") {
         return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-      } else if (format === 'MMMM D, YYYY h:mm A') {
+      } else if (format === "MMMM D, YYYY h:mm A") {
         const hours = d.getHours() % 12 || 12;
-        const ampm = d.getHours() >= 12 ? 'PM' : 'AM';
+        const ampm = d.getHours() >= 12 ? "PM" : "AM";
         return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} @ ${hours} ${ampm}`;
       } else {
-        return d.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles' });
+        return d.toLocaleDateString("en-US", {
+          timeZone: "America/Los_Angeles",
+        });
       }
     });
   }
-  
+
   async initialize(): Promise<void> {
-    console.log('Initializing site generator...');
-    
+    console.log("Initializing site generator...");
+
     await ensureDir(this.options.outputDir);
-    
+
     let tagDescriptions: Record<string, string> = {};
-    const tagsTomlPath = path.join(process.cwd(), 'src', 'tags.toml');
-    
+    const tagsTomlPath = path.join(process.cwd(), "src", "tags.toml");
+
     const tagsTomlFile = Bun.file(tagsTomlPath);
     if (await tagsTomlFile.exists()) {
       try {
         tagDescriptions = require(tagsTomlPath);
-        console.log('Loaded tag descriptions from tags.toml');
+        console.log("Loaded tag descriptions from tags.toml");
       } catch (error) {
-        console.warn('Error loading tag descriptions:', error);
+        console.warn("Error loading tag descriptions:", error);
       }
     }
-    
+
     const posts = await parseMarkdownDirectory(this.options.contentDir);
     console.log(`Parsed ${posts.length} posts`);
-    
+
     const tags: Record<string, TagData> = {};
-    
-    posts.forEach(post => {
+
+    posts.forEach((post) => {
       post.tagSlugs = {};
-      
-      post.tags.forEach(tagName => {
+
+      post.tags.forEach((tagName) => {
         const tagSlug = slugify(tagName, { lower: true, strict: true });
         post.tagSlugs[tagName] = tagSlug;
-        
+
         if (!tags[tagName]) {
           const tagData: TagData = {
             name: tagName,
             slug: tagSlug,
             count: 0,
-            posts: []
+            posts: [],
           };
-          
+
           if (tagDescriptions[tagName.toLowerCase()]) {
             tagData.description = tagDescriptions[tagName.toLowerCase()];
           }
-          
+
           tags[tagName] = tagData;
         }
-        
+
         tags[tagName].count += 1;
         tags[tagName].posts.push(post);
       });
     });
-    
+
     this.site = {
       name: this.options.config.domain,
       posts,
-      tags
+      tags,
     };
   }
-  
+
   async generate(): Promise<void> {
-    console.log('Generating static site...');
-    
+    console.log("Generating static site...");
+
     await ensureDir(this.options.outputDir);
     await this.generateStylesheet();
     await this.generateIndexPage();
@@ -137,245 +174,264 @@ export class SiteGenerator {
     await this.generateRSSFeed();
     await this.generateSitemap();
     await this.copyStaticAssets();
-    
-    console.log('Site generation complete!');
+
+    console.log("Site generation complete!");
   }
-  
+
   private async generateYearArchives(): Promise<void> {
     const postsByYear: Record<string, Post[]> = {};
-    
+
     for (const post of this.site.posts) {
       const postDate = new Date(post.date);
       const year = postDate.getFullYear().toString();
-      
+
       if (!postsByYear[year]) {
         postsByYear[year] = [];
       }
-      
+
       postsByYear[year].push(post);
     }
-    
+
     for (const [year, yearPosts] of Object.entries(postsByYear)) {
       const yearDir = path.join(this.options.outputDir, year);
       await ensureDir(yearDir);
-      
+
       const pageSize = 10;
       const totalPages = Math.ceil(yearPosts.length / pageSize);
-      
+
       for (let page = 1; page <= totalPages; page++) {
         const startIndex = (page - 1) * pageSize;
         const endIndex = startIndex + pageSize;
         const paginatedPosts = yearPosts.slice(startIndex, endIndex);
-        
+
         const pagination = this.createPagination(
           yearPosts,
           page,
           pageSize,
-          `/${year}/`
+          `/${year}/`,
         );
-        
-        const yearPageHtml = nunjucks.render('archive.njk', {
+
+        const yearPageHtml = nunjucks.render("archive.njk", {
           site: this.options.config,
           posts: paginatedPosts,
           tags: Object.values(this.site.tags),
           year: year,
-          pagination
+          pagination,
         });
-        
+
         if (page === 1) {
-          await Bun.write(path.join(yearDir, 'index.html'), yearPageHtml);
+          await Bun.write(path.join(yearDir, "index.html"), yearPageHtml);
         } else {
-          const pageDir = path.join(yearDir, 'page', page.toString());
+          const pageDir = path.join(yearDir, "page", page.toString());
           await ensureDir(pageDir);
-          await Bun.write(path.join(pageDir, 'index.html'), yearPageHtml);
+          await Bun.write(path.join(pageDir, "index.html"), yearPageHtml);
         }
       }
     }
   }
-  
+
   private async generateIndexPage(): Promise<void> {
     const pageSize = 10;
     const totalPages = Math.ceil(this.site.posts.length / pageSize);
-    
+
     for (let page = 1; page <= totalPages; page++) {
       const startIndex = (page - 1) * pageSize;
       const endIndex = startIndex + pageSize;
       const paginatedPosts = this.site.posts.slice(startIndex, endIndex);
-      
+
       const pagination = this.createPagination(
-        this.site.posts, 
+        this.site.posts,
         page,
         pageSize,
-        '/'
+        "/",
       );
-      
-      const pageHtml = nunjucks.render('index.njk', {
+
+      const pageHtml = nunjucks.render("index.njk", {
         site: this.options.config,
         posts: paginatedPosts,
         tags: Object.values(this.site.tags),
-        pagination
+        pagination,
       });
-      
+
       if (page === 1) {
-        await Bun.write(path.join(this.options.outputDir, 'index.html'), pageHtml);
+        await Bun.write(
+          path.join(this.options.outputDir, "index.html"),
+          pageHtml,
+        );
       } else {
-        const pageDir = path.join(this.options.outputDir, 'page', page.toString());
+        const pageDir = path.join(
+          this.options.outputDir,
+          "page",
+          page.toString(),
+        );
         await ensureDir(pageDir);
-        await Bun.write(path.join(pageDir, 'index.html'), pageHtml);
+        await Bun.write(path.join(pageDir, "index.html"), pageHtml);
       }
     }
   }
-  
+
   private async generatePostPages(): Promise<void> {
     for (const post of this.site.posts) {
       const postPath = post.url.substring(1);
       const postDir = path.join(this.options.outputDir, postPath);
-      
+
       await ensureDir(postDir);
-      
-      const postHtml = nunjucks.render('post.njk', {
+
+      const postHtml = nunjucks.render("post.njk", {
         site: this.options.config,
         post,
-        tags: Object.values(this.site.tags)
+        tags: Object.values(this.site.tags),
       });
-      
-      await Bun.write(path.join(postDir, 'index.html'), postHtml);
+
+      await Bun.write(path.join(postDir, "index.html"), postHtml);
     }
   }
-  
+
   private async generateTagPages(): Promise<void> {
-    const tagsDir = path.join(this.options.outputDir, 'tags');
+    const tagsDir = path.join(this.options.outputDir, "tags");
     await ensureDir(tagsDir);
-    
-    const tagIndexHtml = nunjucks.render('tags.njk', {
+
+    const tagIndexHtml = nunjucks.render("tags.njk", {
       site: this.options.config,
-      tags: Object.values(this.site.tags)
+      tags: Object.values(this.site.tags),
     });
-    
-    await Bun.write(path.join(tagsDir, 'index.html'), tagIndexHtml);
-    
+
+    await Bun.write(path.join(tagsDir, "index.html"), tagIndexHtml);
+
     for (const [tagName, tagData] of Object.entries(this.site.tags)) {
       const tagDir = path.join(tagsDir, tagData.slug);
       await ensureDir(tagDir);
-      
+
       const pageSize = 10;
       const totalPages = Math.ceil(tagData.posts.length / pageSize);
-      
+
       for (let page = 1; page <= totalPages; page++) {
         const startIndex = (page - 1) * pageSize;
         const endIndex = startIndex + pageSize;
         const paginatedPosts = tagData.posts.slice(startIndex, endIndex);
-        
+
         const paginatedTagData = {
           ...tagData,
-          posts: paginatedPosts
+          posts: paginatedPosts,
         };
-        
+
         const pagination = this.createPagination(
           tagData.posts,
           page,
           pageSize,
-          `/tags/${tagData.slug}/`
+          `/tags/${tagData.slug}/`,
         );
-        
-        const tagPageHtml = nunjucks.render('tag.njk', {
+
+        const tagPageHtml = nunjucks.render("tag.njk", {
           site: this.options.config,
           tag: paginatedTagData,
           tags: Object.values(this.site.tags),
-          pagination
+          pagination,
         });
-        
+
         if (page === 1) {
-          await Bun.write(path.join(tagDir, 'index.html'), tagPageHtml);
+          await Bun.write(path.join(tagDir, "index.html"), tagPageHtml);
         } else {
-          const pageDir = path.join(tagDir, 'page', page.toString());
+          const pageDir = path.join(tagDir, "page", page.toString());
           await ensureDir(pageDir);
-          await Bun.write(path.join(pageDir, 'index.html'), tagPageHtml);
+          await Bun.write(path.join(pageDir, "index.html"), tagPageHtml);
         }
       }
     }
   }
-  
+
   private async generateStylesheet(): Promise<void> {
-    const cssFilePath = path.join(this.options.templatesDir, 'styles', 'main.css');
-    
+    const cssFilePath = path.join(
+      this.options.templatesDir,
+      "styles",
+      "main.css",
+    );
+
     const cssFile = Bun.file(cssFilePath);
     if (!(await cssFile.exists())) {
-      console.warn('CSS file not found, skipping stylesheet generation.');
+      console.warn("CSS file not found, skipping stylesheet generation.");
       return;
     }
-    
+
     try {
       const cssContent = await cssFile.text();
-      
-      const cssDir = path.join(this.options.outputDir, 'css');
+
+      const cssDir = path.join(this.options.outputDir, "css");
       await ensureDir(cssDir);
-      
-      await Bun.write(path.join(cssDir, 'style.css'), cssContent);
+
+      await Bun.write(path.join(cssDir, "style.css"), cssContent);
     } catch (error) {
-      console.error('Error generating stylesheet:', error);
+      console.error("Error generating stylesheet:", error);
     }
   }
-  
+
   private async copyStaticAssets(): Promise<void> {
-    const assetsDir = path.join(this.options.templatesDir, 'assets');
-    const publicDir = path.join(process.cwd(), 'public');
-    
+    const assetsDir = path.join(this.options.templatesDir, "assets");
+    const publicDir = path.join(process.cwd(), "public");
+
     const assetsDirFile = Bun.file(assetsDir);
     if (await assetsDirFile.exists()) {
       const assetGlob = new Glob("**/*.*");
-      const assetsOutputDir = path.join(this.options.outputDir, 'assets');
-      
+      const assetsOutputDir = path.join(this.options.outputDir, "assets");
+
       await ensureDir(assetsOutputDir);
-      
-      for await (const file of assetGlob.scan({ cwd: assetsDir, absolute: true })) {
+
+      for await (const file of assetGlob.scan({
+        cwd: assetsDir,
+        absolute: true,
+      })) {
         const relativePath = path.relative(assetsDir, file);
         const targetPath = path.join(assetsOutputDir, relativePath);
-        
+
         const targetDir = path.dirname(targetPath);
         await ensureDir(targetDir);
-        
+
         await copyFile(file, targetPath);
       }
     }
-    
+
     const publicDirFile = Bun.file(publicDir);
     if (await publicDirFile.exists()) {
       const publicGlob = new Glob("**/*.*");
-      
-      for await (const file of publicGlob.scan({ cwd: publicDir, absolute: true })) {
+
+      for await (const file of publicGlob.scan({
+        cwd: publicDir,
+        absolute: true,
+      })) {
         const relativePath = path.relative(publicDir, file);
         const targetPath = path.join(this.options.outputDir, relativePath);
-        
+
         const targetDir = path.dirname(targetPath);
         await ensureDir(targetDir);
-        
+
         const targetFile = Bun.file(targetPath);
         if (!(await targetFile.exists())) {
           await copyFile(file, targetPath);
         }
       }
-      console.log('Copied public files to site');
+      console.log("Copied public files to site");
     }
   }
-  
+
   private async generateRSSFeed(): Promise<void> {
     const posts = this.site.posts.slice(0, 15);
     const config = this.options.config;
-    
-    const rssItems = posts.map(post => {
-      const postUrl = `${config.baseUrl}${post.url}`;
-      const pubDate = this.formatRSSDate(post.date);
-      
-      return `    <item>
+
+    const rssItems = posts
+      .map((post) => {
+        const postUrl = `${config.baseUrl}${post.url}`;
+        const pubDate = this.formatRSSDate(post.date);
+
+        return `    <item>
       <title><![CDATA[${post.title}]]></title>
       <link>${postUrl}</link>
       <guid>${postUrl}</guid>
       <pubDate>${pubDate}</pubDate>
       <description><![CDATA[${post.excerpt}]]></description>
     </item>`;
-    }).join('\n');
-    
+      })
+      .join("\n");
+
     const rssContent = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
@@ -387,15 +443,15 @@ export class SiteGenerator {
 ${rssItems}
   </channel>
 </rss>`;
-    
-    await Bun.write(path.join(this.options.outputDir, 'feed.xml'), rssContent);
+
+    await Bun.write(path.join(this.options.outputDir, "feed.xml"), rssContent);
   }
 
   private async generateSitemap(): Promise<void> {
     const currentDate = this.getPacificDate(new Date()).toISOString();
     const pageSize = 10;
     const config = this.options.config;
-    
+
     let sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 `;
@@ -424,7 +480,7 @@ ${rssItems}
     for (const post of this.site.posts) {
       const postUrl = `${config.baseUrl}${post.url}`;
       const postDate = new Date(post.date).toISOString();
-      
+
       sitemapContent += `  <url>
     <loc>${postUrl}</loc>
     <lastmod>${postDate}</lastmod>
@@ -444,7 +500,7 @@ ${rssItems}
 
     for (const [, tagData] of Object.entries(this.site.tags)) {
       const tagUrl = `${config.baseUrl}/tags/${tagData.slug}/`;
-      
+
       sitemapContent += `  <url>
     <loc>${tagUrl}</loc>
     <lastmod>${currentDate}</lastmod>
@@ -466,19 +522,19 @@ ${rssItems}
         }
       }
     }
-    
+
     const postsByYear: Record<string, Post[]> = {};
     for (const post of this.site.posts) {
       const postDate = new Date(post.date);
       const year = postDate.getFullYear().toString();
-      
+
       if (!postsByYear[year]) {
         postsByYear[year] = [];
       }
-      
+
       postsByYear[year].push(post);
     }
-    
+
     for (const [year, yearPosts] of Object.entries(postsByYear)) {
       sitemapContent += `  <url>
     <loc>${config.baseUrl}/${year}/</loc>
@@ -503,8 +559,11 @@ ${rssItems}
     }
 
     sitemapContent += `</urlset>`;
-    
-    await Bun.write(path.join(this.options.outputDir, 'sitemap.xml'), sitemapContent);
-    console.log('Generated sitemap.xml');
+
+    await Bun.write(
+      path.join(this.options.outputDir, "sitemap.xml"),
+      sitemapContent,
+    );
+    console.log("Generated sitemap.xml");
   }
 }

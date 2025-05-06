@@ -35,7 +35,7 @@ jobs:
       # Verify TypeScript compilation
       - name: TypeScript check
         run: bunx tsc --noEmit
-        
+
       # Verify code formatting
       - name: Check formatting
         run: bunx prettier --check .
@@ -64,7 +64,7 @@ jobs:
             echo "Site generation failed"
             exit 1
           fi
-          
+
       # Check for basic site structure
       - name: Verify site structure
         run: |

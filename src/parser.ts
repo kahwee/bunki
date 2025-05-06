@@ -1,13 +1,17 @@
-import { Post } from './types';
-import { findFilesByPattern } from './utils/file-utils';
-import { parseMarkdownFile } from './utils/markdown-utils';
+import { Post } from "./types";
+import { findFilesByPattern } from "./utils/file-utils";
+import { parseMarkdownFile } from "./utils/markdown-utils";
 
-export async function parseMarkdownDirectory(contentDir: string): Promise<Post[]> {
+export async function parseMarkdownDirectory(
+  contentDir: string,
+): Promise<Post[]> {
   try {
-    const markdownFiles = await findFilesByPattern('**/*.md', contentDir, true);
+    const markdownFiles = await findFilesByPattern("**/*.md", contentDir, true);
     console.log(`Found ${markdownFiles.length} markdown files`);
 
-    const postsPromises = markdownFiles.map(filePath => parseMarkdownFile(filePath));
+    const postsPromises = markdownFiles.map((filePath) =>
+      parseMarkdownFile(filePath),
+    );
     const posts = await Promise.all(postsPromises);
 
     return posts

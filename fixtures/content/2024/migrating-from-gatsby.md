@@ -46,6 +46,7 @@ Next, you'll need to migrate your templates:
 1. **From React to Nunjucks**: Bunki uses Nunjucks for templating. Here's a comparison:
 
    **Gatsby (React):**
+
    ```jsx
    const PostTemplate = ({ data }) => (
      <Layout>
@@ -56,12 +57,11 @@ Next, you'll need to migrate your templates:
    ```
 
    **Bunki (Nunjucks):**
-   ```html
-   {% extends "base.njk" %}
 
-   {% block content %}
-     <h1>{{ post.title }}</h1>
-     <div>{{ post.html | safe }}</div>
+   ```html
+   {% extends "base.njk" %} {% block content %}
+   <h1>{{ post.title }}</h1>
+   <div>{{ post.html | safe }}</div>
    {% endblock %}
    ```
 
@@ -103,16 +103,19 @@ Next, you'll need to migrate your templates:
 Once your content and templates are migrated:
 
 1. Install Bunki:
+
    ```bash
    bun install bunki
    ```
 
 2. Build your site:
+
    ```bash
    bunki generate
    ```
 
 3. Preview locally:
+
    ```bash
    bunki serve
    ```
