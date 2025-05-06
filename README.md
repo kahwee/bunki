@@ -254,6 +254,61 @@ generate().catch(console.error);
 
 > **Note**: Bunki's programmatic API is designed specifically for Bun and utilizes Bun's native APIs for optimal performance. It will not work in Node.js environments.
 
+## Development
+
+### Testing
+
+Bunki includes a comprehensive test suite to verify functionality:
+
+```bash
+# Run all tests
+bun test
+
+# Run specific test files
+bun test site-generator
+bun test utils/markdown
+
+# Run tests with watch mode
+bun test --watch
+
+# Run tests with coverage
+bun test --coverage
+```
+
+Tests are written using Bun's native test runner and verify all core functionality of Bunki, including:
+
+- Site generation process
+- Markdown parsing and rendering
+- Configuration handling
+- File system utilities
+- Template rendering
+
+### Test Fixtures
+
+Bunki comes with a set of test fixtures that are used by the test suite and can also serve as examples:
+
+The fixture directory includes:
+
+```
+fixtures/
+├── bunki.config.json   # Test configuration file
+├── content/            # Sample markdown content
+│   └── 2024/           
+│       ├── test-post-1.md
+│       ├── performance-optimization.md
+│       └── migrating-from-gatsby.md
+├── src/
+│   └── tags.toml       # Tag definitions
+└── templates/          # Test templates
+    ├── base.njk
+    ├── index.njk
+    ├── post.njk
+    └── styles/
+        └── main.css
+```
+
+You can use these fixtures as examples for your own Bunki projects.
+
 ## License
 
 MIT

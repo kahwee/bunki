@@ -642,6 +642,7 @@ program
   });
 
 // When called directly (not imported)
-if (process.argv[1] === import.meta.url.substring(7)) {
+// This ensures it works both as ESM import and when executed directly
+if (import.meta.url === Bun.main || process.argv[1] === import.meta.url.substring(7)) {
   program.parse(process.argv);
 }

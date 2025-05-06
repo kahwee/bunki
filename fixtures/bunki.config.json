@@ -1,0 +1,6 @@
+{
+  "title": "Bunki Test Blog",
+  "description": "A test blog for demonstrating the Bunki static site generator",
+  "baseUrl": "https://example.com",
+  "domain": "example.com"
+}

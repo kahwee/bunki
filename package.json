@@ -1,13 +1,13 @@
 {
   "name": "bunki",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "An opinionated static site generator built with Bun",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "bun build ./src/index.ts --outdir ./dist --target bun",
+    "build": "bun build.js",
     "dev": "bun run --watch src/index.ts",
     "test": "bun test",
     "format": "prettier --write ."

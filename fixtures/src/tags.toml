@@ -1,0 +1,13 @@
+bun = "A high-performance JavaScript runtime, bundler, transpiler, and package manager designed for speed and developer efficiency. It provides a complete toolkit for JavaScript and TypeScript development with significantly faster performance than Node.js."
+
+gatsby = "A popular React-based framework for building websites and applications with a rich plugin ecosystem, GraphQL data layer, and performance optimizations. Known for its comprehensive approach to static site generation with dynamic capabilities."
+
+migration = "The process of moving from one system, platform, or framework to another while preserving functionality and content. Includes strategies, tools, and best practices for ensuring smooth transitions with minimal disruption."
+
+open source = "Software whose source code is freely available for anyone to view, modify, and distribute. Built on principles of transparency, community collaboration, and shared ownership of code to foster innovation and quality."
+
+performance = "The measurement of how efficiently a system completes tasks, focusing on speed, resource usage, and user experience. Includes optimization techniques, benchmarking methodologies, and architectural decisions that impact system responsiveness."
+
+technology = "Broad analysis of technology trends, innovation patterns, and their impacts on software development and digital experiences. Covers emerging tools, frameworks, languages, and methodologies reshaping how we build and interact with software."
+
+"web development" = "The practice of creating websites and web applications, encompassing frontend design, backend systems, performance optimization, and deployment strategies. Includes modern frameworks, architecture patterns, and tools that power the modern web."
