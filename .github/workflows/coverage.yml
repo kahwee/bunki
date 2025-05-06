@@ -34,7 +34,7 @@ jobs:
 
       # Run tests with coverage
       - name: Generate coverage report
-        run: bun test --coverage
+        run: bun test:coverage
 
       # Generate a coverage badge
       - name: Generate coverage badge
