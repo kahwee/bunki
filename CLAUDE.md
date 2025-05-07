@@ -72,13 +72,15 @@ Images are stored in Cloudflare R2 or S3-compatible storage (not in Git).
 ### Image Configuration
 
 Create a `.env` file with S3/R2 credentials:
+
 - `R2_ACCOUNT_ID`
-- `R2_ACCESS_KEY_ID` 
+- `R2_ACCESS_KEY_ID`
 - `R2_SECRET_ACCESS_KEY`
 - `R2_BUCKET`
 - `R2_PUBLIC_URL`
 
 For domain-specific custom domains, you can set:
+
 ```
 R2_CUSTOM_DOMAIN_EXAMPLE_COM=cdn.example.com
 ```
