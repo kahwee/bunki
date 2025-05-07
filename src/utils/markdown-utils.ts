@@ -1,5 +1,5 @@
 import matter from "gray-matter";
-import { Marked, MarkedOptions } from "marked";
+import { Marked } from "marked";
 import { markedHighlight } from "marked-highlight";
 import sanitizeHtml from "sanitize-html";
 import hljs from "highlight.js/lib/core";

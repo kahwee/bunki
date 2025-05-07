@@ -1,8 +1,8 @@
-# CLAUDE.md - Agentic Coding Assistant Configuration
+# CLAUDE.md - Bunki Configuration Guide
 
 ## Runtime Environment
 
-This project uses [Bun](https://bun.sh/) v1.2.12 exclusively as its JavaScript runtime and package manager. Bun provides significantly better performance than Node.js/npm for both development and production workflows, including optimized file operations through its native Glob and File APIs.
+This project uses [Bun](https://bun.sh/) v1.2.12 as its JavaScript runtime and package manager. Bun provides significantly better performance than Node.js for both development and production workflows.
 
 ### Setup Requirements
 
@@ -14,28 +14,15 @@ This project uses [Bun](https://bun.sh/) v1.2.12 exclusively as its JavaScript r
 2. Clone repository: `git clone git@github.com:kahwee/bunki.git`
 3. Install dependencies: `bun install`
 
-Do not use npm/yarn/pnpm with this project - only use Bun v1.2.12 for all operations.
+### Build & Run Commands
 
-### Version Check
-
-Before starting development, verify your Bun version:
-
-```bash
-bun --version
-# Should output: 1.2.12
-```
-
-## Build & Run Commands
-
-- Build: `bun run build` (targets Bun runtime for native APIs)
+- Build: `bun run build`
 - Development: `bun run dev`
 - Generate static site: `bun run generate`
 - Serve the site: `bun run serve`
-- Deploy to Cloudflare: `bun run deploy`
-- Initialize image directories: `bun run init-images`
-- Upload images: `bun run upload-images`
-- Quick image upload script: `./upload-image.sh path/to/image.jpg`
-- Type check: `bun run typecheck` (runs TypeScript compiler without emitting files)
+- Type check: `bun run typecheck`
+- Run tests: `bun test`
+- Run tests with coverage: `bun test:coverage`
 
 ## Code Style Guidelines
 
@@ -43,93 +30,72 @@ bun --version
 - **Imports**: Use ES modules style imports with explicit named imports
 - **Error Handling**: Use async/await with try/catch blocks
 - **Naming**: PascalCase for interfaces, camelCase for variables/functions
-- **File Organization**: Separate concerns (config, parser, generator)
-- **File Naming**: Use kebab-case for filenames (e.g., `file-scanner.ts` not `fileScanner.ts`)
+- **File Naming**: Use kebab-case for filenames
 - **Formatting**: 2-space indentation, semi-colons required
-- **Command Pattern**: Use commander.js for CLI commands
-- **Environment Variables**: Store configuration in .env files
 - **Templates**: Use Nunjucks templates with .njk extension
 - **CSS**: Use CSS in the templates/styles directory with CSS variables
 - **Native APIs**: Prefer Bun's native APIs (e.g., Glob, File) when available
-- **Date Format**: Use timezone-aware ISO format with PST/PDT timezone in all Markdown files: `date: YYYY-MM-DDT09:00:00-07:00` (displays as "Month Day, Year @ H AM/PM")
+- **Date Format**: Use timezone-aware ISO format with PST/PDT timezone in Markdown frontmatter:
+  `date: YYYY-MM-DDT09:00:00-07:00`
+
+## Project Structure
+
+```
+.
+├── bunki.config.ts/json  # Site configuration
+├── content/              # Markdown content
+│   └── YYYY/             # Year-based content organization
+│       └── slug-name.md  # Markdown files with frontmatter
+├── templates/            # Nunjucks templates
+│   ├── base.njk          # Base template
+│   ├── index.njk         # Homepage template
+│   ├── post.njk          # Single post template
+│   ├── tag.njk           # Tag page template
+│   ├── tags.njk          # Tags index template
+│   ├── archive.njk       # Archives template
+│   └── styles/           # CSS directory
+│       └── main.css      # Main stylesheet
+├── images/               # Local images directory
+│   └── domain.com/       # Domain-specific image directory
+├── src/                  # Source code
+└── dist/                 # Generated site output
+```
 
 ## Tag System
 
-Tags and their descriptions are defined in `src/tags.toml` and displayed on tag pages. All available tags are listed in the TOML file with their descriptions.
+Tags and their descriptions are defined in `src/tags.toml` and displayed on tag pages. Use lowercase for all tags and prioritize existing ones over creating new ones.
 
-### Tag Usage Guidelines
+## Image Management
 
-When adding tags to new content:
-
-1. Use lowercase for all tags
-2. Prioritize existing tags over creating new ones
-3. Limit to 3-5 tags per article
-4. Avoid creating new tags for single articles
-
-### Tag Consolidation Recommendations
-
-The following tags should be consolidated to maintain a consistent taxonomy:
-
-- Use **technology** instead of **tech** or **tech trend**
-- Use **ai** as the primary AI tag, with more specific AI tags when needed (**ai tool**, **large language model**, **ai assistant**)
-- Use **web development** instead of **static site generator**
-- Use **software engineering** for broad engineering topics, with more specific tags when relevant (**build tool**, **developer tool**)
-- Use **privacy** to cover **web security**, **ad blocking**
-- Use **cryptocurrency** instead of **bitcoin**
-- Use **finance** to cover **fintech**
-- Use **personal** to cover **learning**, **philosophy**
-
-### Adding or Modifying Tags
-
-To add or modify tag descriptions:
-
-1. Edit `src/tags.toml`
-2. Follow the existing TOML format: `"tag name" = "Your description here"`
-3. The generator will automatically use these descriptions on tag pages
-
-## Image Management Workflow
-
-Images are stored in Cloudflare R2 (not in Git) to keep the repository size small and load times fast.
-
-### Image Directory Structure
-
-```
-images/                  # Main images directory
-└── example.com/         # Domain-specific images
-    ├── header.jpg
-    ├── profile.png
-    └── logo.svg
-```
+Images are stored in Cloudflare R2 or S3-compatible storage (not in Git).
 
 ### Image Configuration
 
-1. Create a `.env` file with R2 credentials (see `.env.example`)
-2. Required environment variables:
-   - `R2_ACCOUNT_ID`
-   - `R2_ACCESS_KEY_ID`
-   - `R2_SECRET_ACCESS_KEY`
-   - `R2_BUCKET`
-   - `R2_PUBLIC_URL`
+Create a `.env` file with S3/R2 credentials:
+- `R2_ACCOUNT_ID`
+- `R2_ACCESS_KEY_ID` 
+- `R2_SECRET_ACCESS_KEY`
+- `R2_BUCKET`
+- `R2_PUBLIC_URL`
 
-### Image Upload Methods
+For domain-specific custom domains, you can set:
+```
+R2_CUSTOM_DOMAIN_EXAMPLE_COM=cdn.example.com
+```
 
-There are three ways to upload images:
+### Image Upload Method
 
-1. Upload all images in a domain directory:
+Bunki uses Bun's native S3 API for image uploads:
 
-   ```bash
-   bun run upload-images
-   ```
+```bash
+# Upload all images in the images directory
+bunki images:push
 
-2. Upload a single image using the CLI:
+# Specify a different images directory
+bunki images:push --images path/to/images
 
-   ```bash
-   bun run upload-image path/to/image.jpg
-   ```
+# Output URL mapping to a JSON file
+bunki images:push --output-json image-urls.json
+```
 
-3. Quick upload with the shell script:
-   ```bash
-   ./upload-image.sh path/to/image.jpg
-   ```
-
-The image uploader supports JPG, PNG, GIF, WebP, and SVG formats. After uploading, it will provide you with the markdown syntax to use the image in your content.
+The image uploader supports JPG, PNG, GIF, WebP, and SVG formats.
