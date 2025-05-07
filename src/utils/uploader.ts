@@ -3,6 +3,7 @@ import { Upload } from "@aws-sdk/lib-storage";
 import path from "path";
 import mime from "mime-types";
 import { ImageUploader, R2Config, SiteConfig, Uploader } from "../types";
+import { BunS3Uploader } from "./bun-s3-uploader";
 
 /**
  * Cloudflare R2 uploader implementation that uses AWS S3 compatible API
@@ -23,6 +24,61 @@ export class R2Uploader implements Uploader, ImageUploader {
         secretAccessKey: r2Config.secretAccessKey,
       },
     });
+  }
+
+  /**
+   * Stub implementation for large file uploads to maintain interface compatibility.
+   * Uses Upload from @aws-sdk/lib-storage which handles multipart uploads.
+   */
+  async uploadLargeFile(filePath: string, remotePath: string): Promise<string> {
+    console.log(
+      `[R2] Uploading large file ${filePath} to R2 bucket ${this.r2Config.bucket}/${remotePath}...`,
+    );
+
+    try {
+      // Read the file content using Bun.file
+      const bunFile = Bun.file(filePath);
+      const fileContent = Buffer.from(await bunFile.arrayBuffer());
+
+      // Determine content type based on file extension
+      const contentType = mime.lookup(filePath) || "application/octet-stream";
+
+      // Upload to R2 using AWS SDK multipart upload
+      const upload = new Upload({
+        client: this.s3Client,
+        params: {
+          Bucket: this.r2Config.bucket,
+          Key: remotePath,
+          Body: fileContent,
+          ContentType: contentType,
+          // Set cache control to cache for 1 year (31536000 seconds)
+          CacheControl: "public, max-age=31536000",
+        },
+      });
+
+      await upload.done();
+
+      // Get the public URL
+      const fileUrl = this.getPublicUrl(remotePath);
+      console.log(`[R2] Large file uploaded to ${fileUrl}`);
+
+      return fileUrl;
+    } catch (error) {
+      console.error(`Error uploading large file to R2:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Stub method for getting a writer - returns null as this isn't natively supported
+   * with AWS SDK in the same way as Bun's native S3 client
+   */
+  getWriterForLargeFile(key: string, contentType?: string): any {
+    console.warn(
+      "[R2] Getting a writer for large files is not supported with the AWS SDK implementation. " +
+        "Use uploadLargeFile instead, or switch to the Bun native S3 uploader with --type bun-s3.",
+    );
+    return null;
   }
 
   async upload(sourcePath: string, config: SiteConfig): Promise<void> {
@@ -188,8 +244,14 @@ export function createUploader(
   switch (type.toLowerCase()) {
     case "r2":
       return new R2Uploader(config);
+    case "bun-s3":
+      return new BunS3Uploader(config);
+    case "bun-r2":
+      return new BunS3Uploader(config); // Alias for bun-s3 for R2
     default:
-      throw new Error(`Unsupported uploader type: ${type}`);
+      throw new Error(
+        `Unsupported uploader type: ${type}. Supported types: 'r2', 'bun-s3', 'bun-r2'`,
+      );
   }
 }
 

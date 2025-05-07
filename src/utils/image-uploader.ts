@@ -22,7 +22,12 @@ export function getUploaderConfig(uploadType: string): R2Config {
     publicUrl: "",
   };
 
-  if (uploadType === "r2") {
+  // Both R2 and Bun-S3 use the same config format
+  if (
+    uploadType === "r2" ||
+    uploadType === "bun-s3" ||
+    uploadType === "bun-r2"
+  ) {
     uploadConfig = {
       accountId: process.env.R2_ACCOUNT_ID || "",
       accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
@@ -31,18 +36,22 @@ export function getUploaderConfig(uploadType: string): R2Config {
       publicUrl: process.env.R2_PUBLIC_URL || "",
     };
 
-    // Validate R2 config
+    // Validate R2/S3 config
     if (
       !uploadConfig.accountId ||
       !uploadConfig.accessKeyId ||
       !uploadConfig.secretAccessKey ||
       !uploadConfig.publicUrl
     ) {
-      console.error("Missing R2 configuration. Please check your .env file.");
+      console.error(
+        "Missing S3/R2 configuration. Please check your .env file.",
+      );
       process.exit(1);
     }
   } else {
-    console.error(`Unsupported upload type: ${uploadType}`);
+    console.error(
+      `Unsupported upload type: ${uploadType}. Supported types: 'r2', 'bun-s3', 'bun-r2'`,
+    );
     process.exit(1);
   }
 

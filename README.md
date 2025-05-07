@@ -20,7 +20,7 @@ Bunki is an opinionated static site generator built with Bun. It's designed for 
 
 ## Installation
 
-> **IMPORTANT**: Bunki requires Bun v1.2.11 or later as its runtime. It is not compatible with Node.js and will not work with npm, yarn, or pnpm.
+> **IMPORTANT**: Bunki requires Bun v1.2.12 or later as its runtime. It is not compatible with Node.js and will not work with npm, yarn, or pnpm.
 
 ### Prerequisites
 
@@ -28,7 +28,7 @@ Bunki is an opinionated static site generator built with Bun. It's designed for 
 # Install Bun if you don't have it
 curl -fsSL https://bun.sh/install | bash
 
-# Verify Bun version (should be 1.2.11 or later)
+# Verify Bun version (should be 1.2.12 or later)
 bun --version
 ```
 
@@ -126,7 +126,12 @@ The `bunki.config.json` file contains the configuration for your site:
 
 ### Image Upload Configuration
 
-To configure image uploading to Cloudflare R2, you need to set the following environment variables:
+Bunki supports uploading images to cloud storage with two implementation options:
+
+1. **AWS SDK-based uploader** (type: `r2`) - Uses the AWS SDK for S3-compatible services
+2. **Bun native S3 uploader** (type: `bun-s3` or `bun-r2`) - Uses Bun's built-in S3 API for better performance
+
+To configure image uploading to Cloudflare R2 or any S3-compatible service, set the following environment variables:
 
 ```
 R2_ACCOUNT_ID=your-cloudflare-account-id
@@ -144,6 +149,57 @@ R2_CUSTOM_DOMAIN_EXAMPLE_COM=cdn.example.com
 ```
 
 This will use `https://cdn.example.com/` as the base URL for all uploaded images.
+
+#### Selecting an Uploader Implementation
+
+When using the CLI, specify the type with the `--type` option:
+
+```bash
+# Use AWS SDK-based uploader (default)
+bunki upload-images --type r2
+
+# Use Bun's native S3 API (faster performance)
+bunki upload-images --type bun-s3
+# or
+bunki upload-images --type bun-r2
+```
+
+The Bun native S3 uploader provides better performance and reduced memory usage, especially for large files.
+
+#### Large File Uploads
+
+For very large files, the Bun native S3 uploader (`bun-s3` or `bun-r2`) supports efficient chunked uploads using streaming. This is particularly useful for video files, high-resolution images, or other large assets.
+
+When using the Bun native implementation programmatically, you can leverage the multipart upload functionality:
+
+```javascript
+import { createUploader } from "bunki";
+
+// Create uploader instance
+const uploader = createUploader("bun-s3", uploaderConfig);
+
+// Option 1: Use the high-level large file upload method
+const fileUrl = await uploader.uploadLargeFile(
+  "/path/to/large-video.mp4",
+  "videos/large-video.mp4",
+);
+
+// Option 2: For more control, use the streaming writer
+const writer = uploader.getWriterForLargeFile(
+  "videos/large-video.mp4",
+  "video/mp4",
+);
+
+// Write data in chunks
+for (let i = 0; i < 100; i++) {
+  writer.write(chunk); // chunk can be Uint8Array, Buffer, string, etc.
+}
+
+// Finalize the upload
+await writer.end();
+```
+
+The AWS SDK implementation (`r2`) also supports large file uploads through its own multipart upload mechanism, but doesn't provide the streaming writer interface.
 
 ## Directory Structure
 
@@ -277,7 +333,7 @@ Upload images to remote storage (e.g., Cloudflare R2)
 Options:
   -d, --domain <domain>     Domain name (defaults to domain in bunki.config.json)
   -i, --images <dir>        Images directory path (default: "images")
-  -t, --type <type>         Upload storage type (currently only r2 is supported) (default: "r2")
+  -t, --type <type>         Upload storage type (r2, bun-s3, bun-r2) (default: "r2")
   --output-json <file>      Output URL mapping to JSON file
   -h, --help                display help for command
 ```
@@ -296,7 +352,7 @@ Arguments:
 
 Options:
   -d, --domain <domain>   Domain name (defaults to domain in bunki.config.json)
-  -t, --type <type>       Upload storage type (currently only r2 is supported) (default: "r2")
+  -t, --type <type>       Upload storage type (r2, bun-s3, bun-r2) (default: "r2")
   -h, --help              display help for command
 ```
 
@@ -371,7 +427,7 @@ async function setupImages() {
   const imageUrlMap = await uploadImages({
     domain: "example.com",
     images: DEFAULT_IMAGES_DIR,
-    type: "r2",
+    type: "bun-r2", // Use Bun's native S3 API for better performance
     outputJson: "image-urls.json",
   });
 
@@ -381,8 +437,25 @@ async function setupImages() {
   const singleImageUrl = await uploadSingleImage({
     imagePath: path.join(process.cwd(), "path/to/image.jpg"),
     domain: "example.com",
-    type: "r2",
+    type: "bun-r2", // Use Bun's native S3 API for better performance
   });
+
+  // For large files, you can access the uploader directly
+  import { createUploader } from "./utils/uploader";
+  import { getUploaderConfig } from "./utils/image-uploader";
+
+  // Get config from environment variables
+  const config = getUploaderConfig("bun-r2");
+  config.bucket = "example-com"; // Set bucket name
+
+  // Create uploader instance
+  const uploader = createUploader("bun-r2", config);
+
+  // Upload a large video file
+  const videoUrl = await uploader.uploadLargeFile(
+    path.join(process.cwd(), "videos/presentation.mp4"),
+    "example.com/videos/presentation.mp4",
+  );
 
   console.log("Single image URL:", singleImageUrl);
 }

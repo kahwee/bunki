@@ -120,6 +120,17 @@ export interface ImageUploader {
     imagesDir: string,
     domainName: string,
   ): Promise<Record<string, string>>;
+
+  /**
+   * Optional method for handling large file uploads using multipart chunking.
+   * Implementation is specific to the uploader type.
+   */
+  uploadLargeFile?(filePath: string, remotePath: string): Promise<string>;
+
+  /**
+   * Optional method to get a writer for streaming large file uploads
+   */
+  getWriterForLargeFile?(key: string, contentType?: string): any;
 }
 
 /**
