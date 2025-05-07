@@ -149,3 +149,12 @@ export interface ImageUploadOptions {
 export interface InitImagesOptions {
   images?: string;
 }
+
+/**
+ * Options for uploading a single image
+ */
+export interface SingleImageUploadOptions {
+  imagePath: string;
+  domain?: string;
+  type?: string;
+}

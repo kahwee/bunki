@@ -5,12 +5,15 @@ import {
   DEFAULT_CONTENT_DIR,
   DEFAULT_OUTPUT_DIR,
   DEFAULT_TEMPLATES_DIR,
-  DEFAULT_IMAGES_DIR,
   loadConfig,
   createDefaultConfig,
+} from "./config";
+import {
+  DEFAULT_IMAGES_DIR,
   uploadImages,
   initImages,
-} from "./index";
+  uploadSingleImage,
+} from "./utils/image-uploader";
 import { SiteGenerator } from "./site-generator";
 import { startServer } from "./server";
 import { ensureDir } from "./utils/file-utils";
@@ -72,11 +75,11 @@ program
       </nav>
     </div>
   </header>
-  
+
   <main class="container">
     {% block content %}{% endblock %}
   </main>
-  
+
   <footer>
     <div class="container">
       <p>&copy; {{ "now" | date("YYYY") }} {{ site.title }}</p>
@@ -88,7 +91,7 @@ program
 
 {% block content %}
   <h1>Latest Posts</h1>
-  
+
   {% if posts.length > 0 %}
     <div class="posts">
       {% for post in posts %}
@@ -109,17 +112,17 @@ program
         </article>
       {% endfor %}
     </div>
-    
+
     {% if pagination.totalPages > 1 %}
       <nav class="pagination">
         {% if pagination.hasPrevPage %}
           <a href="{{ pagination.pagePath }}{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="prev">← Previous</a>
         {% endif %}
-        
+
         {% if pagination.hasNextPage %}
           <a href="{{ pagination.pagePath }}page/{{ pagination.nextPage }}/" class="next">Next →</a>
         {% endif %}
-        
+
         <span class="page-info">Page {{ pagination.currentPage }} of {{ pagination.totalPages }}</span>
       </nav>
     {% endif %}
@@ -147,7 +150,7 @@ program
         {% endif %}
       </div>
     </header>
-    
+
     <div class="post-content">
       {{ post.html | safe }}
     </div>
@@ -160,11 +163,11 @@ program
 
 {% block content %}
   <h1>Posts tagged "{{ tag.name }}"</h1>
-  
+
   {% if tag.description %}
     <div class="tag-description">{{ tag.description }}</div>
   {% endif %}
-  
+
   {% if tag.posts.length > 0 %}
     <div class="posts">
       {% for post in tag.posts %}
@@ -178,17 +181,17 @@ program
         </article>
       {% endfor %}
     </div>
-    
+
     {% if pagination.totalPages > 1 %}
       <nav class="pagination">
         {% if pagination.hasPrevPage %}
           <a href="{{ pagination.pagePath }}{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="prev">← Previous</a>
         {% endif %}
-        
+
         {% if pagination.hasNextPage %}
           <a href="{{ pagination.pagePath }}page/{{ pagination.nextPage }}/" class="next">Next →</a>
         {% endif %}
-        
+
         <span class="page-info">Page {{ pagination.currentPage }} of {{ pagination.totalPages }}</span>
       </nav>
     {% endif %}
@@ -203,7 +206,7 @@ program
 
 {% block content %}
   <h1>All Tags</h1>
-  
+
   {% if tags.length > 0 %}
     <ul class="tags-list">
       {% for tag in tags %}
@@ -227,7 +230,7 @@ program
 
 {% block content %}
   <h1>Posts from {{ year }}</h1>
-  
+
   {% if posts.length > 0 %}
     <div class="posts">
       {% for post in posts %}
@@ -248,17 +251,17 @@ program
         </article>
       {% endfor %}
     </div>
-    
+
     {% if pagination.totalPages > 1 %}
       <nav class="pagination">
         {% if pagination.hasPrevPage %}
           <a href="/{{ year }}/{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="prev">← Previous</a>
         {% endif %}
-        
+
         {% if pagination.hasNextPage %}
           <a href="/{{ year }}/page/{{ pagination.nextPage }}/" class="next">Next →</a>
         {% endif %}
-        
+
         <span class="page-info">Page {{ pagination.currentPage }} of {{ pagination.totalPages }}</span>
       </nav>
     {% endif %}
@@ -698,6 +701,33 @@ program
       });
     } catch (error) {
       console.error("Error uploading images:", error);
+      process.exit(1);
+    }
+  });
+
+// Upload single image command
+program
+  .command("upload-image")
+  .description("Upload a single image to remote storage (e.g., Cloudflare R2)")
+  .argument("<imagePath>", "Path to the image file to upload")
+  .option(
+    "-d, --domain <domain>",
+    "Domain name (defaults to domain in bunki.config.json)",
+  )
+  .option(
+    "-t, --type <type>",
+    "Upload storage type (currently only r2 is supported)",
+    "r2",
+  )
+  .action(async (imagePath, options) => {
+    try {
+      await uploadSingleImage({
+        imagePath: imagePath,
+        domain: options.domain,
+        type: options.type,
+      });
+    } catch (error) {
+      console.error("Error uploading image:", error);
       process.exit(1);
     }
   });

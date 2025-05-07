@@ -93,7 +93,11 @@ Images are stored in Cloudflare R2 (not in Git) to keep the repository size smal
 ### Image Directory Structure
 
 ```
-images/        # Images for the blog
+images/                  # Main images directory
+└── example.com/         # Domain-specific images
+    ├── header.jpg
+    ├── profile.png
+    └── logo.svg
 ```
 
 ### Image Configuration
@@ -105,3 +109,26 @@ images/        # Images for the blog
    - `R2_SECRET_ACCESS_KEY`
    - `R2_BUCKET`
    - `R2_PUBLIC_URL`
+
+### Image Upload Methods
+
+There are three ways to upload images:
+
+1. Upload all images in a domain directory:
+
+   ```bash
+   bun run upload-images
+   ```
+
+2. Upload a single image using the CLI:
+
+   ```bash
+   bun run upload-image path/to/image.jpg
+   ```
+
+3. Quick upload with the shell script:
+   ```bash
+   ./upload-image.sh path/to/image.jpg
+   ```
+
+The image uploader supports JPG, PNG, GIF, WebP, and SVG formats. After uploading, it will provide you with the markdown syntax to use the image in your content.

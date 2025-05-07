@@ -1,7 +1,12 @@
 import path from "path";
-import { ImageUploadOptions, InitImagesOptions, R2Config } from "../types";
+import {
+  ImageUploadOptions,
+  InitImagesOptions,
+  R2Config,
+  SingleImageUploadOptions,
+} from "../types";
 import { loadConfig } from "../config";
-import { uploadDomainImages } from "./uploader";
+import { uploadDomainImages, createUploader } from "./uploader";
 import { ensureDir, fileExists } from "./file-utils";
 
 // Constants
@@ -142,6 +147,63 @@ export async function initImages(
     console.log("bunki upload-images");
   } catch (error) {
     console.error("Error initializing image directories:", error);
+    process.exit(1);
+  }
+}
+
+// Upload a single image implementation function
+export async function uploadSingleImage(
+  options: SingleImageUploadOptions,
+): Promise<string> {
+  try {
+    // Validate image path
+    if (!options.imagePath) {
+      console.error("Error: image path is required.");
+      process.exit(1);
+    }
+
+    const imagePath = path.resolve(options.imagePath);
+
+    // Check if file exists
+    if (!(await fileExists(imagePath))) {
+      console.error(`Error: image file does not exist: ${imagePath}`);
+      process.exit(1);
+    }
+
+    // If domain is not provided, get it from bunki config
+    let domain = options.domain;
+    if (!domain) {
+      const config = await loadConfig();
+      domain = config.domain;
+    }
+
+    if (!domain) {
+      console.error(
+        "Error: domain is required. Use --domain <domainName> or ensure domain is in bunki.config.json",
+      );
+      process.exit(1);
+    }
+
+    const uploadType = options.type || "r2";
+    const uploadConfig = getUploaderConfig(uploadType);
+
+    // Convert domain name to bucket name format (e.g., example.com -> example-com)
+    const bucketName = domain.replace(/\./g, "-");
+    uploadConfig.bucket = bucketName;
+
+    // Create uploader and upload the image
+    const uploader = createUploader(uploadType, uploadConfig);
+    console.log(
+      `Uploading image ${path.basename(imagePath)} for domain ${domain}...`,
+    );
+    const imageUrl = await uploader.uploadImage(imagePath, domain);
+
+    console.log(`\nImage uploaded successfully!`);
+    console.log(`Use this URL in your markdown: ![Alt text](${imageUrl})`);
+
+    return imageUrl;
+  } catch (error) {
+    console.error("Error uploading image:", error);
     process.exit(1);
   }
 }

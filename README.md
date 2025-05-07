@@ -265,7 +265,9 @@ Options:
   -h, --help           display help for command
 ```
 
-### Upload Images Command
+### Image Upload Commands
+
+#### Upload Multiple Images
 
 ```
 Usage: bunki upload-images [options]
@@ -278,6 +280,43 @@ Options:
   -t, --type <type>         Upload storage type (currently only r2 is supported) (default: "r2")
   --output-json <file>      Output URL mapping to JSON file
   -h, --help                display help for command
+```
+
+This command will find and upload all supported image files (JPG, PNG, GIF, WebP, SVG) in the specified directory.
+
+#### Upload Single Image
+
+```
+Usage: bunki upload-image <imagePath> [options]
+
+Upload a single image to remote storage (e.g., Cloudflare R2)
+
+Arguments:
+  imagePath               Path to the image file to upload
+
+Options:
+  -d, --domain <domain>   Domain name (defaults to domain in bunki.config.json)
+  -t, --type <type>       Upload storage type (currently only r2 is supported) (default: "r2")
+  -h, --help              display help for command
+```
+
+#### Quick Upload Script
+
+Bunki also includes a convenient shell script for quick image uploads:
+
+```bash
+# Upload a single image using the shell script
+./upload-image.sh path/to/your/image.jpg
+
+# Optionally specify the domain
+./upload-image.sh path/to/your/image.jpg example.com
+```
+
+After uploading, the tool will display the public URL of the uploaded image along with the markdown syntax to use it in your content:
+
+```
+Image uploaded successfully!
+Use this URL in your markdown: ![Alt text](https://your-r2-url.com/example-com/image.jpg)
 ```
 
 ## Programmatic Usage
@@ -314,7 +353,12 @@ generate().catch(console.error);
 ### Image Uploading
 
 ```javascript
-import { uploadImages, initImages, DEFAULT_IMAGES_DIR } from "bunki";
+import {
+  uploadImages,
+  uploadSingleImage,
+  initImages,
+  DEFAULT_IMAGES_DIR,
+} from "bunki";
 import path from "path";
 
 // Initialize image directories
@@ -323,7 +367,7 @@ async function setupImages() {
     images: path.join(process.cwd(), "images"),
   });
 
-  // Upload images
+  // Upload all images in a directory
   const imageUrlMap = await uploadImages({
     domain: "example.com",
     images: DEFAULT_IMAGES_DIR,
@@ -332,6 +376,15 @@ async function setupImages() {
   });
 
   console.log("Image URLs:", imageUrlMap);
+
+  // Upload a single image
+  const singleImageUrl = await uploadSingleImage({
+    imagePath: path.join(process.cwd(), "path/to/image.jpg"),
+    domain: "example.com",
+    type: "r2",
+  });
+
+  console.log("Single image URL:", singleImageUrl);
 }
 
 setupImages().catch(console.error);

@@ -37,6 +37,7 @@ export {
 export {
   uploadImages,
   initImages,
+  uploadSingleImage,
   getUploaderConfig,
   DEFAULT_IMAGES_DIR,
 } from "./utils/image-uploader";
