@@ -34,11 +34,11 @@ jobs:
 
       # Verify TypeScript compilation
       - name: TypeScript check
-        run: bunx tsc --noEmit
+        run: bun run typecheck
 
       # Verify code formatting
       - name: Check formatting
-        run: bunx prettier --check .
+        run: bun run format:check
 
       # Run tests with coverage
       - name: Run tests with coverage

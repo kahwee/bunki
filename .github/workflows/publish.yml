@@ -45,7 +45,7 @@ jobs:
 
       # Verify TypeScript compilation
       - name: TypeScript check
-        run: bunx tsc --noEmit
+        run: bun run typecheck
 
       # Run tests with coverage
       - name: Run tests with coverage

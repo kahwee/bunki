@@ -601,7 +601,7 @@ program
   .command("generate")
   .description("Generate static site from markdown content")
   .option("-c, --config <file>", "Config file path", "bunki.config.ts")
-  .option("-c, --content <dir>", "Content directory", DEFAULT_CONTENT_DIR)
+  .option("-d, --content <dir>", "Content directory", DEFAULT_CONTENT_DIR)
   .option("-o, --output <dir>", "Output directory", DEFAULT_OUTPUT_DIR)
   .option("-t, --templates <dir>", "Templates directory", DEFAULT_TEMPLATES_DIR)
   .action(async (options) => {
