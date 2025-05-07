@@ -34,15 +34,5 @@ export {
 } from "./utils/file-utils";
 
 // Export image uploader functions
-export {
-  uploadImages,
-  initImages,
-  uploadSingleImage,
-  getUploaderConfig,
-  DEFAULT_IMAGES_DIR,
-} from "./utils/image-uploader";
-export {
-  createUploader,
-  uploadDomainImages,
-  uploadSites,
-} from "./utils/uploader";
+export { uploadImages, DEFAULT_IMAGES_DIR } from "./utils/image-uploader";
+export { createUploader } from "./utils/s3-uploader";

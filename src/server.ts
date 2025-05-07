@@ -1,13 +1,19 @@
 import path from "path";
-import fs from "fs/promises";
 import { DEFAULT_OUTPUT_DIR } from "./config";
 
 export function startServer(
   outputDir: string = DEFAULT_OUTPUT_DIR,
   port: number = 3000,
 ) {
-  fs.access(outputDir)
-    .then(() => {
+  const outputDirFile = Bun.file(outputDir);
+
+  outputDirFile
+    .exists()
+    .then((exists) => {
+      if (!exists) {
+        throw new Error(`Output directory ${outputDir} does not exist`);
+      }
+
       console.log(`Starting server for site in ${outputDir}...`);
 
       Bun.serve({

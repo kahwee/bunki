@@ -1,110 +1,68 @@
 import path from "path";
-import {
-  ImageUploadOptions,
-  InitImagesOptions,
-  R2Config,
-  SingleImageUploadOptions,
-} from "../types";
+import { ImageUploadOptions, S3Config } from "../types";
 import { loadConfig } from "../config";
-import { uploadDomainImages, createUploader } from "./uploader";
+import { createUploader } from "./s3-uploader";
 import { ensureDir, fileExists } from "./file-utils";
 
 // Constants
 export const DEFAULT_IMAGES_DIR = path.join(process.cwd(), "images");
 
-// Helper function to load uploader configuration
-export function getUploaderConfig(uploadType: string): R2Config {
-  let uploadConfig: R2Config = {
-    accountId: "",
-    accessKeyId: "",
-    secretAccessKey: "",
-    bucket: "",
-    publicUrl: "",
-  };
-
-  // Both R2 and Bun-S3 use the same config format
-  if (
-    uploadType === "r2" ||
-    uploadType === "bun-s3" ||
-    uploadType === "bun-r2"
-  ) {
-    uploadConfig = {
-      accountId: process.env.R2_ACCOUNT_ID || "",
-      accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
-      secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
-      bucket: process.env.R2_BUCKET || "", // Will be overridden by domain-specific bucket
-      publicUrl: process.env.R2_PUBLIC_URL || "",
-    };
-
-    // Validate R2/S3 config
-    if (
-      !uploadConfig.accountId ||
-      !uploadConfig.accessKeyId ||
-      !uploadConfig.secretAccessKey ||
-      !uploadConfig.publicUrl
-    ) {
-      console.error(
-        "Missing S3/R2 configuration. Please check your .env file.",
-      );
-      process.exit(1);
-    }
-  } else {
-    console.error(
-      `Unsupported upload type: ${uploadType}. Supported types: 'r2', 'bun-s3', 'bun-r2'`,
-    );
-    process.exit(1);
-  }
-
-  return uploadConfig;
-}
-
-// Upload images implementation function (reusable)
+// Upload images implementation function
 export async function uploadImages(
   options: ImageUploadOptions = {},
 ): Promise<Record<string, string>> {
   try {
-    // If domain is not provided, get it from bunki config
-    let domain = options.domain;
-    if (!domain) {
-      const config = await loadConfig();
-      domain = config.domain;
+    const imagesDir = path.resolve(options.images || DEFAULT_IMAGES_DIR);
+
+    // Check if images directory exists
+    if (!(await fileExists(imagesDir))) {
+      // Create images directory if not exists
+      console.log(`Creating images directory at ${imagesDir}...`);
+      await ensureDir(imagesDir);
     }
 
-    if (!domain) {
+    const config = await loadConfig();
+
+    // Use config's S3 settings directly
+    if (!config.s3 && !process.env.BUNKI_DRY_RUN) {
       console.error(
-        "Error: domain is required. Use --domain <domainName> or ensure domain is in bunki.config.json",
+        "Missing S3 configuration. Please check your bunki.config.ts or .env file.",
       );
       process.exit(1);
     }
 
-    const imagesDir = path.resolve(options.images || DEFAULT_IMAGES_DIR);
-    const domainImagesDir = path.join(imagesDir, domain);
+    // Create S3 config either from config or as a stub for dry run
+    let s3Config: S3Config;
 
-    // Check if domain-specific images directory exists
-    if (!(await fileExists(domainImagesDir))) {
-      // Create domain-specific directory if not exists
-      console.log(`Creating images directory for ${domain}...`);
-      await ensureDir(domainImagesDir);
+    if (process.env.BUNKI_DRY_RUN === "true") {
+      console.warn("Using stub S3 configuration for dry run");
+      s3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        publicUrl: "https://example.com",
+        bucket: config.s3?.bucket || "test-bucket",
+        endpoint: config.s3?.endpoint,
+        region: config.s3?.region || "auto",
+      };
+    } else {
+      // Use the S3 config from bunki.config.ts
+      if (!config.s3) {
+        throw new Error("Missing S3 configuration in config");
+      }
+
+      s3Config = {
+        ...config.s3,
+        publicUrl: config.s3.publicUrl || config.publicUrl || "",
+      };
     }
 
     console.log(
-      `Uploading images for domain ${domain} from ${domainImagesDir}`,
+      `Uploading images from ${imagesDir} to bucket ${s3Config.bucket}`,
     );
 
-    const uploadType = options.type || "r2";
-    const uploadConfig = getUploaderConfig(uploadType);
-
-    // Convert domain name to bucket name format (e.g., example.com -> example-com)
-    const bucketName = domain.replace(/\./g, "-");
-    uploadConfig.bucket = bucketName;
-
-    // Upload images
-    const imageUrlMap = await uploadDomainImages(
-      domainImagesDir,
-      domain,
-      uploadType,
-      uploadConfig,
-    );
+    // Create uploader and upload images
+    const uploader = createUploader(s3Config);
+    const imageUrlMap = await uploader.uploadImages(imagesDir);
 
     // Output URL mapping to JSON if requested
     if (options.outputJson) {
@@ -125,94 +83,6 @@ export async function uploadImages(
     return imageUrlMap;
   } catch (error) {
     console.error("Error uploading images:", error);
-    process.exit(1);
-  }
-}
-
-// Initialize image directories implementation function (reusable)
-export async function initImages(
-  options: InitImagesOptions = {},
-): Promise<void> {
-  try {
-    const imagesDir = path.resolve(options.images || DEFAULT_IMAGES_DIR);
-
-    // Create main images directory if not exists
-    if (!(await fileExists(imagesDir))) {
-      console.log(`Creating main images directory at ${imagesDir}...`);
-      await ensureDir(imagesDir);
-    }
-
-    // Create images directory for the configured domain
-    const config = await loadConfig();
-    const domainImagesDir = path.join(imagesDir, config.domain);
-    if (!(await fileExists(domainImagesDir))) {
-      console.log(`Creating images directory for ${config.domain}...`);
-      // Create directory and .gitkeep to ensure it's tracked in git
-      await ensureDir(domainImagesDir);
-    }
-
-    console.log("\nImage directory structure initialized successfully!");
-    console.log("\nPlace your images in domain-specific folders and use:");
-    console.log("bunki upload-images");
-  } catch (error) {
-    console.error("Error initializing image directories:", error);
-    process.exit(1);
-  }
-}
-
-// Upload a single image implementation function
-export async function uploadSingleImage(
-  options: SingleImageUploadOptions,
-): Promise<string> {
-  try {
-    // Validate image path
-    if (!options.imagePath) {
-      console.error("Error: image path is required.");
-      process.exit(1);
-    }
-
-    const imagePath = path.resolve(options.imagePath);
-
-    // Check if file exists
-    if (!(await fileExists(imagePath))) {
-      console.error(`Error: image file does not exist: ${imagePath}`);
-      process.exit(1);
-    }
-
-    // If domain is not provided, get it from bunki config
-    let domain = options.domain;
-    if (!domain) {
-      const config = await loadConfig();
-      domain = config.domain;
-    }
-
-    if (!domain) {
-      console.error(
-        "Error: domain is required. Use --domain <domainName> or ensure domain is in bunki.config.json",
-      );
-      process.exit(1);
-    }
-
-    const uploadType = options.type || "r2";
-    const uploadConfig = getUploaderConfig(uploadType);
-
-    // Convert domain name to bucket name format (e.g., example.com -> example-com)
-    const bucketName = domain.replace(/\./g, "-");
-    uploadConfig.bucket = bucketName;
-
-    // Create uploader and upload the image
-    const uploader = createUploader(uploadType, uploadConfig);
-    console.log(
-      `Uploading image ${path.basename(imagePath)} for domain ${domain}...`,
-    );
-    const imageUrl = await uploader.uploadImage(imagePath, domain);
-
-    console.log(`\nImage uploaded successfully!`);
-    console.log(`Use this URL in your markdown: ![Alt text](${imageUrl})`);
-
-    return imageUrl;
-  } catch (error) {
-    console.error("Error uploading image:", error);
     process.exit(1);
   }
 }

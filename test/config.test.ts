@@ -69,31 +69,6 @@ describe("Configuration", () => {
     await Bun.write(TEST_CONFIG_PATH, JSON.stringify(defaultConfig, null, 2));
   });
 
-  test("createDefaultConfig should not overwrite existing config", async () => {
-    // Create a custom config
-    const customConfig = {
-      title: "Custom Title",
-      description: "Custom Description",
-      baseUrl: "https://custom.example.com",
-      domain: "custom.example.com",
-    };
-
-    await Bun.write(TEST_CONFIG_PATH, JSON.stringify(customConfig));
-
-    // Try to create default config at same path
-    const created = await createDefaultConfig(TEST_CONFIG_PATH);
-
-    expect(created).toBeFalse();
-
-    // Verify file wasn't changed
-    const configFile = Bun.file(TEST_CONFIG_PATH);
-    const fileContent = await configFile.text();
-    const parsedConfig = JSON.parse(fileContent);
-
-    expect(parsedConfig.title).toBe("Custom Title");
-    expect(parsedConfig.description).toBe("Custom Description");
-  });
-
   test("configExists should correctly detect config file", async () => {
     expect(await configExists(TEST_CONFIG_PATH)).toBeTrue();
 

@@ -34,6 +34,10 @@ export interface SiteConfig {
   baseUrl: string;
   /** Site identifier (used for metadata) */
   domain: string;
+  /** Optional public URL for the bucket */
+  publicUrl?: string;
+  /** Optional S3 client configuration (accessKeyId, secretAccessKey, bucket, etc.) */
+  s3?: S3Config;
   /** Additional custom configuration options */
   [key: string]: any;
 }
@@ -115,33 +119,27 @@ export interface Uploader {
  * Interface for image uploaders
  */
 export interface ImageUploader {
-  uploadImage(imagePath: string, domainName: string): Promise<string>;
-  uploadImages(
-    imagesDir: string,
-    domainName: string,
-  ): Promise<Record<string, string>>;
-
   /**
-   * Optional method for handling large file uploads using multipart chunking.
-   * Implementation is specific to the uploader type.
+   * Upload all images from a directory
+   * @param imagesDir Directory containing images to upload
+   * @returns Record of image filenames to their public URLs
    */
-  uploadLargeFile?(filePath: string, remotePath: string): Promise<string>;
-
-  /**
-   * Optional method to get a writer for streaming large file uploads
-   */
-  getWriterForLargeFile?(key: string, contentType?: string): any;
+  uploadImages(imagesDir: string): Promise<Record<string, string>>;
 }
 
+// We'll use S3Config directly instead of having a separate S3ClientOptions interface
+
 /**
- * R2 configuration type
+ * S3 configuration type
  */
-export interface R2Config {
-  accountId: string;
+export interface S3Config {
   accessKeyId: string;
   secretAccessKey: string;
   bucket: string;
   publicUrl: string;
+  /** S3 client options */
+  endpoint?: string;
+  region?: string;
 }
 
 /**
@@ -150,22 +148,5 @@ export interface R2Config {
 export interface ImageUploadOptions {
   domain?: string;
   images?: string;
-  type?: string;
   outputJson?: string;
-}
-
-/**
- * Options for initializing image directories
- */
-export interface InitImagesOptions {
-  images?: string;
-}
-
-/**
- * Options for uploading a single image
- */
-export interface SingleImageUploadOptions {
-  imagePath: string;
-  domain?: string;
-  type?: string;
 }

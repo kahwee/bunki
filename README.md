@@ -70,7 +70,7 @@ bunki init
 
 This will:
 
-- Create a default configuration file (`bunki.config.json`)
+- Create a default configuration file (`bunki.config.ts`)
 - Set up the required directory structure
 - Create default templates
 - Add a sample blog post
@@ -113,14 +113,30 @@ Then visit http://localhost:3000 in your browser.
 
 ## Configuration
 
-The `bunki.config.json` file contains the configuration for your site:
+The `bunki.config.ts` file contains the configuration for your site:
 
-```json
-{
-  "title": "My Blog",
-  "description": "A blog built with Bunki",
-  "baseUrl": "https://example.com",
-  "domain": "blog"
+```typescript
+import { SiteConfig } from "bunki";
+import { config } from "dotenv";
+
+// Load environment variables from .env file
+config();
+
+export default function (): SiteConfig {
+  return {
+    title: "My Blog",
+    description: "A blog built with Bunki",
+    baseUrl: "https://example.com",
+    domain: "blog",
+    // S3 upload configuration
+    s3: {
+      accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
+      secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
+      bucket: process.env.S3_BUCKET || "",
+      endpoint: process.env.S3_ENDPOINT,
+      region: process.env.S3_REGION || "auto",
+    },
+  };
 }
 ```
 
@@ -156,12 +172,12 @@ When using the CLI, specify the type with the `--type` option:
 
 ```bash
 # Use AWS SDK-based uploader (default)
-bunki upload-images --type r2
+bunki images:push --type r2
 
 # Use Bun's native S3 API (faster performance)
-bunki upload-images --type bun-s3
+bunki images:push --type bun-s3
 # or
-bunki upload-images --type bun-r2
+bunki images:push --type bun-r2
 ```
 
 The Bun native S3 uploader provides better performance and reduced memory usage, especially for large files.
@@ -205,7 +221,7 @@ The AWS SDK implementation (`r2`) also supports large file uploads through its o
 
 ```
 .
-├── bunki.config.json   # Configuration file
+├── bunki.config.ts     # Configuration file
 ├── content/            # Markdown content
 │   ├── post1.md
 │   └── post2.md
@@ -221,7 +237,6 @@ The AWS SDK implementation (`r2`) also supports large file uploads through its o
 ├── public/             # Static files to copy to the site
 │   └── favicon.ico
 ├── images/             # Image storage directory
-│   └── example.com/    # Domain-specific images
 └── dist/               # Generated site
     ├── index.html
     ├── css/
@@ -249,8 +264,7 @@ Commands:
   new [options] <title> Create a new blog post
   generate [options]    Generate static site from markdown content
   serve [options]       Start a local development server
-  init-images [options] Initialize directory structure for storing images
-  upload-images [options] Upload images to remote storage (e.g., Cloudflare R2)
+  images:push [options] Upload images to remote storage (e.g., Cloudflare R2)
   help [command]        display help for command
 ```
 
@@ -262,7 +276,7 @@ Usage: bunki init [options]
 Initialize a new site with default structure
 
 Options:
-  -c, --config <file>  Path to config file (default: "bunki.config.json")
+  -c, --config <file>  Path to config file (default: "bunki.config.ts")
   -h, --help           display help for command
 ```
 
@@ -289,7 +303,7 @@ Usage: bunki generate [options]
 Generate static site from markdown content
 
 Options:
-  -c, --config <file>    Config file path (default: "bunki.config.json")
+  -c, --config <file>    Config file path (default: "bunki.config.ts")
   -c, --content <dir>    Content directory (default: "content")
   -o, --output <dir>     Output directory (default: "dist")
   -t, --templates <dir>  Templates directory (default: "templates")
@@ -309,29 +323,17 @@ Options:
   -h, --help           display help for command
 ```
 
-### Initialize Images Command
-
-```
-Usage: bunki init-images [options]
-
-Initialize directory structure for storing images
-
-Options:
-  -i, --images <dir>   Images directory path (default: "images")
-  -h, --help           display help for command
-```
-
 ### Image Upload Commands
 
 #### Upload Multiple Images
 
 ```
-Usage: bunki upload-images [options]
+Usage: bunki images:push [options]
 
 Upload images to remote storage (e.g., Cloudflare R2)
 
 Options:
-  -d, --domain <domain>     Domain name (defaults to domain in bunki.config.json)
+  -d, --domain <domain>     Domain name (defaults to domain in bunki.config.ts)
   -i, --images <dir>        Images directory path (default: "images")
   -t, --type <type>         Upload storage type (r2, bun-s3, bun-r2) (default: "r2")
   --output-json <file>      Output URL mapping to JSON file
@@ -339,22 +341,6 @@ Options:
 ```
 
 This command will find and upload all supported image files (JPG, PNG, GIF, WebP, SVG) in the specified directory.
-
-#### Upload Single Image
-
-```
-Usage: bunki upload-image <imagePath> [options]
-
-Upload a single image to remote storage (e.g., Cloudflare R2)
-
-Arguments:
-  imagePath               Path to the image file to upload
-
-Options:
-  -d, --domain <domain>   Domain name (defaults to domain in bunki.config.json)
-  -t, --type <type>       Upload storage type (r2, bun-s3, bun-r2) (default: "r2")
-  -h, --help              display help for command
-```
 
 #### Quick Upload Script
 
@@ -386,7 +372,7 @@ import { SiteGenerator, loadConfig } from "bunki";
 import path from "path";
 
 // Load configuration
-const config = loadConfig("bunki.config.json");
+const config = loadConfig("bunki.config.ts");
 
 // Create a generator
 const generator = new SiteGenerator({
@@ -409,23 +395,13 @@ generate().catch(console.error);
 ### Image Uploading
 
 ```javascript
-import {
-  uploadImages,
-  uploadSingleImage,
-  initImages,
-  DEFAULT_IMAGES_DIR,
-} from "bunki";
+import { uploadImages, DEFAULT_IMAGES_DIR, createUploader } from "bunki";
 import path from "path";
 
-// Initialize image directories
-async function setupImages() {
-  await initImages({
-    images: path.join(process.cwd(), "images"),
-  });
-
+// Upload all images in a directory
+async function uploadAllImages() {
   // Upload all images in a directory
   const imageUrlMap = await uploadImages({
-    domain: "example.com",
     images: DEFAULT_IMAGES_DIR,
     type: "bun-r2", // Use Bun's native S3 API for better performance
     outputJson: "image-urls.json",
@@ -433,34 +409,28 @@ async function setupImages() {
 
   console.log("Image URLs:", imageUrlMap);
 
-  // Upload a single image
-  const singleImageUrl = await uploadSingleImage({
-    imagePath: path.join(process.cwd(), "path/to/image.jpg"),
-    domain: "example.com",
-    type: "bun-r2", // Use Bun's native S3 API for better performance
-  });
-
   // For large files, you can access the uploader directly
-  import { createUploader } from "./utils/uploader";
-  import { getUploaderConfig } from "./utils/image-uploader";
-
-  // Get config from environment variables
-  const config = getUploaderConfig("bun-r2");
-  config.bucket = "example-com"; // Set bucket name
+  // Get configuration from bunki.config.json or bunki.config.ts
+  import { loadConfig } from "bunki";
+  const config = loadConfig();
 
   // Create uploader instance
-  const uploader = createUploader("bun-r2", config);
+  const uploader = createUploader(config.s3);
 
-  // Upload a large video file
-  const videoUrl = await uploader.uploadLargeFile(
+  // Upload a large file
+  const largeFileStream = Bun.file(
     path.join(process.cwd(), "videos/presentation.mp4"),
-    "example.com/videos/presentation.mp4",
+  );
+  await uploader.upload(
+    "videos/presentation.mp4",
+    largeFileStream,
+    "video/mp4",
   );
 
-  console.log("Single image URL:", singleImageUrl);
+  console.log("Large file uploaded successfully");
 }
 
-setupImages().catch(console.error);
+uploadAllImages().catch(console.error);
 ```
 
 > **Note**: Bunki's programmatic API is designed specifically for Bun and utilizes Bun's native APIs for optimal performance. It will not work in Node.js environments.
@@ -484,6 +454,9 @@ bun test --watch
 
 # Run tests with coverage
 bun test:coverage
+
+# Run TypeScript type checking
+bun run typecheck
 ```
 
 Code coverage reports are automatically generated during testing.

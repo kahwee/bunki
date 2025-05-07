@@ -8,12 +8,7 @@ import {
   loadConfig,
   createDefaultConfig,
 } from "./config";
-import {
-  DEFAULT_IMAGES_DIR,
-  uploadImages,
-  initImages,
-  uploadSingleImage,
-} from "./utils/image-uploader";
+import { DEFAULT_IMAGES_DIR, uploadImages } from "./utils/image-uploader";
 import { SiteGenerator } from "./site-generator";
 import { startServer } from "./server";
 import { ensureDir } from "./utils/file-utils";
@@ -29,7 +24,7 @@ program
 program
   .command("init")
   .description("Initialize a new site with default structure")
-  .option("-c, --config <file>", "Path to config file", "bunki.config.json")
+  .option("-c, --config <file>", "Path to config file", "bunki.config.ts")
   .action(async (options) => {
     try {
       const configPath = path.resolve(options.config);
@@ -527,7 +522,7 @@ function hello() {
 
 ## Next Steps
 
-1. Edit the site configuration in \`bunki.config.json\`
+1. Edit the site configuration in \`bunki.config.ts\`
 2. Create your own templates in the \`templates\` directory
 3. Add more blog posts in the \`content\` directory
 4. Run \`bunki generate\` to build your site
@@ -540,7 +535,7 @@ function hello() {
         );
 
         console.log("\nInitialization complete! Here are the next steps:");
-        console.log("1. Edit bunki.config.json to configure your site");
+        console.log("1. Edit bunki.config.ts to configure your site");
         console.log("2. Add markdown files to the content directory");
         console.log('3. Run "bunki generate" to build your site');
         console.log('4. Run "bunki serve" to preview your site locally');
@@ -605,7 +600,7 @@ tags: [${tags.join(", ")}]
 program
   .command("generate")
   .description("Generate static site from markdown content")
-  .option("-c, --config <file>", "Config file path", "bunki.config.json")
+  .option("-c, --config <file>", "Config file path", "bunki.config.ts")
   .option("-c, --content <dir>", "Content directory", DEFAULT_CONTENT_DIR)
   .option("-o, --output <dir>", "Output directory", DEFAULT_OUTPUT_DIR)
   .option("-t, --templates <dir>", "Templates directory", DEFAULT_TEMPLATES_DIR)
@@ -660,74 +655,27 @@ program
     }
   });
 
-// Initialize image directories command
-program
-  .command("init-images")
-  .description("Initialize directory structure for storing images")
-  .option("-i, --images <dir>", "Images directory path", DEFAULT_IMAGES_DIR)
-  .action(async (options) => {
-    try {
-      await initImages({
-        images: options.images,
-      });
-    } catch (error) {
-      console.error("Error initializing image directories:", error);
-      process.exit(1);
-    }
-  });
+// No init-images command needed - the images directory will be created automatically during upload
 
-// Upload images command
+// Images push command
 program
-  .command("upload-images")
-  .description("Upload images to remote storage (e.g., Cloudflare R2)")
+  .command("images:push")
+  .description("Upload images to S3-compatible storage")
   .option(
     "-d, --domain <domain>",
-    "Domain name (defaults to domain in bunki.config.json)",
+    "Domain name for bucket identification (defaults to domain in bunki.config.ts)",
   )
   .option("-i, --images <dir>", "Images directory path", DEFAULT_IMAGES_DIR)
-  .option(
-    "-t, --type <type>",
-    "Upload storage type (currently only r2 is supported)",
-    "r2",
-  )
   .option("--output-json <file>", "Output URL mapping to JSON file")
   .action(async (options) => {
     try {
       await uploadImages({
         domain: options.domain,
         images: options.images,
-        type: options.type,
         outputJson: options.outputJson,
       });
     } catch (error) {
       console.error("Error uploading images:", error);
-      process.exit(1);
-    }
-  });
-
-// Upload single image command
-program
-  .command("upload-image")
-  .description("Upload a single image to remote storage (e.g., Cloudflare R2)")
-  .argument("<imagePath>", "Path to the image file to upload")
-  .option(
-    "-d, --domain <domain>",
-    "Domain name (defaults to domain in bunki.config.json)",
-  )
-  .option(
-    "-t, --type <type>",
-    "Upload storage type (currently only r2 is supported)",
-    "r2",
-  )
-  .action(async (imagePath, options) => {
-    try {
-      await uploadSingleImage({
-        imagePath: imagePath,
-        domain: options.domain,
-        type: options.type,
-      });
-    } catch (error) {
-      console.error("Error uploading image:", error);
       process.exit(1);
     }
   });

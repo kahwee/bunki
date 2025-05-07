@@ -35,6 +35,7 @@ bun --version
 - Initialize image directories: `bun run init-images`
 - Upload images: `bun run upload-images`
 - Quick image upload script: `./upload-image.sh path/to/image.jpg`
+- Type check: `bun run typecheck` (runs TypeScript compiler without emitting files)
 
 ## Code Style Guidelines
 
