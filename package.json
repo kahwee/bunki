@@ -44,15 +44,15 @@
     "marked": "^15.0.11",
     "marked-highlight": "^2.0.7",
     "nunjucks": "^3.2.4",
-    "sanitize-html": "^2.11.0",
+    "sanitize-html": "2.17.0",
     "slugify": "^1.6.6"
   },
   "devDependencies": {
     "@types/nunjucks": "^3.2.5",
     "@types/sanitize-html": "^2.9.5",
-    "bun-types": "^1.2.12",
+    "bun-types": "1.2.13",
     "husky": "^9.1.7",
-    "lint-staged": "^15.5.2",
+    "lint-staged": "16.0.0",
     "prettier": "^3.1.0",
     "typescript": "^5.2.2"
   },

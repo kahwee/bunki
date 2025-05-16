@@ -18,7 +18,7 @@ const program = new Command();
 program
   .name("bunki")
   .description("An opinionated static site generator built with Bun")
-  .version("0.1.0");
+  .version("0.2.3");
 
 // Init command - create a new site
 program
