@@ -1,6 +1,6 @@
 {
   "name": "bunki",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "An opinionated static site generator built with Bun",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -38,7 +38,7 @@
   },
   "homepage": "https://github.com/kahwee/bunki#readme",
   "dependencies": {
-    "commander": "^13.1.0",
+    "commander": "^14",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.9.0",
     "marked": "^15.0.11",
