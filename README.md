@@ -20,7 +20,7 @@ Bunki is an opinionated static site generator built with Bun. It's designed for 
 
 ## Installation
 
-> **IMPORTANT**: Bunki requires Bun v1.2.12 or later as its runtime. It is not compatible with Node.js.
+> **IMPORTANT**: Bunki requires Bun v1.2.19 or later as its runtime. It is not compatible with Node.js.
 
 ### Prerequisites
 
@@ -28,7 +28,7 @@ Bunki is an opinionated static site generator built with Bun. It's designed for 
 # Install Bun if you don't have it
 curl -fsSL https://bun.sh/install | bash
 
-# Verify Bun version (should be 1.2.12 or later)
+# Verify Bun version (should be 1.2.19 or later)
 bun --version
 ```
 
