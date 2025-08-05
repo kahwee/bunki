@@ -41,7 +41,7 @@
     "commander": "^14.0.0",
     "gray-matter": "^4.0.3",
     "highlight.js": "^11.11.1",
-    "marked": "^16.1.1",
+    "marked": "^16.1.2",
     "marked-highlight": "^2.2.2",
     "nunjucks": "^3.2.4",
     "sanitize-html": "2.17.0",
@@ -52,9 +52,9 @@
     "@types/sanitize-html": "^2.16.0",
     "bun-types": "1.2.19",
     "husky": "^9.1.7",
-    "lint-staged": "16.1.2",
+    "lint-staged": "16.1.4",
     "prettier": "^3.6.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   },
   "files": [
     "dist",
