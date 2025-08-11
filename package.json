@@ -50,7 +50,7 @@
   "devDependencies": {
     "@types/nunjucks": "^3.2.6",
     "@types/sanitize-html": "^2.16.0",
-    "bun-types": "1.2.19",
+    "bun-types": "1.2.20",
     "husky": "^9.1.7",
     "lint-staged": "16.1.4",
     "prettier": "^3.6.2",
@@ -62,7 +62,7 @@
     "README.md"
   ],
   "engines": {
-    "bun": ">=1.2.19"
+    "bun": ">=1.2.20"
   },
   "engineStrict": true,
   "lint-staged": {
