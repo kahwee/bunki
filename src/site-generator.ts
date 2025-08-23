@@ -2,6 +2,7 @@ import path from "path";
 import nunjucks from "nunjucks";
 import slugify from "slugify";
 import { Glob } from "bun";
+import fs from "fs";
 import {
   GeneratorOptions,
   PaginationData,
@@ -394,9 +395,18 @@ export class SiteGenerator {
   private async copyStaticAssets(): Promise<void> {
     const assetsDir = path.join(this.options.templatesDir, "assets");
     const publicDir = path.join(process.cwd(), "public");
+    // Helper: robust directory existence check (Bun.file() can be unreliable for dirs)
+    async function dirExists(p: string): Promise<boolean> {
+      try {
+        const stat = await fs.promises.stat(p);
+        return stat.isDirectory();
+      } catch {
+        return false;
+      }
+    }
 
-    const assetsDirFile = Bun.file(assetsDir);
-    if (await assetsDirFile.exists()) {
+    const assetsDirFile = Bun.file(assetsDir); // keep existing logic for assets (optional)
+    if (await assetsDirFile.exists() && (await dirExists(assetsDir))) {
       const assetGlob = new Glob("**/*.*");
       const assetsOutputDir = path.join(this.options.outputDir, "assets");
 
@@ -416,26 +426,33 @@ export class SiteGenerator {
       }
     }
 
-    const publicDirFile = Bun.file(publicDir);
-    if (await publicDirFile.exists()) {
-      const publicGlob = new Glob("**/*.*");
+    if (await dirExists(publicDir)) {
+      // Recursively traverse public directory to include files without extensions and dotfiles
+      const copyRecursive = async (srcDir: string) => {
+        const entries = await fs.promises.readdir(srcDir, { withFileTypes: true });
+        for (const entry of entries) {
+          const srcPath = path.join(srcDir, entry.name);
+          const relativePath = path.relative(publicDir, srcPath);
+          const destPath = path.join(this.options.outputDir, relativePath);
 
-      for await (const file of publicGlob.scan({
-        cwd: publicDir,
-        absolute: true,
-      })) {
-        const relativePath = path.relative(publicDir, file);
-        const targetPath = path.join(this.options.outputDir, relativePath);
+          // Skip if this is the root directory itself
+          if (!relativePath) continue;
 
-        const targetDir = path.dirname(targetPath);
-        await ensureDir(targetDir);
-
-        const targetFile = Bun.file(targetPath);
-        if (!(await targetFile.exists())) {
-          await copyFile(file, targetPath);
+          if (entry.isDirectory()) {
+            await ensureDir(destPath);
+            await copyRecursive(srcPath);
+          } else if (entry.isFile()) {
+            const targetFile = Bun.file(destPath);
+            if (!(await targetFile.exists())) {
+              const targetDir = path.dirname(destPath);
+              await ensureDir(targetDir);
+              await copyFile(srcPath, destPath);
+            }
+          }
         }
-      }
-      console.log("Copied public files to site");
+      };
+      await copyRecursive(publicDir);
+      console.log("Copied public files to site (including extensionless & dotfiles)");
     }
   }
 

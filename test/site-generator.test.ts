@@ -154,4 +154,35 @@ describe("SiteGenerator", () => {
 
     // Skip file count check as it can be unreliable
   });
+
+  test("should copy public directory files (including extensionless & dotfiles)", async () => {
+    const projectRoot = process.cwd();
+    const publicDir = path.join(projectRoot, "public");
+    // ensure public dir exists for this test
+    await ensureDir(publicDir);
+
+    // Create sample files
+    const files: Record<string, string> = {
+      "robots.txt": "User-agent: *\nAllow: /",
+      "humans.txt": "We are people.",
+      ".well-known/security.txt": "Contact: mailto:security@example.com",
+      "images/logo.svg": '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>',
+      "CNAME": "example.com",
+    };
+
+    for (const [rel, content] of Object.entries(files)) {
+      const fullPath = path.join(publicDir, rel);
+      await ensureDir(path.dirname(fullPath));
+      await Bun.write(fullPath, content);
+    }
+
+    await generator.generate();
+
+    // Assert files copied (flattened without top-level public folder)
+    for (const rel of Object.keys(files)) {
+      const outputPath = path.join(OUTPUT_DIR, rel);
+      const f = Bun.file(outputPath);
+      expect(await f.exists()).toBeTrue();
+    }
+  });
 });
