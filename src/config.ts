@@ -1,5 +1,22 @@
 import path from "path";
 import { SiteConfig } from "./types";
+import fs from "fs";
+
+const PROJECT_ROOT = process.cwd();
+const ALLOWED_CONFIG_EXTS = [".ts", ".js", ".mjs", ".cjs", ".json"]; // keep tight
+
+function isSafeConfigPath(p: string): boolean {
+  try {
+    const normalized = path.resolve(p);
+    if (!ALLOWED_CONFIG_EXTS.includes(path.extname(normalized))) return false;
+    if (!normalized.startsWith(PROJECT_ROOT)) return false; // outside project root
+    // basic traversal pattern rejection
+    if (/[\\/]\.{2}(?:[\\/]|$)/.test(p) || /%2f/i.test(p)) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export const DEFAULT_CONTENT_DIR = path.join(process.cwd(), "content");
 export const DEFAULT_OUTPUT_DIR = path.join(process.cwd(), "dist");
@@ -16,33 +33,59 @@ export async function configExists(
 export async function loadConfig(
   configPath: string = DEFAULT_CONFIG_FILE,
 ): Promise<SiteConfig> {
-  const configFile = Bun.file(configPath);
-  if (await configFile.exists()) {
-    try {
-      // TypeScript config file
-      const config = await import(configPath);
-      // If it's a function, execute it to get the config
-      if (typeof config.default === "function") {
-        return await config.default();
-      }
-      // Otherwise, return the default export as config
-      return config.default || getDefaultConfig();
-    } catch (error) {
-      console.error(`Error loading config file ${configPath}:`, error);
-      return getDefaultConfig();
-    }
+  // Normalize relative path to project root
+  const resolved = path.isAbsolute(configPath)
+    ? configPath
+    : path.join(PROJECT_ROOT, configPath);
+
+  if (!isSafeConfigPath(resolved)) {
+    throw new Error("Unsafe config path: must be within project directory");
   }
 
-  return getDefaultConfig();
+  const exists = await Bun.file(resolved).exists();
+  if (!exists) {
+    return getDefaultConfig();
+  }
+
+  try {
+    const imported = await import(resolved);
+    let cfg: any = imported.default;
+    if (typeof cfg === "function") {
+      cfg = await cfg();
+    }
+    if (!cfg || typeof cfg !== "object") {
+      return getDefaultConfig();
+    }
+    // ensure site mirror for tests while preserving current shape usage
+    if (!cfg.site) {
+      cfg.site = {
+        title: cfg.title ?? "My Blog",
+        description: cfg.description ?? "A blog built with Bunki",
+        url: cfg.baseUrl ?? "https://example.com",
+        author: cfg.author ?? "",
+      };
+    }
+    return cfg as SiteConfig;
+  } catch (error) {
+    console.error(`Error loading config file ${resolved}:`, error);
+    return getDefaultConfig();
+  }
 }
 
 export function getDefaultConfig(): SiteConfig {
-  return {
+  const base: any = {
     title: "My Blog",
     description: "A blog built with Bunki",
     baseUrl: "https://example.com",
     domain: "blog",
   };
+  base.site = {
+    title: base.title,
+    description: base.description,
+    url: base.baseUrl,
+    author: "",
+  };
+  return base as SiteConfig;
 }
 
 export async function createDefaultConfig(

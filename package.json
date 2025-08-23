@@ -1,7 +1,7 @@
 {
   "name": "bunki",
-  "version": "0.2.6",
-  "description": "An opinionated static site generator built with Bun",
+  "version": "0.3.1",
+  "description": "An opinionated static site generator built with Bun featuring PostCSS integration and modern web development workflows",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -11,11 +11,15 @@
     "dev": "bun run --watch src/index.ts",
     "test": "bun test",
     "test:coverage": "bun test --coverage --coverage-reporter=lcov",
+    "test:watch": "bun test --watch",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky",
     "lint-staged": "lint-staged",
-    "typecheck": "bun tsc --noEmit"
+    "typecheck": "bun tsc --noEmit",
+    "clean": "rm -rf dist coverage",
+    "prepack": "bun run clean && bun run build",
+    "prepublishOnly": "bun run clean && bun run build && bun run test && bun run typecheck"
   },
   "bin": {
     "bunki": "./dist/cli.js"
@@ -25,7 +29,12 @@
     "markdown",
     "blog",
     "bun",
-    "typescript"
+    "typescript",
+    "postcss",
+    "tailwind",
+    "css-processing",
+    "jamstack",
+    "web-development"
   ],
   "author": "KahWee Teng",
   "license": "MIT",
@@ -44,6 +53,8 @@
     "marked": "^16.2.0",
     "marked-highlight": "^2.2.2",
     "nunjucks": "^3.2.4",
+    "postcss": "^8.5.6",
+    "postcss-cli": "^11.0.1",
     "sanitize-html": "2.17.0",
     "slugify": "^1.6.6"
   },
@@ -56,16 +67,41 @@
     "prettier": "^3.6.2",
     "typescript": "^5.9.2"
   },
+  "peerDependencies": {
+    "postcss": "^8.0.0"
+  },
+  "peerDependenciesMeta": {
+    "postcss": {
+      "optional": true
+    }
+  },
   "files": [
     "dist",
     "LICENSE",
     "README.md"
   ],
   "engines": {
-    "bun": ">=1.2.20"
+    "bun": ">=1.2.20",
+    "node": ">=18.0.0"
   },
   "engineStrict": true,
+  "publishConfig": {
+    "access": "public"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/kahwee"
+  },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
-  }
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.js"
+    },
+    "./cli": "./dist/cli.js"
+  },
+  "sideEffects": false
 }

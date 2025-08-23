@@ -23,6 +23,22 @@ export interface Post {
 }
 
 /**
+ * Configuration for CSS processing
+ */
+export interface CSSConfig {
+  /** Input CSS file path (relative to project root) */
+  input: string;
+  /** Output CSS file path (relative to output directory) */
+  output: string;
+  /** PostCSS config file path (relative to project root) */
+  postcssConfig?: string;
+  /** Whether to enable CSS processing */
+  enabled: boolean;
+  /** Whether to watch for changes in development */
+  watch?: boolean;
+}
+
+/**
  * Configuration for the site
  */
 export interface SiteConfig {
@@ -38,6 +54,8 @@ export interface SiteConfig {
   publicUrl?: string;
   /** Optional S3 client configuration (accessKeyId, secretAccessKey, bucket, etc.) */
   s3?: S3Config;
+  /** CSS processing configuration */
+  css?: CSSConfig;
   /** Additional custom configuration options */
   [key: string]: any;
 }

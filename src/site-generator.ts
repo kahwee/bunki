@@ -12,6 +12,7 @@ import {
 } from "./types";
 import { parseMarkdownDirectory } from "./parser";
 import { ensureDir, copyFile } from "./utils/file-utils";
+import { processCSS, getDefaultCSSConfig } from "./utils/css-processor";
 
 export class SiteGenerator {
   private options: GeneratorOptions;
@@ -341,27 +342,52 @@ export class SiteGenerator {
   }
 
   private async generateStylesheet(): Promise<void> {
-    const cssFilePath = path.join(
-      this.options.templatesDir,
-      "styles",
-      "main.css",
-    );
+    // Use CSS configuration from site config, or fallback to default
+    const cssConfig = this.options.config.css || getDefaultCSSConfig();
 
+    if (!cssConfig.enabled) {
+      console.log(
+        "CSS processing is disabled, skipping stylesheet generation.",
+      );
+      return;
+    }
+
+    try {
+      await processCSS({
+        css: cssConfig,
+        projectRoot: process.cwd(),
+        outputDir: this.options.outputDir,
+        verbose: true,
+      });
+    } catch (error) {
+      console.error("Error processing CSS:", error);
+
+      // Fallback to simple file copying if PostCSS fails
+      console.log("Falling back to simple CSS file copying...");
+      await this.fallbackCSSGeneration(cssConfig);
+    }
+  }
+
+  private async fallbackCSSGeneration(cssConfig: any): Promise<void> {
+    const cssFilePath = path.resolve(process.cwd(), cssConfig.input);
     const cssFile = Bun.file(cssFilePath);
+
     if (!(await cssFile.exists())) {
-      console.warn("CSS file not found, skipping stylesheet generation.");
+      console.warn(`CSS input file not found: ${cssFilePath}`);
       return;
     }
 
     try {
       const cssContent = await cssFile.text();
+      const outputPath = path.resolve(this.options.outputDir, cssConfig.output);
+      const outputDir = path.dirname(outputPath);
 
-      const cssDir = path.join(this.options.outputDir, "css");
-      await ensureDir(cssDir);
+      await ensureDir(outputDir);
+      await Bun.write(outputPath, cssContent);
 
-      await Bun.write(path.join(cssDir, "style.css"), cssContent);
+      console.log("✅ CSS file copied successfully (fallback mode)");
     } catch (error) {
-      console.error("Error generating stylesheet:", error);
+      console.error("Error in fallback CSS generation:", error);
     }
   }
 

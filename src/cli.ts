@@ -12,6 +12,11 @@ import { DEFAULT_IMAGES_DIR, uploadImages } from "./utils/image-uploader";
 import { SiteGenerator } from "./site-generator";
 import { startServer } from "./server";
 import { ensureDir } from "./utils/file-utils";
+import {
+  processCSS,
+  watchCSS,
+  getDefaultCSSConfig,
+} from "./utils/css-processor";
 
 const program = new Command();
 
@@ -643,14 +648,60 @@ program
   .description("Start a local development server")
   .option("-o, --output <dir>", "Output directory", DEFAULT_OUTPUT_DIR)
   .option("-p, --port <number>", "Port number", "3000")
-  .action((options) => {
+  .action(async (options) => {
     try {
       const outputDir = path.resolve(options.output);
       const port = parseInt(options.port, 10);
 
-      startServer(outputDir, port);
+      await startServer(outputDir, port);
     } catch (error) {
       console.error("Error starting dev server:", error);
+      process.exit(1);
+    }
+  });
+
+// CSS command
+program
+  .command("css")
+  .description("Process CSS using PostCSS")
+  .option("-c, --config <file>", "Config file path", "bunki.config.ts")
+  .option("-o, --output <dir>", "Output directory", DEFAULT_OUTPUT_DIR)
+  .option("-w, --watch", "Watch for changes and rebuild")
+  .action(async (options) => {
+    try {
+      const configPath = path.resolve(options.config);
+      const outputDir = path.resolve(options.output);
+
+      // Load configuration
+      const config = await loadConfig(configPath);
+      const cssConfig = config.css || getDefaultCSSConfig();
+
+      if (!cssConfig.enabled) {
+        console.log("CSS processing is disabled in configuration");
+        return;
+      }
+
+      const processorOptions = {
+        css: cssConfig,
+        projectRoot: process.cwd(),
+        outputDir,
+        verbose: true,
+      };
+
+      if (options.watch) {
+        console.log("Starting CSS watch mode...");
+        cssConfig.watch = true;
+
+        // Process once initially
+        await processCSS(processorOptions);
+
+        // Then watch for changes
+        await watchCSS(processorOptions);
+      } else {
+        await processCSS(processorOptions);
+      }
+    } catch (error) {
+      console.error("Error processing CSS:", error);
       process.exit(1);
     }
   });
