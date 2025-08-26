@@ -2,14 +2,14 @@
 
 ## Runtime Environment
 
-This project uses [Bun](https://bun.sh/) v1.2.20 as its JavaScript runtime and package manager. Bun provides significantly better performance than Node.js for both development and production workflows.
+This project uses [Bun](https://bun.sh/) v1.2.21 as its JavaScript runtime and package manager. Bun provides significantly better performance than Node.js for both development and production workflows.
 
 ### Setup Requirements
 
-1. Install Bun v1.2.20:
+1. Install Bun v1.2.21:
    ```bash
    curl -fsSL https://bun.sh/install | bash
-   bun upgrade --version 1.2.20
+   bun upgrade --version 1.2.21
    ```
 2. Clone repository: `git clone git@github.com:kahwee/bunki.git`
 3. Install dependencies: `bun install`

@@ -12,7 +12,7 @@ bun install -g bunki     # or global
 npm i bunki              # Node (>=18)
 ```
 
-Requires Bun >= 1.2.20 (recommended runtime).
+Requires Bun >= 1.2.21 (recommended runtime).
 
 ## Quick Start
 
@@ -252,7 +252,7 @@ Bunki will process your CSS through PostCSS and Tailwind, generating optimized o
 
 ## 📦 Installation
 
-> **IMPORTANT**: Bunki requires Bun v1.2.20 or later as its runtime. It also works with Node.js v18+ but Bun is recommended for optimal performance.
+> **IMPORTANT**: Bunki requires Bun v1.2.21 or later as its runtime. It also works with Node.js v18+ but Bun is recommended for optimal performance.
 
 ### Prerequisites
 
@@ -260,7 +260,7 @@ Bunki will process your CSS through PostCSS and Tailwind, generating optimized o
 # Install Bun if you don't have it
 curl -fsSL https://bun.sh/install | bash
 
-# Verify Bun version (should be 1.2.20 or later)
+# Verify Bun version (should be 1.2.21 or later)
 bun --version
 ```
 
