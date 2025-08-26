@@ -24,7 +24,6 @@ test/temp-dir/
 test/temp-config.json
 fixtures/test-output/
 fixtures/dist/
-.vscode/
 .DS_Store
 *.log
 *.swp
