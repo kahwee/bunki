@@ -139,9 +139,9 @@ main {
 }
 
 .post-content pre {
-  background-color: #f5f5f5;
+  /* Structural styles; colors now provided via Tailwind @layer components */
   padding: 1rem;
-  border-radius: 4px;
+  border-radius: 6px;
   overflow-x: auto;
   margin-bottom: 1.5rem;
 }
@@ -149,7 +149,7 @@ main {
 .post-content code {
   font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
   font-size: 0.9em;
-  background-color: #f5f5f5;
+  /* Background/text colors come from Tailwind layer */
   padding: 0.2em 0.4em;
   border-radius: 3px;
 }
@@ -158,6 +158,8 @@ main {
   padding: 0;
   background-color: transparent;
 }
+
+/* Diff/addition/deletion color + layout now defined solely in Tailwind @layer components block below */
 
 /* Tags */
 .tags a {
@@ -205,4 +207,63 @@ footer {
   padding: 2rem 0;
   color: #6c757d;
   font-size: 0.9rem;
+}
+
+/* Code & diff highlighting (plain CSS so works with or without Tailwind build) */
+.post-content pre {
+  background-color: #1e293b;
+  /* slate-800 */
+  color: #f1f5f9;
+  /* slate-100 */
+}
+
+.post-content code {
+  background-color: #e2e8f0;
+  /* slate-200 */
+  color: #1e293b;
+  /* slate-800 */
+}
+
+.post-content pre code .hljs-addition,
+.post-content pre code .hljs-deletion {
+  display: block;
+  margin: 0 -1rem;
+  padding: 0 1rem;
+  border-left: 4px solid transparent;
+}
+
+.post-content pre code .hljs-addition {
+  background-color: #064e3b;
+  /* emerald-900 */
+  color: #d1fae5;
+  /* emerald-100 */
+  border-left-color: #10b981;
+  /* emerald-500 */
+}
+
+.post-content pre code .hljs-deletion {
+  background-color: #7f1d1d;
+  /* red-900 */
+  color: #fee2e2;
+  /* red-100 */
+  border-left-color: #ef4444;
+  /* red-500 */
+}
+
+.post-content code .hljs-addition {
+  background-color: #065f46;
+  /* emerald-800 */
+  color: #d1fae5;
+  /* emerald-100 */
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+
+.post-content code .hljs-deletion {
+  background-color: #991b1b;
+  /* red-800 */
+  color: #fee2e2;
+  /* red-100 */
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
 }
