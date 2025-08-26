@@ -1,8 +1,8 @@
 import path from "path";
-import { ImageUploadOptions, S3Config } from "../types";
 import { loadConfig } from "../config";
-import { createUploader } from "./s3-uploader";
+import { ImageUploadOptions, S3Config } from "../types";
 import { ensureDir, fileExists } from "./file-utils";
+import { createUploader } from "./s3-uploader";
 
 // Constants
 export const DEFAULT_IMAGES_DIR = path.join(process.cwd(), "images");

@@ -2,21 +2,21 @@
 import { Command } from "commander";
 import path from "path";
 import {
+  createDefaultConfig,
   DEFAULT_CONTENT_DIR,
   DEFAULT_OUTPUT_DIR,
   DEFAULT_TEMPLATES_DIR,
   loadConfig,
-  createDefaultConfig,
 } from "./config";
-import { DEFAULT_IMAGES_DIR, uploadImages } from "./utils/image-uploader";
-import { SiteGenerator } from "./site-generator";
 import { startServer } from "./server";
-import { ensureDir } from "./utils/file-utils";
+import { SiteGenerator } from "./site-generator";
 import {
+  getDefaultCSSConfig,
   processCSS,
   watchCSS,
-  getDefaultCSSConfig,
 } from "./utils/css-processor";
+import { ensureDir } from "./utils/file-utils";
+import { DEFAULT_IMAGES_DIR, uploadImages } from "./utils/image-uploader";
 
 const program = new Command();
 

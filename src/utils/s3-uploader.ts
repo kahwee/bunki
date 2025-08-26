@@ -1,6 +1,6 @@
+import { S3Client } from "bun";
 import path from "path";
 import { ImageUploader, S3Config, SiteConfig, Uploader } from "../types";
-import { s3, S3Client } from "bun";
 
 /**
  * Bun-native S3 uploader implementation
@@ -74,7 +74,7 @@ export class S3Uploader implements Uploader, ImageUploader {
     const bucketName = this.s3Config.bucket;
     const customDomain =
       process.env[
-        `S3_CUSTOM_DOMAIN_${bucketName.replace(/-/g, "_").toUpperCase()}`
+      `S3_CUSTOM_DOMAIN_${bucketName.replace(/-/g, "_").toUpperCase()}`
       ];
 
     if (customDomain) {

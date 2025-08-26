@@ -1,6 +1,6 @@
 import { spawn } from "child_process";
-import path from "path";
 import fs from "fs";
+import path from "path";
 import { CSSConfig } from "../types";
 
 export interface CSSProcessorOptions {

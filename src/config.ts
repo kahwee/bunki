@@ -1,6 +1,5 @@
 import path from "path";
 import { SiteConfig } from "./types";
-import fs from "fs";
 
 const PROJECT_ROOT = process.cwd();
 const ALLOWED_CONFIG_EXTS = [".ts", ".js", ".mjs", ".cjs", ".json"]; // keep tight

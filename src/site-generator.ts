@@ -1,19 +1,18 @@
-import path from "path";
-import nunjucks from "nunjucks";
-import slugify from "slugify";
 import { Glob } from "bun";
 import fs from "fs";
+import nunjucks from "nunjucks";
+import path from "path";
+import slugify from "slugify";
+import { parseMarkdownDirectory } from "./parser";
 import {
   GeneratorOptions,
   PaginationData,
   Post,
-  SiteConfig,
-  TagData,
   Site,
+  TagData
 } from "./types";
-import { parseMarkdownDirectory } from "./parser";
-import { ensureDir, copyFile } from "./utils/file-utils";
-import { processCSS, getDefaultCSSConfig } from "./utils/css-processor";
+import { getDefaultCSSConfig, processCSS } from "./utils/css-processor";
+import { copyFile, ensureDir } from "./utils/file-utils";
 
 export class SiteGenerator {
   private options: GeneratorOptions;

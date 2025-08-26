@@ -1,5 +1,5 @@
-import path from "path";
 import fs from "fs";
+import path from "path";
 import { DEFAULT_OUTPUT_DIR } from "./config";
 
 export async function startServer(
