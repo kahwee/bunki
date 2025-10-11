@@ -5,6 +5,7 @@ import javascript from "highlight.js/lib/languages/javascript";
 import json from "highlight.js/lib/languages/json";
 import markdown from "highlight.js/lib/languages/markdown";
 import python from "highlight.js/lib/languages/python";
+import swift from "highlight.js/lib/languages/swift";
 import typescript from "highlight.js/lib/languages/typescript";
 import xml from "highlight.js/lib/languages/xml";
 import { Marked } from "marked";
@@ -20,6 +21,7 @@ hljs.registerLanguage("xml", xml);
 hljs.registerLanguage("diff", diff);
 hljs.registerLanguage("python", python);
 hljs.registerLanguage("json", json);
+hljs.registerLanguage("swift", swift);
 
 const marked = new Marked(
   markedHighlight({
