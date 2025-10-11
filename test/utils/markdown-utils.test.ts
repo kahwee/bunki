@@ -84,4 +84,53 @@ const x = 1;
     expect(post).toHaveProperty("url");
     expect(post).toHaveProperty("excerpt");
   });
+
+  test("convertMarkdownToHtml should preserve video tags", () => {
+    const markdown = `
+<video controls width="640" height="360" poster="thumbnail.jpg">
+  <source src="video.mp4" type="video/mp4">
+  <source src="video.webm" type="video/webm">
+  Your browser does not support the video tag.
+</video>
+    `;
+
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude("<video");
+    expect(html).toInclude("controls");
+    expect(html).toInclude('width="640"');
+    expect(html).toInclude('height="360"');
+    expect(html).toInclude('poster="thumbnail.jpg"');
+    expect(html).toInclude("<source");
+    expect(html).toInclude('src="video.mp4"');
+    expect(html).toInclude('type="video/mp4"');
+  });
+
+  test("convertMarkdownToHtml should preserve video tag with src attribute", () => {
+    const markdown = `
+<video src="video.mp4" controls muted loop></video>
+    `;
+
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude("<video");
+    expect(html).toInclude('src="video.mp4"');
+    expect(html).toInclude("controls");
+    expect(html).toInclude("muted");
+    expect(html).toInclude("loop");
+  });
+
+  test("convertMarkdownToHtml should sanitize dangerous video attributes", () => {
+    const markdown = `
+<video src="video.mp4" controls onclick="alert('xss')"></video>
+    `;
+
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude("<video");
+    expect(html).toInclude('src="video.mp4"');
+    expect(html).toInclude("controls");
+    expect(html).not.toInclude("onclick");
+    expect(html).not.toInclude("alert");
+  });
 });

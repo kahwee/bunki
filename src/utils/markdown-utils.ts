@@ -108,6 +108,8 @@ export function convertMarkdownToHtml(markdownContent: string): string {
       "span",
       "iframe",
       "div",
+      "video",
+      "source",
     ]),
     allowedAttributes: {
       ...sanitizeHtml.defaults.allowedAttributes,
@@ -118,6 +120,18 @@ export function convertMarkdownToHtml(markdownContent: string): string {
       span: ["class", "style"],
       iframe: ["src", "frameborder", "allow", "allowfullscreen", "loading"],
       div: ["class"],
+      video: [
+        "src",
+        "controls",
+        "width",
+        "height",
+        "autoplay",
+        "loop",
+        "muted",
+        "preload",
+        "poster",
+      ],
+      source: ["src", "type"],
     },
     allowedClasses: {
       code: ["*"],
