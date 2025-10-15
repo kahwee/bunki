@@ -71,6 +71,11 @@ marked.use({
         '<div class="video-container"><iframe src="https://www.youtube.com/embed/$4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>',
       );
 
+      html = html.replace(
+        /<img /g,
+        '<img loading="lazy" ',
+      );
+
       return html.replace(
         /<a href="(https?:\/\/|\/\/)([^"]+)"/g,
         '<a href="$1$2" target="_blank" rel="noopener noreferrer"',
@@ -114,7 +119,7 @@ export function convertMarkdownToHtml(markdownContent: string): string {
     allowedAttributes: {
       ...sanitizeHtml.defaults.allowedAttributes,
       a: ["href", "name", "target", "rel", "title"],
-      img: ["src", "alt", "title"],
+      img: ["src", "alt", "title", "loading"],
       code: ["class"],
       pre: ["class"],
       span: ["class", "style"],

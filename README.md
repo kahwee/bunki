@@ -319,6 +319,18 @@ Your post content goes here with **markdown** support!
 ```javascript
 console.log("Code highlighting works too!");
 ```
+
+You can also embed videos using HTML5 video tags:
+
+<video src="https://example.com/video.mp4" controls width="640" height="360"></video>
+
+Or with multiple formats for better browser compatibility:
+
+<video controls width="640" height="360" poster="thumbnail.jpg">
+  <source src="video.mp4" type="video/mp4">
+  <source src="video.webm" type="video/webm">
+  Your browser does not support the video tag.
+</video>
 ````
 
 ````

@@ -34,7 +34,13 @@ async function buildProject() {
     await runCommand("chmod", ["+x", "./dist/cli.js"]);
 
     // Generate TypeScript declarations
-    await runCommand("bun", ["tsc", "--declaration", "--emitDeclarationOnly", "--outDir", "./dist"]);
+    await runCommand("bun", [
+      "tsc",
+      "--declaration",
+      "--emitDeclarationOnly",
+      "--outDir",
+      "./dist",
+    ]);
 
     console.log("Build completed successfully! ✅");
   } catch (error) {

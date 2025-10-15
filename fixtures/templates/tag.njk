@@ -3,6 +3,15 @@
 {% block title %}{{ tag.name }} | {{ site.title }}{% endblock %}
 {% block description %}Posts tagged with {{ tag.name }} on {{ site.title }}{% endblock %}
 
+{% block canonical %}{{ site.baseUrl }}/tags/{{ tag.slug }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
+
+{% block og_title %}{{ tag.name }} | {{ site.title }}{% endblock %}
+{% block og_description %}Posts tagged with {{ tag.name }} on {{ site.title }}{% endblock %}
+{% block og_url %}{{ site.baseUrl }}/tags/{{ tag.slug }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
+
+{% block twitter_title %}{{ tag.name }} | {{ site.title }}{% endblock %}
+{% block twitter_description %}Posts tagged with {{ tag.name }} on {{ site.title }}{% endblock %}
+
 {% block content %}
   <h1>Posts tagged "{{ tag.name }}"</h1>
   

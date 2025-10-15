@@ -1,5 +1,9 @@
 {% extends "base.njk" %}
 
+{% block canonical %}{{ site.baseUrl }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
+
+{% block og_url %}{{ site.baseUrl }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
+
 {% block content %}
   <h1>Latest Posts</h1>
   

@@ -4,13 +4,7 @@ import nunjucks from "nunjucks";
 import path from "path";
 import slugify from "slugify";
 import { parseMarkdownDirectory } from "./parser";
-import {
-  GeneratorOptions,
-  PaginationData,
-  Post,
-  Site,
-  TagData
-} from "./types";
+import { GeneratorOptions, PaginationData, Post, Site, TagData } from "./types";
 import { getDefaultCSSConfig, processCSS } from "./utils/css-processor";
 import { copyFile, ensureDir } from "./utils/file-utils";
 
@@ -405,7 +399,7 @@ export class SiteGenerator {
     }
 
     const assetsDirFile = Bun.file(assetsDir); // keep existing logic for assets (optional)
-    if (await assetsDirFile.exists() && (await dirExists(assetsDir))) {
+    if ((await assetsDirFile.exists()) && (await dirExists(assetsDir))) {
       const assetGlob = new Glob("**/*.*");
       const assetsOutputDir = path.join(this.options.outputDir, "assets");
 
@@ -428,7 +422,9 @@ export class SiteGenerator {
     if (await dirExists(publicDir)) {
       // Recursively traverse public directory to include files without extensions and dotfiles
       const copyRecursive = async (srcDir: string) => {
-        const entries = await fs.promises.readdir(srcDir, { withFileTypes: true });
+        const entries = await fs.promises.readdir(srcDir, {
+          withFileTypes: true,
+        });
         for (const entry of entries) {
           const srcPath = path.join(srcDir, entry.name);
           const relativePath = path.relative(publicDir, srcPath);
@@ -451,7 +447,9 @@ export class SiteGenerator {
         }
       };
       await copyRecursive(publicDir);
-      console.log("Copied public files to site (including extensionless & dotfiles)");
+      console.log(
+        "Copied public files to site (including extensionless & dotfiles)",
+      );
     }
   }
 
@@ -493,6 +491,24 @@ ${rssItems}
     const currentDate = this.getPacificDate(new Date()).toISOString();
     const pageSize = 10;
     const config = this.options.config;
+    const now = this.getPacificDate(new Date()).getTime();
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    const ONE_WEEK = 7 * ONE_DAY;
+    const ONE_MONTH = 30 * ONE_DAY;
+
+    // Helper function to calculate priority based on freshness
+    const calculatePriority = (date: string, basePriority: number): number => {
+      const postTime = new Date(date).getTime();
+      const age = now - postTime;
+
+      // Boost recent content
+      if (age < ONE_WEEK) {
+        return Math.min(1.0, basePriority + 0.2);
+      } else if (age < ONE_MONTH) {
+        return Math.min(1.0, basePriority + 0.1);
+      }
+      return basePriority;
+    };
 
     let sitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
@@ -513,7 +529,7 @@ ${rssItems}
     <loc>${config.baseUrl}/page/${page}/</loc>
     <lastmod>${currentDate}</lastmod>
     <changefreq>daily</changefreq>
-    <priority>0.9</priority>
+    <priority>0.8</priority>
   </url>
 `;
       }
@@ -522,12 +538,15 @@ ${rssItems}
     for (const post of this.site.posts) {
       const postUrl = `${config.baseUrl}${post.url}`;
       const postDate = new Date(post.date).toISOString();
+      const priority = calculatePriority(post.date, 0.7);
+      const age = now - new Date(post.date).getTime();
+      const changefreq = age < ONE_MONTH ? "weekly" : "monthly";
 
       sitemapContent += `  <url>
     <loc>${postUrl}</loc>
     <lastmod>${postDate}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <changefreq>${changefreq}</changefreq>
+    <priority>${priority.toFixed(1)}</priority>
   </url>
 `;
     }
@@ -536,18 +555,23 @@ ${rssItems}
     <loc>${config.baseUrl}/tags/</loc>
     <lastmod>${currentDate}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.5</priority>
   </url>
 `;
 
     for (const [, tagData] of Object.entries(this.site.tags)) {
       const tagUrl = `${config.baseUrl}/tags/${tagData.slug}/`;
+      // Calculate tag priority based on most recent post
+      const mostRecentPost = tagData.posts[0];
+      const tagPriority = mostRecentPost
+        ? calculatePriority(mostRecentPost.date, 0.4)
+        : 0.4;
 
       sitemapContent += `  <url>
     <loc>${tagUrl}</loc>
     <lastmod>${currentDate}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <priority>${tagPriority.toFixed(1)}</priority>
   </url>
 `;
 
@@ -558,7 +582,7 @@ ${rssItems}
     <loc>${config.baseUrl}/tags/${tagData.slug}/page/${page}/</loc>
     <lastmod>${currentDate}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.5</priority>
+    <priority>${Math.max(0.3, tagPriority - 0.1).toFixed(1)}</priority>
   </url>
 `;
         }
@@ -578,11 +602,15 @@ ${rssItems}
     }
 
     for (const [year, yearPosts] of Object.entries(postsByYear)) {
+      const currentYear = new Date().getFullYear();
+      const isCurrentYear = parseInt(year) === currentYear;
+      const yearPriority = isCurrentYear ? 0.7 : 0.5;
+
       sitemapContent += `  <url>
     <loc>${config.baseUrl}/${year}/</loc>
     <lastmod>${currentDate}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <changefreq>${isCurrentYear ? 'weekly' : 'monthly'}</changefreq>
+    <priority>${yearPriority.toFixed(1)}</priority>
   </url>
 `;
 
@@ -592,8 +620,8 @@ ${rssItems}
           sitemapContent += `  <url>
     <loc>${config.baseUrl}/${year}/page/${page}/</loc>
     <lastmod>${currentDate}</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <changefreq>${isCurrentYear ? 'weekly' : 'monthly'}</changefreq>
+    <priority>${(yearPriority - 0.1).toFixed(1)}</priority>
   </url>
 `;
         }

@@ -74,7 +74,7 @@ export class S3Uploader implements Uploader, ImageUploader {
     const bucketName = this.s3Config.bucket;
     const customDomain =
       process.env[
-      `S3_CUSTOM_DOMAIN_${bucketName.replace(/-/g, "_").toUpperCase()}`
+        `S3_CUSTOM_DOMAIN_${bucketName.replace(/-/g, "_").toUpperCase()}`
       ];
 
     if (customDomain) {
