@@ -56,6 +56,8 @@ export interface SiteConfig {
   s3?: S3Config;
   /** CSS processing configuration */
   css?: CSSConfig;
+  /** Optional number of tags to display on homepage (sorted by count). If not set, all tags are shown */
+  maxTagsOnHomepage?: number;
   /** Additional custom configuration options */
   [key: string]: any;
 }

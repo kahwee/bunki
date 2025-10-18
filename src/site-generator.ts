@@ -29,6 +29,13 @@ export class SiteGenerator {
     );
   }
 
+  private getSortedTags(limit?: number): TagData[] {
+    const sorted = Object.values(this.site.tags).sort(
+      (a, b) => b.count - a.count,
+    );
+    return limit ? sorted.slice(0, limit) : sorted;
+  }
+
   private createPagination(
     items: any[],
     currentPage: number,
@@ -210,7 +217,7 @@ export class SiteGenerator {
         const yearPageHtml = nunjucks.render("archive.njk", {
           site: this.options.config,
           posts: paginatedPosts,
-          tags: Object.values(this.site.tags),
+          tags: this.getSortedTags(this.options.config.maxTagsOnHomepage),
           year: year,
           pagination,
         });
@@ -245,7 +252,7 @@ export class SiteGenerator {
       const pageHtml = nunjucks.render("index.njk", {
         site: this.options.config,
         posts: paginatedPosts,
-        tags: Object.values(this.site.tags),
+        tags: this.getSortedTags(this.options.config.maxTagsOnHomepage),
         pagination,
       });
 
@@ -276,7 +283,6 @@ export class SiteGenerator {
       const postHtml = nunjucks.render("post.njk", {
         site: this.options.config,
         post,
-        tags: Object.values(this.site.tags),
       });
 
       await Bun.write(path.join(postDir, "index.html"), postHtml);
@@ -289,7 +295,7 @@ export class SiteGenerator {
 
     const tagIndexHtml = nunjucks.render("tags.njk", {
       site: this.options.config,
-      tags: Object.values(this.site.tags),
+      tags: this.getSortedTags(),
     });
 
     await Bun.write(path.join(tagsDir, "index.html"), tagIndexHtml);

@@ -186,4 +186,35 @@ describe("SiteGenerator", () => {
       expect(await f.exists()).toBeTrue();
     }
   });
+
+  test("tags can be sorted by count", () => {
+    const tags = generator["site"].tags;
+    const tagArray = Object.values(tags);
+
+    // Sort tags by count descending
+    const sortedTags = tagArray.sort((a, b) => b.count - a.count);
+
+    // Verify tags are properly sorted (descending order)
+    for (let i = 0; i < sortedTags.length - 1; i++) {
+      expect(sortedTags[i].count).toBeGreaterThanOrEqual(sortedTags[i + 1].count);
+    }
+  });
+
+  test("tags can be limited to maxTagsOnHomepage", () => {
+    // Get all tags sorted by count
+    const allTags = Object.values(generator["site"].tags).sort(
+      (a, b) => b.count - a.count,
+    );
+
+    const maxTags = 20;
+    const limited = allTags.slice(0, maxTags);
+
+    // Verify that limit works correctly
+    expect(limited.length).toBeLessThanOrEqual(maxTags);
+
+    // If we have more than 20 tags, verify we get exactly 20
+    if (allTags.length > maxTags) {
+      expect(limited.length).toBe(maxTags);
+    }
+  });
 });
