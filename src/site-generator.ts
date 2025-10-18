@@ -7,6 +7,7 @@ import { parseMarkdownDirectory } from "./parser";
 import { GeneratorOptions, PaginationData, Post, Site, TagData } from "./types";
 import { getDefaultCSSConfig, processCSS } from "./utils/css-processor";
 import { copyFile, ensureDir } from "./utils/file-utils";
+import { setNoFollowExceptions } from "./utils/markdown-utils";
 
 export class SiteGenerator {
   private options: GeneratorOptions;
@@ -111,6 +112,11 @@ export class SiteGenerator {
     console.log("Initializing site generator...");
 
     await ensureDir(this.options.outputDir);
+
+    // Set up nofollow exceptions if configured
+    if (this.options.config.noFollowExceptions) {
+      setNoFollowExceptions(this.options.config.noFollowExceptions);
+    }
 
     let tagDescriptions: Record<string, string> = {};
     const tagsTomlPath = path.join(process.cwd(), "src", "tags.toml");

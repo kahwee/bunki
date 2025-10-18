@@ -58,6 +58,8 @@ export interface SiteConfig {
   css?: CSSConfig;
   /** Optional number of tags to display on homepage (sorted by count). If not set, all tags are shown */
   maxTagsOnHomepage?: number;
+  /** Optional list of domains to exclude from nofollow attribute. Links to these domains will have follow attribute. */
+  noFollowExceptions?: string[];
   /** Additional custom configuration options */
   [key: string]: any;
 }

@@ -23,66 +23,102 @@ hljs.registerLanguage("python", python);
 hljs.registerLanguage("json", json);
 hljs.registerLanguage("swift", swift);
 
-const marked = new Marked(
-  markedHighlight({
-    emptyLangClass: "hljs",
-    langPrefix: "hljs language-",
-    highlight(code, lang, info) {
-      const language = hljs.getLanguage(lang) ? lang : "json";
-      return hljs.highlight(code, { language }).value;
-    },
-  }),
-);
+let noFollowExceptions: Set<string> = new Set();
 
-marked.setOptions({
-  gfm: true,
-  breaks: true,
-});
+function createMarked() {
+  const marked = new Marked(
+    markedHighlight({
+      emptyLangClass: "hljs",
+      langPrefix: "hljs language-",
+      highlight(code, lang, info) {
+        const language = hljs.getLanguage(lang) ? lang : "json";
+        return hljs.highlight(code, { language }).value;
+      },
+    }),
+  );
 
-marked.use({
-  walkTokens(token) {
-    if (token.type === "link") {
-      token.href = token.href || "";
-      const isExternal =
-        token.href &&
-        (token.href.startsWith("http://") ||
-          token.href.startsWith("https://") ||
-          token.href.startsWith("//"));
+  marked.setOptions({
+    gfm: true,
+    breaks: true,
+  });
 
-      if (isExternal) {
-        (token as any).isExternalLink = true;
+  marked.use({
+    walkTokens(token) {
+      if (token.type === "link") {
+        token.href = token.href || "";
+        const isExternal =
+          token.href &&
+          (token.href.startsWith("http://") ||
+            token.href.startsWith("https://") ||
+            token.href.startsWith("//"));
 
-        if (
-          token.href.includes("youtube.com/watch") ||
-          token.href.includes("youtu.be/")
-        ) {
-          (token as any).isYouTubeLink = true;
+        if (isExternal) {
+          (token as any).isExternalLink = true;
+
+          if (
+            token.href.includes("youtube.com/watch") ||
+            token.href.includes("youtu.be/")
+          ) {
+            (token as any).isYouTubeLink = true;
+          }
         }
       }
-    }
-  },
-  hooks: {
-    preprocess(markdown) {
-      return markdown;
     },
-    postprocess(html) {
-      html = html.replace(
-        /<a href="(https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)[^"]*)"[^>]*>(.*?)<\/a>/g,
-        '<div class="video-container"><iframe src="https://www.youtube.com/embed/$4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>',
-      );
+    hooks: {
+      preprocess(markdown) {
+        return markdown;
+      },
+      postprocess(html) {
+        html = html.replace(
+          /<a href="(https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)[^"]*)"[^>]*>(.*?)<\/a>/g,
+          '<div class="video-container"><iframe src="https://www.youtube.com/embed/$4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>',
+        );
 
-      html = html.replace(
-        /<img /g,
-        '<img loading="lazy" ',
-      );
+        html = html.replace(
+          /<img /g,
+          '<img loading="lazy" ',
+        );
 
-      return html.replace(
-        /<a href="(https?:\/\/|\/\/)([^"]+)"/g,
-        '<a href="$1$2" target="_blank" rel="noopener noreferrer"',
-      );
+        // Process external links and add rel attributes
+        return html.replace(
+          /<a href="(https?:\/\/|\/\/)([^"]+)"/g,
+          (match, protocol, rest) => {
+            const fullUrl = protocol + rest;
+            let relAttr = 'rel="noopener noreferrer';
+
+            // Check if this URL should follow links
+            try {
+              const url = new URL(fullUrl);
+              const domain = url.hostname.replace(/^www\./, "");
+
+              // Add nofollow if domain is not in exceptions list
+              if (!noFollowExceptions.has(domain)) {
+                relAttr += ' nofollow';
+              }
+            } catch {
+              // If URL parsing fails, add nofollow as default
+              relAttr += ' nofollow';
+            }
+
+            relAttr += '"';
+            return `<a href="${fullUrl}" target="_blank" ${relAttr}`;
+          },
+        );
+      },
     },
-  },
-});
+  });
+
+  return marked;
+}
+
+let marked = createMarked();
+
+export function setNoFollowExceptions(exceptions: string[]) {
+  noFollowExceptions = new Set(
+    exceptions.map((domain) => domain.toLowerCase().replace(/^www\./, "")),
+  );
+  marked = createMarked();
+}
 
 export function extractExcerpt(content: string, maxLength = 200): string {
   const plainText = content
