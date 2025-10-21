@@ -12,6 +12,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v1
@@ -32,14 +34,44 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # Verify source files structure
+      - name: Verify source structure
+        run: |
+          echo "Working directory: $(pwd)"
+          echo ""
+          echo "Source files:"
+          find src -type f -name "*.ts" | head -10
+          echo ""
+          echo "Test files:"
+          find test -type f -name "*.test.ts" | head -10
+
       # Run tests with coverage
       - name: Generate coverage report
         run: bun test:coverage
 
-      # Generate a coverage badge
-      - name: Generate coverage badge
+      # Verify coverage report exists and contains source file references
+      - name: Verify coverage report
+        run: |
+          if [ -f coverage/lcov.info ]; then
+            echo "✓ Coverage report generated"
+            echo "Coverage report size: $(wc -c < coverage/lcov.info) bytes"
+            echo "Number of source files in coverage: $(grep -c "^SF:" coverage/lcov.info || echo 0)"
+            echo ""
+            echo "First 20 source files referenced:"
+            grep "^SF:" coverage/lcov.info | head -20
+          else
+            echo "✗ Coverage report not found at coverage/lcov.info"
+            exit 1
+          fi
+
+      # Upload coverage to Coveralls with proper source file mapping
+      - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           format: lcov
-          file: coverage/lcov.info
+          files: coverage/lcov.info
+          flag-name: bunki-tests
+          parallel: false
+          fail-on-error: false
+          debug: true

@@ -1,0 +1,14 @@
+# Coveralls configuration for source file mapping
+service_name: github
+coverage_clover: coverage/lcov.info
+
+# Explicitly specify source file patterns
+# This helps Coveralls locate and display source files
+source_files:
+  - src/
+
+# Base path for source file resolution
+base_path: ./
+
+# Service job ID for GitHub Actions
+repo_token: ${{ secrets.GITHUB_TOKEN }}
