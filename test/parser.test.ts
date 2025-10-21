@@ -48,4 +48,11 @@ describe("Markdown Parser", () => {
     expect(firstPost).toHaveProperty("html");
     expect(firstPost).toHaveProperty("excerpt");
   });
+
+  test("parseMarkdownDirectory should handle errors gracefully", async () => {
+    const posts = await parseMarkdownDirectory("/non/existent/directory");
+
+    expect(posts).toBeArray();
+    expect(posts.length).toBe(0);
+  });
 });

@@ -68,4 +68,52 @@ describe("CLI Init Command (modular)", () => {
     // If it didn't throw, and files still exist, it's fine for now.
     expect(await fileExists(path.join(tmpRoot, "bunki.config.ts"))).toBeTrue();
   });
+
+  test("should handle errors gracefully with custom dependencies", async () => {
+    let errorLogged = "";
+    let exitCode = -1;
+
+    const failingDeps = {
+      createDefaultConfig: async () => {
+        throw new Error("Mock config creation failure");
+      },
+      ensureDir: async () => {},
+      writeFile: async () => 0,
+      logger: {
+        log: () => {},
+        error: (msg: string, err: any) => {
+          errorLogged = msg;
+        },
+      },
+      exit: (code: number) => {
+        exitCode = code;
+      },
+    };
+
+    await handleInitCommand({ config: "bunki.config.ts" }, failingDeps);
+
+    expect(errorLogged).toInclude("Error initializing");
+    expect(exitCode).toBe(1);
+  });
+
+  test("should skip init and log message when config already exists", async () => {
+    let loggedMessage = "";
+
+    const mockDeps = {
+      createDefaultConfig: async () => false, // Config already exists
+      ensureDir: async () => {},
+      writeFile: async () => 0,
+      logger: {
+        log: (msg: string) => {
+          loggedMessage = msg;
+        },
+        error: () => {},
+      },
+      exit: (code: number) => {},
+    };
+
+    await handleInitCommand({ config: "bunki.config.ts" }, mockDeps);
+
+    expect(loggedMessage).toInclude("Skipped initialization");
+  });
 });

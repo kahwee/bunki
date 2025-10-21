@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import path from "path";
-import { handleNewCommand } from "../../../src/cli/commands/new-post";
+import { handleNewCommand, registerNewCommand } from "../../../src/cli/commands/new-post";
+import { Command } from "commander";
 
 describe("CLI New Command (handler)", () => {
   test("creates a slugged markdown file with frontmatter and tags", async () => {
@@ -186,5 +187,46 @@ describe("CLI New Command (handler)", () => {
     await handleNewCommand("Test", options, deps);
 
     expect(calls.data).toContain("tags: [tag1, tag2, tag3]");
+  });
+});
+
+describe("CLI New Command (registration)", () => {
+  test("should register new command with program", () => {
+    const program = new Command();
+    const result = registerNewCommand(program);
+
+    expect(result).toBeDefined();
+    // The command should be registered
+    const commands = program.commands.map((cmd) => cmd.name());
+    expect(commands).toContain("new");
+  });
+
+  test("should create command with correct options", () => {
+    const program = new Command();
+    registerNewCommand(program);
+
+    const newCommand = program.commands.find((cmd) => cmd.name() === "new");
+    expect(newCommand).toBeDefined();
+    expect(newCommand?.description()).toInclude("Create a new blog post");
+  });
+
+  test("should have all command options and arguments defined", () => {
+    const program = new Command();
+    registerNewCommand(program);
+
+    const newCmd = program.commands.find((cmd) => cmd.name() === "new");
+    expect(newCmd).toBeDefined();
+
+    if (newCmd) {
+      // Verify options - check that the command has the tags option
+      const options = newCmd.options;
+      const tagsOption = options.find(
+        (opt) => opt.short === "-t" || opt.long === "--tags"
+      );
+      expect(tagsOption).toBeDefined();
+
+      // Verify the command is callable (has an action set)
+      expect(newCmd._actionHandler).toBeDefined();
+    }
   });
 });

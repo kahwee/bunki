@@ -157,4 +157,275 @@ describe("S3Uploader", () => {
     const uploader = createUploader(config);
     expect(uploader).toBeDefined();
   });
+
+  describe("Upload Method", () => {
+    const testUploadDir = path.join(import.meta.dir, "test-upload-src");
+
+    beforeAll(async () => {
+      await ensureDir(testUploadDir);
+      // Create some test files to upload
+      await Bun.write(path.join(testUploadDir, "index.html"), "<h1>Test</h1>");
+      await Bun.write(path.join(testUploadDir, "style.css"), "body { color: red; }");
+    });
+
+    afterAll(async () => {
+      try {
+        await Bun.file(testUploadDir).rm?.({ recursive: true });
+      } catch {}
+    });
+
+    test("should upload site with dry run mode", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "test-bucket",
+        publicUrl: "https://test-bucket.example.com",
+        endpoint: "https://s3.example.com",
+        region: "us-east-1",
+      };
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const siteConfig = {
+        title: "Test Site",
+        description: "Test",
+        baseUrl: "https://example.com",
+        domain: "test",
+      };
+
+      await expect(uploader.upload(testUploadDir, siteConfig)).resolves.toBeUndefined();
+
+      delete process.env.BUNKI_DRY_RUN;
+    });
+
+    test("should handle upload errors", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "test-bucket",
+        publicUrl: "https://test-bucket.example.com",
+        endpoint: "https://s3.example.com",
+        region: "us-east-1",
+      };
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const siteConfig = {
+        title: "Test Site",
+        description: "Test",
+        baseUrl: "https://example.com",
+        domain: "test",
+      };
+
+      // Use non-existent path to trigger error
+      try {
+        await uploader.upload("/non/existent/path/to/site", siteConfig);
+      } catch (error) {
+        expect(error).toBeDefined();
+      }
+
+      delete process.env.BUNKI_DRY_RUN;
+    });
+  });
+
+  describe("Image Upload Error Handling", () => {
+    test("should handle non-existent images directory", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "test-bucket",
+        publicUrl: "https://test-bucket.example.com",
+        endpoint: "https://s3.example.com",
+        region: "us-east-1",
+      };
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const result = await uploader.uploadImages("/non/existent/images/dir");
+
+      expect(result).toEqual({});
+
+      delete process.env.BUNKI_DRY_RUN;
+    });
+
+    test("should handle empty images directory", async () => {
+      const emptyDir = path.join(import.meta.dir, "empty-images");
+      await ensureDir(emptyDir);
+
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "test-bucket",
+        publicUrl: "https://test-bucket.example.com",
+        endpoint: "https://s3.example.com",
+        region: "us-east-1",
+      };
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const result = await uploader.uploadImages(emptyDir);
+
+      expect(result).toEqual({});
+
+      delete process.env.BUNKI_DRY_RUN;
+
+      // Clean up
+      try {
+        await Bun.file(emptyDir).rm?.({ recursive: true });
+      } catch {}
+    });
+  });
+
+  describe("Public URL Generation", () => {
+    test("should generate URLs with custom domain", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "my-bucket",
+        publicUrl: "https://my-bucket.s3.amazonaws.com",
+        endpoint: "https://s3.amazonaws.com",
+        region: "us-east-1",
+      };
+
+      // Set custom domain via environment variable
+      process.env.S3_CUSTOM_DOMAIN_MY_BUCKET = "cdn.example.com";
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      // Create test images with known URLs
+      const testDir = path.join(import.meta.dir, "test-custom-domain-images");
+      await ensureDir(testDir);
+      const jpgContent = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+      await Bun.write(path.join(testDir, "test-image.jpg"), jpgContent);
+
+      const result = await uploader.uploadImages(testDir);
+
+      // Custom domain should be used
+      const imageUrl = result["test-image.jpg"];
+      expect(imageUrl).toContain("cdn.example.com");
+      expect(imageUrl).toContain("test-image.jpg");
+
+      delete process.env.S3_CUSTOM_DOMAIN_MY_BUCKET;
+      delete process.env.BUNKI_DRY_RUN;
+
+      // Clean up
+      try {
+        await Bun.file(testDir).rm?.({ recursive: true });
+      } catch {}
+    });
+
+    test("should generate URLs with hyphenated bucket names", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "my-hyphenated-bucket",
+        publicUrl: "https://my-hyphenated-bucket.s3.amazonaws.com",
+        region: "us-east-1",
+      };
+
+      // Set custom domain with underscores (bucket hyphens converted to underscores)
+      process.env.S3_CUSTOM_DOMAIN_MY_HYPHENATED_BUCKET =
+        "cdn-hyphenated.example.com";
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const testDir = path.join(import.meta.dir, "test-hyphenated-images");
+      await ensureDir(testDir);
+      const jpgContent = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+      await Bun.write(path.join(testDir, "img.jpg"), jpgContent);
+
+      const result = await uploader.uploadImages(testDir);
+
+      const imageUrl = result["img.jpg"];
+      expect(imageUrl).toContain("cdn-hyphenated.example.com");
+
+      delete process.env.S3_CUSTOM_DOMAIN_MY_HYPHENATED_BUCKET;
+      delete process.env.BUNKI_DRY_RUN;
+
+      // Clean up
+      try {
+        await Bun.file(testDir).rm?.({ recursive: true });
+      } catch {}
+    });
+
+    test("should generate URLs with bucket in public URL", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "test-bucket",
+        publicUrl: "https://cdn.example.com/test-bucket",
+        region: "us-east-1",
+      };
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const testDir = path.join(import.meta.dir, "test-bucket-in-url-images");
+      await ensureDir(testDir);
+      const jpgContent = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+      await Bun.write(path.join(testDir, "photo.jpg"), jpgContent);
+
+      const result = await uploader.uploadImages(testDir);
+
+      // Should not duplicate bucket name since it's already in publicUrl
+      const imageUrl = result["photo.jpg"];
+      expect(imageUrl).toContain("https://cdn.example.com/test-bucket/photo.jpg");
+
+      delete process.env.BUNKI_DRY_RUN;
+
+      // Clean up
+      try {
+        await Bun.file(testDir).rm?.({ recursive: true });
+      } catch {}
+    });
+
+    test("should handle different file formats", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "test-bucket",
+        publicUrl: "https://test-bucket.example.com",
+        region: "us-east-1",
+      };
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const testDir = path.join(import.meta.dir, "test-formats-images");
+      await ensureDir(testDir);
+
+      // Create test files with different extensions
+      const jpgContent = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+      const pngContent = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+      const gifContent = Buffer.from([0x47, 0x49, 0x46]);
+      const webpContent = Buffer.from([0x52, 0x49, 0x46, 0x46]);
+
+      await Bun.write(path.join(testDir, "image.jpg"), jpgContent);
+      await Bun.write(path.join(testDir, "image.png"), pngContent);
+      await Bun.write(path.join(testDir, "image.gif"), gifContent);
+      await Bun.write(path.join(testDir, "image.webp"), webpContent);
+
+      const result = await uploader.uploadImages(testDir);
+
+      // All file formats should be included
+      expect(Object.keys(result).length).toBe(4);
+      expect(result["image.jpg"]).toBeDefined();
+      expect(result["image.png"]).toBeDefined();
+      expect(result["image.gif"]).toBeDefined();
+      expect(result["image.webp"]).toBeDefined();
+
+      delete process.env.BUNKI_DRY_RUN;
+
+      // Clean up
+      try {
+        await Bun.file(testDir).rm?.({ recursive: true });
+      } catch {}
+    });
+  });
 });
