@@ -1,14 +1,24 @@
 # Coveralls configuration for source file mapping
+# For more info, see: https://docs.coveralls.io/
+
 service_name: github
+
+# Coverage report format
 coverage_clover: coverage/lcov.info
 
-# Explicitly specify source file patterns
-# This helps Coveralls locate and display source files
-source_files:
-  - src/
+# Repository information for source file fetching
+repo_token: $GITHUB_TOKEN
 
-# Base path for source file resolution
+# Coveralls will try to fetch source files from the GitHub repository
+# This requires the repository to be public or properly authenticated
+# Documentation: https://docs.coveralls.io/parallel-builds
+
+# Configuration for source file detection
+# Coveralls will use GitHub API to fetch source files if this is set
+github_token: $GITHUB_TOKEN
+
+# Base path for coverage report
 base_path: ./
 
-# Service job ID for GitHub Actions
-repo_token: ${{ secrets.GITHUB_TOKEN }}
+# Enable GitHub integration for source file fetching
+github_repository: kahwee/bunki
