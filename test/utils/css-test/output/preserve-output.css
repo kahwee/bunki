@@ -1,0 +1,14 @@
+/* Important styles */
+:root {
+  --primary: #0066cc;
+  --secondary: #ff6600;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+}
+
+.button {
+  padding: 8px 16px;
+  border-radius: 4px;
+}

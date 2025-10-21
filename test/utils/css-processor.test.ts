@@ -232,6 +232,102 @@ describe("CSS Config Tests", () => {
   });
 });
 
+describe("Error Handling Tests", () => {
+  beforeEach(async () => {
+    await fs.promises.mkdir(TEST_DIR, { recursive: true });
+    await fs.promises.mkdir(OUTPUT_DIR, { recursive: true });
+  });
+
+  test("should handle empty CSS file", async () => {
+    await fs.promises.writeFile(path.join(TEST_DIR, "empty.css"), "");
+
+    const cssConfig = {
+      input: "empty.css",
+      output: "empty-output.css",
+      enabled: true,
+      watch: false,
+    };
+
+    await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+    });
+
+    const outputPath = path.join(OUTPUT_DIR, "empty-output.css");
+    const content = await fs.promises.readFile(outputPath, "utf-8");
+    expect(content).toBe("");
+  });
+
+  test("should handle CSS with special characters", async () => {
+    const cssWithSpecialChars = `/* 特殊文字 - Special chars */
+.class-name {
+  content: "Quote \\"test\\"";
+  background: url('data:image/svg+xml;utf8,<svg>...</svg>');
+}`;
+
+    await fs.promises.writeFile(
+      path.join(TEST_DIR, "special.css"),
+      cssWithSpecialChars,
+    );
+
+    const cssConfig = {
+      input: "special.css",
+      output: "special-output.css",
+      enabled: true,
+      watch: false,
+    };
+
+    await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+    });
+
+    const outputPath = path.join(OUTPUT_DIR, "special-output.css");
+    const content = await fs.promises.readFile(outputPath, "utf-8");
+    expect(content).toInclude("class-name");
+  });
+
+  test("should validate config with missing input", () => {
+    const config = {
+      input: "",
+      output: "style.css",
+      enabled: true,
+    } as any;
+
+    const errors = validateCSSConfig(config);
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors).toContain("CSS input path is required");
+  });
+
+  test("should validate config with missing output", () => {
+    const config = {
+      input: "main.css",
+      output: "",
+      enabled: true,
+    } as any;
+
+    const errors = validateCSSConfig(config);
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors).toContain("CSS output path is required");
+  });
+
+  test("should validate config with non-boolean enabled", () => {
+    const config = {
+      input: "main.css",
+      output: "style.css",
+      enabled: "yes",
+    } as any;
+
+    const errors = validateCSSConfig(config);
+    expect(errors.length).toBeGreaterThan(0);
+    expect(errors).toContain("CSS enabled must be a boolean");
+  });
+});
+
 describe("Integration Tests", () => {
   beforeEach(async () => {
     await fs.promises.mkdir(TEST_DIR, { recursive: true });
@@ -243,6 +339,7 @@ describe("Integration Tests", () => {
       "base.css",
       "components.css",
       "utilities.css",
+      "postcss.config.cjs",
     ]) {
       try {
         await fs.promises.unlink(path.join(TEST_DIR, f));
@@ -336,5 +433,77 @@ body {
 
     const content = await fs.promises.readFile(outputPath, "utf-8");
     expect(content).toInclude("font-family: system-ui");
+  });
+
+  test("should handle deeply nested output paths", async () => {
+    await fs.promises.writeFile(
+      path.join(TEST_DIR, "input.css"),
+      "body { margin: 0; }",
+    );
+
+    const cssConfig = {
+      input: "input.css",
+      output: "dist/assets/css/styles/main.css",
+      enabled: true,
+      watch: false,
+    };
+
+    await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+    });
+
+    const outputPath = path.join(
+      OUTPUT_DIR,
+      "dist/assets/css/styles/main.css",
+    );
+    const outputExists = await fs.promises
+      .access(outputPath)
+      .then(() => true)
+      .catch(() => false);
+    expect(outputExists).toBe(true);
+  });
+
+  test("should preserve CSS content during fallback copy", async () => {
+    const originalContent = `/* Important styles */
+:root {
+  --primary: #0066cc;
+  --secondary: #ff6600;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+}
+
+.button {
+  padding: 8px 16px;
+  border-radius: 4px;
+}`;
+
+    await fs.promises.writeFile(
+      path.join(TEST_DIR, "preserve.css"),
+      originalContent,
+    );
+
+    const cssConfig = {
+      input: "preserve.css",
+      output: "preserve-output.css",
+      postcssConfig: "nonexistent-config.js",
+      enabled: true,
+      watch: false,
+    };
+
+    await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+    });
+
+    const outputPath = path.join(OUTPUT_DIR, "preserve-output.css");
+    const outputContent = await fs.promises.readFile(outputPath, "utf-8");
+    expect(outputContent).toBe(originalContent);
   });
 });
