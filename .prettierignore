@@ -1,0 +1,15 @@
+# Test fixture directories created during test runs
+test/temp-cli-init/
+test/cli/commands/test/
+test/utils/css-test/
+test/css-test/
+
+# Build and distribution
+dist/
+coverage/
+
+# Dependencies
+node_modules/
+
+# Lock files
+bun.lockb
