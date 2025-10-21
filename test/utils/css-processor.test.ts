@@ -5,6 +5,7 @@ import {
   beforeAll,
   afterAll,
   beforeEach,
+  afterEach,
 } from "bun:test";
 import {
   processCSS,
@@ -502,5 +503,68 @@ body {
     const outputPath = path.join(OUTPUT_DIR, "preserve-output.css");
     const outputContent = await fs.promises.readFile(outputPath, "utf-8");
     expect(outputContent).toBe(originalContent);
+  });
+});
+
+describe("CSS Processor - Critical Paths", () => {
+  beforeEach(async () => {
+    await fs.promises.mkdir(TEST_DIR, { recursive: true });
+    await fs.promises.mkdir(OUTPUT_DIR, { recursive: true });
+    await fs.promises.writeFile(
+      path.join(TEST_DIR, "main.css"),
+      `body { margin: 0; }`,
+    );
+  });
+
+  afterEach(async () => {
+    try {
+      await fs.promises.rm(OUTPUT_DIR, { recursive: true });
+    } catch {}
+  });
+
+  test("should handle enabled=false without creating output", async () => {
+    const cssConfig = {
+      input: "main.css",
+      output: "style.css",
+      enabled: false,
+      watch: false,
+    };
+
+    await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+    });
+
+    const outputPath = path.join(OUTPUT_DIR, "style.css");
+    const exists = await fs.promises
+      .access(outputPath)
+      .then(() => true)
+      .catch(() => false);
+    expect(exists).toBe(false);
+  });
+
+  test("should handle nested output directories", async () => {
+    const cssConfig = {
+      input: "main.css",
+      output: "nested/deep/style.css",
+      enabled: true,
+      watch: false,
+    };
+
+    await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+    });
+
+    const outputPath = path.join(OUTPUT_DIR, "nested/deep/style.css");
+    const exists = await fs.promises
+      .access(outputPath)
+      .then(() => true)
+      .catch(() => false);
+    expect(exists).toBe(true);
   });
 });

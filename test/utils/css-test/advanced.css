@@ -1,0 +1,15 @@
+
+:root {
+  --spacing-unit: 1rem;
+  --color-primary: hsl(200, 80%, 50%);
+  --color-secondary: rgb(255, 100, 50);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card {
+  padding: calc(var(--spacing-unit) * 2);
+  background: var(--color-primary);
+  box-shadow: var(--shadow);
+  border-radius: min(2rem, 10vw);
+  width: max(200px, 100%);
+}

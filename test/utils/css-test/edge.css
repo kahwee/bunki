@@ -1,0 +1,15 @@
+
+/* Multi-line
+   comment
+   block */
+body {
+  /* Inline comment */
+  color: black; /* After rule */
+}
+
+/* Comment with special chars: !@#$%^&*() */
+.test { content: "// Not a comment"; }
+
+// Single line comment (CSS doesn't support this but we should handle it)
+::-webkit-scrollbar { width: 10px; }
+::selection { background: yellow; }

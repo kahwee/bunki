@@ -1,0 +1,19 @@
+
+/* Complex selectors */
+html[data-theme="dark"] body.has-sidebar > main.content {
+  background: #222;
+}
+
+@media (min-width: 768px) {
+  .grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+}
+
+@supports (display: flex) {
+  .flex-container {
+    display: flex;
+    gap: 1rem;
+  }
+}
