@@ -64,6 +64,16 @@ jobs:
             exit 1
           fi
 
+      # Post-process coverage report to use absolute paths for Coveralls
+      - name: Prepare coverage for Coveralls
+        run: |
+          # The LCOV file has relative paths like "src/..." but Coveralls
+          # needs them to be resolvable. We'll use base-path to tell it where to look.
+          echo "Coverage report paths (before):"
+          grep "^SF:" coverage/lcov.info | head -5
+
+          # Note: The Coveralls action will handle path resolution with base-path
+
       # Upload coverage to Coveralls with proper source file mapping
       - name: Upload coverage to Coveralls
         uses: coverallsapp/github-action@v2
