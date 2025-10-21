@@ -185,7 +185,7 @@ export class S3Uploader implements Uploader, ImageUploader {
           const filename = path.basename(imagePath);
 
           console.log(
-            `[S3] Uploading image ${imagePath} to S3 bucket ${this.s3Config.bucket}/${filename}...`,
+            `[S3] Uploading image ${imagePath} to S3 bucket ${this.s3Config.bucket}/${imageFile}...`,
           );
 
           // Read the file content using Bun.file
@@ -197,15 +197,15 @@ export class S3Uploader implements Uploader, ImageUploader {
           // Check if we're in dry run mode
           if (process.env.BUNKI_DRY_RUN === "true") {
             console.log(
-              `[S3] Dry run: would upload ${filename} with content type ${contentType}`,
+              `[S3] Dry run: would upload ${imageFile} with content type ${contentType}`,
             );
           } else {
-            const s3File = this.client.file(filename);
+            const s3File = this.client.file(imageFile);
             await s3File.write(file);
           }
 
           // Get the public URL
-          const imageUrl = this.getPublicUrl(filename);
+          const imageUrl = this.getPublicUrl(imageFile);
           console.log(`[S3] Image uploaded to ${imageUrl}`);
 
           imageUrls[imageFile] = imageUrl;
