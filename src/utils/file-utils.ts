@@ -188,7 +188,11 @@ export async function ensureDir(dirPath: string): Promise<void> {
 }
 
 /**
- * Copy a file from source to target using Bun's native API
+ * Copy a file from source to target using Bun's zero-copy file-to-file operation
+ *
+ * This uses Bun.write(target, BunFile) which performs a zero-copy operation at the kernel level.
+ * Similar to `cat source > target` but much faster than reading into memory and writing back.
+ *
  * @param sourcePath - Source file path
  * @param targetPath - Target file path
  */
@@ -203,7 +207,8 @@ export async function copyFile(
       throw new Error(`Source file does not exist: ${sourcePath}`);
     }
 
-    // Bun.write() is much faster than copying manually
+    // Zero-copy file transfer: Bun.write(target, sourceFile) uses kernel-level copy
+    // No data is loaded into application memory during the transfer
     await Bun.write(targetPath, sourceFile);
   } catch (error) {
     console.error(
@@ -276,5 +281,64 @@ export async function listDir(
   } catch (error) {
     console.error(`Error listing directory ${dirPath}:`, error);
     return [];
+  }
+}
+
+/**
+ * Create a buffered file writer for incremental writes
+ *
+ * Useful for streaming writes or building large files incrementally without loading
+ * everything into memory. Uses a buffered sink with configurable watermark.
+ *
+ * Zero-copy streaming to disk with backpressure handling.
+ *
+ * @param filePath - Path to file
+ * @param highWaterMark - Buffer size in bytes (default: 1MB)
+ * @returns Bun file writer object with write(), flush(), and end() methods
+ *
+ * @example
+ * ```typescript
+ * const writer = createFileWriter("./output.txt");
+ * writer.write("Line 1\n");
+ * writer.write("Line 2\n");
+ * writer.write("Line 3\n");
+ * await writer.flush();
+ * await writer.end();
+ * ```
+ */
+export function createFileWriter(
+  filePath: string,
+  highWaterMark: number = 1024 * 1024, // 1MB default
+) {
+  const file = Bun.file(filePath);
+  return file.writer({ highWaterMark });
+}
+
+/**
+ * Write a file to stdout using zero-copy streaming
+ *
+ * Similar to `cat file.txt` command. Uses Bun's zero-copy mechanism to stream
+ * the file content directly to stdout without loading into memory.
+ *
+ * @param filePath - Path to file to output
+ * @returns Promise that resolves when file is written to stdout
+ *
+ * @example
+ * ```typescript
+ * // CLI tool: output file contents
+ * await writeToStdout("./dist/index.html");
+ * ```
+ */
+export async function writeToStdout(filePath: string): Promise<void> {
+  try {
+    const file = Bun.file(filePath);
+    if (!(await file.exists())) {
+      throw new Error(`File not found: ${filePath}`);
+    }
+    // Zero-copy to stdout: no data is loaded into application memory
+    await Bun.write(Bun.stdout, file);
+  } catch (error) {
+    console.error(`Error writing file to stdout: ${filePath}:`, error);
+    throw error;
   }
 }

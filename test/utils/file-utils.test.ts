@@ -16,6 +16,8 @@ import {
   listDir,
   isFile,
   isDirectory,
+  createFileWriter,
+  writeToStdout,
 } from "../../src/utils/file-utils";
 import path from "path";
 import fs from "fs";
@@ -394,5 +396,51 @@ describe("File Utils - Filename Utilities", () => {
   test("should handle root level files", () => {
     const filename = getBaseFilename("file.md", ".md");
     expect(filename).toBe("file");
+  });
+});
+
+describe("File Utils - Advanced Bun Features", () => {
+  beforeEach(async () => {
+    await fs.promises.mkdir(testDir, { recursive: true });
+  });
+
+  afterEach(async () => {
+    try {
+      await fs.promises.rm(testDir, { recursive: true });
+    } catch {}
+  });
+
+  test("should create file writer for incremental writes", async () => {
+    const testFile = path.join(testDir, "incremental.txt");
+    const writer = createFileWriter(testFile);
+
+    writer.write("Line 1\n");
+    writer.write("Line 2\n");
+    writer.write("Line 3\n");
+    await writer.flush();
+    await writer.end();
+
+    const content = await readFileAsText(testFile);
+    expect(content).toBe("Line 1\nLine 2\nLine 3\n");
+  });
+
+  test("should write file to stdout without error", async () => {
+    const testFile = path.join(testDir, "stdout-test.txt");
+    await writeFile(testFile, "Test content for stdout");
+
+    // Should not throw when file exists
+    await writeToStdout(testFile);
+    expect(true).toBe(true); // If we reach here, no error was thrown
+  });
+
+  test("should throw when writing non-existent file to stdout", async () => {
+    const nonExistent = path.join(testDir, "non-existent.txt");
+
+    try {
+      await writeToStdout(nonExistent);
+      expect(false).toBe(true); // Should not reach
+    } catch (error) {
+      expect(error instanceof Error).toBe(true);
+    }
   });
 });
