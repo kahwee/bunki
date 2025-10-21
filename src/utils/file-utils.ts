@@ -28,9 +28,15 @@ export async function findFilesByPattern(
 }
 
 /**
- * Check if a file exists
+ * Check if a file exists using Bun's native API
+ *
+ * Note: BunFile.exists() only checks for files, not directories.
+ * Use isDirectory() to check if a path is a directory.
+ *
  * @param filePath - Path to file
- * @returns True if file exists
+ * @returns True if file exists, false if not or if path is a directory
+ *
+ * @see isDirectory - Use this to check if a path is a directory
  */
 export async function fileExists(filePath: string): Promise<boolean> {
   try {
