@@ -51,6 +51,7 @@ All tests use Bun's native test framework with consistent naming patterns:
 - **Organization**: Group related tests in `describe()` blocks with meaningful names
 
 **Example:**
+
 ```typescript
 import { describe, test, expect, beforeAll } from "bun:test";
 
@@ -66,6 +67,7 @@ describe("Markdown Parser", () => {
 ```
 
 **Test Commands:**
+
 - Run all tests: `bun test`
 - Run with coverage: `bun test:coverage`
 - Run specific file: `bun test test/parser.test.ts`

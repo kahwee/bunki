@@ -5,7 +5,7 @@ import { config } from "dotenv";
 config();
 
 // TypeScript configuration with environment variables support
-export default function(): SiteConfig {
+export default function (): SiteConfig {
   return {
     title: "My Blog",
     description: "A blog built with Bunki",
@@ -17,8 +17,8 @@ export default function(): SiteConfig {
       accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
       secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
       bucket: process.env.S3_BUCKET || "", // Defaults to domain name with dots replaced by hyphens if not set
-      endpoint: process.env.S3_ENDPOINT,   // Custom endpoint for S3 service (optional)
-      region: process.env.S3_REGION || "auto"
-    }
+      endpoint: process.env.S3_ENDPOINT, // Custom endpoint for S3 service (optional)
+      region: process.env.S3_REGION || "auto",
+    },
   };
 }
