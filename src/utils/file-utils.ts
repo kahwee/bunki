@@ -70,18 +70,17 @@ export async function isDirectory(dirPath: string): Promise<boolean> {
 }
 
 /**
- * Read file as text
+ * Read file as text using Bun's native API
  * @param filePath - Path to file
  * @returns File contents or null if file doesn't exist
  */
 export async function readFileAsText(filePath: string): Promise<string | null> {
   try {
-    if (!(await fileExists(filePath))) {
+    const file = Bun.file(filePath);
+    if (!(await file.exists())) {
       return null;
     }
-
-    const content = await Bun.file(filePath).text();
-    return content;
+    return await file.text();
   } catch (error) {
     console.error(`Error reading file ${filePath}:`, error);
     return null;
@@ -89,7 +88,7 @@ export async function readFileAsText(filePath: string): Promise<string | null> {
 }
 
 /**
- * Read file as binary buffer
+ * Read file as binary buffer using Bun's native API
  * @param filePath - Path to file
  * @returns File contents as Uint8Array or null if file doesn't exist
  */
@@ -97,11 +96,11 @@ export async function readFileAsBuffer(
   filePath: string,
 ): Promise<Uint8Array | null> {
   try {
-    if (!(await fileExists(filePath))) {
+    const file = Bun.file(filePath);
+    if (!(await file.exists())) {
       return null;
     }
-
-    const buffer = await Bun.file(filePath).arrayBuffer();
+    const buffer = await file.arrayBuffer();
     return new Uint8Array(buffer);
   } catch (error) {
     console.error(`Error reading file ${filePath}:`, error);
@@ -189,7 +188,7 @@ export async function ensureDir(dirPath: string): Promise<void> {
 }
 
 /**
- * Copy a file from source to target
+ * Copy a file from source to target using Bun's native API
  * @param sourcePath - Source file path
  * @param targetPath - Target file path
  */
@@ -204,8 +203,8 @@ export async function copyFile(
       throw new Error(`Source file does not exist: ${sourcePath}`);
     }
 
-    const buffer = await sourceFile.arrayBuffer();
-    await Bun.write(targetPath, buffer);
+    // Bun.write() is much faster than copying manually
+    await Bun.write(targetPath, sourceFile);
   } catch (error) {
     console.error(
       `Error copying file from ${sourcePath} to ${targetPath}:`,
@@ -216,16 +215,17 @@ export async function copyFile(
 }
 
 /**
- * Delete a file
+ * Delete a file using Bun's native API
  * @param filePath - Path to file
  */
 export async function deleteFile(filePath: string): Promise<void> {
   try {
-    if (!(await fileExists(filePath))) {
+    const file = Bun.file(filePath);
+    if (!(await file.exists())) {
       return; // File doesn't exist, nothing to delete
     }
 
-    await Bun.file(filePath).unlink();
+    await file.unlink();
   } catch (error) {
     console.error(`Error deleting file ${filePath}:`, error);
     throw error;
