@@ -15,7 +15,8 @@ export interface CSSProcessorOptions {
 }
 
 /**
- * Process CSS using PostCSS
+ * Process CSS using PostCSS directly
+ * Throws on error - no fallback
  */
 export async function processCSS(options: CSSProcessorOptions): Promise<void> {
   const { css, projectRoot, outputDir, verbose = false } = options;
@@ -40,18 +41,6 @@ export async function processCSS(options: CSSProcessorOptions): Promise<void> {
     throw new Error(`CSS input file not found: ${inputPath}`);
   }
 
-  let postcssConfigExists = false;
-  try {
-    await fs.promises.access(postcssConfigPath);
-    postcssConfigExists = true;
-  } catch (error) {
-    if (verbose) {
-      console.log(
-        `PostCSS config not found at ${postcssConfigPath}, will fallback to simple copy`,
-      );
-    }
-  }
-
   // Ensure output directory exists
   const outputDirPath = path.dirname(outputPath);
   await fs.promises.mkdir(outputDirPath, { recursive: true });
@@ -63,105 +52,52 @@ export async function processCSS(options: CSSProcessorOptions): Promise<void> {
     console.log(`Config: ${postcssConfigPath}`);
   }
 
-  // If no config file, just perform a simple copy (identity transform)
-  if (!postcssConfigExists) {
-    await fs.promises.copyFile(inputPath, outputPath);
-    if (verbose) console.log("Copied CSS without PostCSS config");
-    return;
-  }
+  await runPostCSS(inputPath, outputPath, postcssConfigPath, projectRoot, verbose);
+}
 
-  const runPostCSS = (configPathToUse: string): Promise<void> => {
-    return new Promise((resolve, reject) => {
-      const args = ["postcss", inputPath, "-o", outputPath];
-      if (configPathToUse && fs.existsSync(configPathToUse)) {
-        args.push("--config", configPathToUse);
-      }
+/**
+ * Run PostCSS process
+ * Throws on error - config issues will be caught
+ */
+function runPostCSS(
+  inputPath: string,
+  outputPath: string,
+  configPath: string,
+  projectRoot: string,
+  verbose: boolean,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const args = ["postcss", inputPath, "-o", outputPath, "--config", configPath];
 
-      const postcss = spawn("bunx", args, {
-        stdio: verbose ? "inherit" : ["ignore", "pipe", "pipe"],
-        cwd: projectRoot,
-      });
-
-      let errorOutput = "";
-      if (!verbose) {
-        postcss.stderr?.on("data", (data) => {
-          errorOutput += data.toString();
-        });
-      }
-
-      postcss.on("close", async (code) => {
-        if (code === 0) {
-          if (verbose) console.log("✅ CSS build completed successfully!");
-          return resolve();
-        }
-
-        // Detect CommonJS config under ESM error and attempt .cjs conversion once
-        if (
-          /module is not defined in ES module scope/i.test(errorOutput) &&
-          configPathToUse.endsWith(".js")
-        ) {
-          const cjsPath = configPathToUse.replace(/\.js$/, ".cjs");
-          try {
-            if (!fs.existsSync(cjsPath)) {
-              const original = await fs.promises.readFile(
-                configPathToUse,
-                "utf-8",
-              );
-              await fs.promises.writeFile(cjsPath, original, "utf-8");
-              if (verbose) {
-                console.log(
-                  `Retrying PostCSS with converted CommonJS config at ${cjsPath}`,
-                );
-              }
-            }
-            return resolve(runPostCSS(cjsPath));
-          } catch (e) {
-            if (verbose) console.warn("CJS fallback failed, copying CSS.");
-            await fs.promises.copyFile(inputPath, outputPath);
-            return resolve();
-          }
-        }
-
-        // Final fallback: copy input to output so build proceeds
-        if (verbose) {
-          console.warn(
-            `PostCSS failed (code ${code}). Falling back to simple copy. Error: ${errorOutput.trim()}`,
-          );
-        }
-        try {
-          await fs.promises.copyFile(inputPath, outputPath);
-          resolve();
-        } catch (copyErr: any) {
-          reject(
-            new Error(
-              `CSS build failed with code ${code} and fallback copy also failed: ${copyErr.message}`,
-            ),
-          );
-        }
-      });
-
-      postcss.on("error", (err) => {
-        // On spawn error, fallback to copy
-        if (verbose) {
-          console.warn(
-            `Failed to start PostCSS process (${err.message}). Falling back to copy.`,
-          );
-        }
-        fs.promises
-          .copyFile(inputPath, outputPath)
-          .then(() => resolve())
-          .catch((copyErr) =>
-            reject(
-              new Error(
-                `Failed to start PostCSS and fallback copy failed: ${copyErr.message}`,
-              ),
-            ),
-          );
-      });
+    const postcss = spawn("bunx", args, {
+      stdio: verbose ? "inherit" : ["ignore", "pipe", "pipe"],
+      cwd: projectRoot,
     });
-  };
 
-  await runPostCSS(postcssConfigPath);
+    let errorOutput = "";
+    if (!verbose) {
+      postcss.stderr?.on("data", (data) => {
+        errorOutput += data.toString();
+      });
+    }
+
+    postcss.on("close", (code) => {
+      if (code === 0) {
+        if (verbose) console.log("✅ CSS build completed successfully!");
+        return resolve();
+      }
+
+      reject(
+        new Error(
+          `PostCSS failed with exit code ${code}: ${errorOutput.trim()}`,
+        ),
+      );
+    });
+
+    postcss.on("error", (err) => {
+      reject(new Error(`Failed to start PostCSS: ${err.message}`));
+    });
+  });
 }
 
 /**
