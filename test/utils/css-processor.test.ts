@@ -10,7 +10,7 @@ import {
   processCSS,
   getDefaultCSSConfig,
   validateCSSConfig,
-} from "../src/utils/css-processor";
+} from "../../src/utils/css-processor";
 import path from "path";
 import fs from "fs";
 

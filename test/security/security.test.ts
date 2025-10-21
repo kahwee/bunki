@@ -6,8 +6,8 @@ import {
   afterAll,
   beforeEach,
 } from "bun:test";
-import { loadConfig } from "../src/config";
-import { convertMarkdownToHtml } from "../src/utils/markdown-utils";
+import { loadConfig } from "../../src/config";
+import { convertMarkdownToHtml } from "../../src/utils/markdown-utils";
 import path from "path";
 import fs from "fs";
 

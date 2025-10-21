@@ -1,7 +1,7 @@
-import { afterAll, beforeAll, describe, expect, it } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import path from "path";
-import { handleInitCommand } from "../src/cli/commands/init";
-import { fileExists } from "../src/utils/file-utils";
+import { handleInitCommand } from "../../../src/cli/commands/init";
+import { fileExists } from "../../../src/utils/file-utils";
 
 const tmpRoot = path.join(process.cwd(), "test", "temp-cli-init");
 
@@ -22,7 +22,7 @@ describe("CLI Init Command (modular)", () => {
     // await Bun.$`rm -rf ${tmpRoot}`.quiet();
   });
 
-  it("should create default config, directories and starter files", async () => {
+  test("should create default config, directories and starter files", async () => {
     await handleInitCommand({ config: "bunki.config.ts" });
 
     // Config
@@ -70,7 +70,7 @@ describe("CLI Init Command (modular)", () => {
     ).toBeTrue();
   });
 
-  it("should be idempotent when config already exists", async () => {
+  test("should be idempotent when config already exists", async () => {
     await handleInitCommand({ config: "bunki.config.ts" });
     // If it didn't throw, and files still exist, it's fine for now.
     expect(await fileExists(path.join(tmpRoot, "bunki.config.ts"))).toBeTrue();

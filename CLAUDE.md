@@ -38,6 +38,38 @@ This project uses [Bun](https://bun.sh/) v1.2.21 as its JavaScript runtime and p
 - **Date Format**: Use timezone-aware ISO format with PST/PDT timezone in Markdown frontmatter:
   `date: YYYY-MM-DDT09:00:00-07:00`
 
+## Testing Conventions
+
+All tests use Bun's native test framework with consistent naming patterns:
+
+- **File Location**: All test files in `test/` directory mirroring `src/` structure
+- **File Naming**: Use `.test.ts` suffix (e.g., `parser.test.ts`, `file-utils.test.ts`)
+- **Test Function**: Use `test()` function from `bun:test` (not `it()`)
+- **Describe Blocks**: Use descriptive, sentence-style names
+- **Test Names**: Use "should..." pattern with present tense (e.g., `test("should parse markdown files", ...)`)
+- **Imports**: `import { describe, test, expect, beforeAll, afterAll } from "bun:test"`
+- **Organization**: Group related tests in `describe()` blocks with meaningful names
+
+**Example:**
+```typescript
+import { describe, test, expect, beforeAll } from "bun:test";
+
+describe("Markdown Parser", () => {
+  test("should parse a single markdown file", async () => {
+    // test implementation
+  });
+
+  test("should extract frontmatter correctly", async () => {
+    // test implementation
+  });
+});
+```
+
+**Test Commands:**
+- Run all tests: `bun test`
+- Run with coverage: `bun test:coverage`
+- Run specific file: `bun test test/parser.test.ts`
+
 ## Project Structure
 
 ```
@@ -58,7 +90,19 @@ This project uses [Bun](https://bun.sh/) v1.2.21 as its JavaScript runtime and p
 ├── images/               # Local images directory
 │   └── domain.com/       # Domain-specific image directory
 ├── src/                  # Source code
-└── dist/                 # Generated site output
+│   ├── cli/              # CLI commands
+│   │   └── commands/     # Command implementations
+│   ├── utils/            # Utility functions
+│   └── types.ts          # TypeScript type definitions
+├── test/                 # Test files mirroring src/ structure
+│   ├── cli/
+│   │   └── commands/     # CLI command tests
+│   ├── utils/            # Utility tests
+│   ├── security/         # Cross-module security tests
+│   ├── *.test.ts         # Module tests
+│   └── fixtures/         # Test fixtures and data
+├── dist/                 # Generated site output
+└── fixtures/             # Additional test fixtures
 ```
 
 ## Tag System

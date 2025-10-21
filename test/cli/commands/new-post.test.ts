@@ -1,9 +1,9 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import path from "path";
-import { handleNewCommand } from "../src/cli/commands/new-post";
+import { handleNewCommand } from "../../../src/cli/commands/new-post";
 
 describe("CLI New Command (handler)", () => {
-  it("creates a slugged markdown file with frontmatter and tags", async () => {
+  test("creates a slugged markdown file with frontmatter and tags", async () => {
     const calls: { filePath?: string; data?: string } = {};
     const fixedDate = new Date("2025-01-01T00:00:00.000Z");
 

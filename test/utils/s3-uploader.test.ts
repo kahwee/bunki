@@ -1,14 +1,14 @@
-import { describe, expect, it, beforeAll, afterAll } from "bun:test";
-import { S3Uploader, createUploader } from "../src/utils/s3-uploader";
-import { S3Config } from "../types";
+import { describe, expect, test, beforeAll, afterAll } from "bun:test";
+import { S3Uploader, createUploader } from "../../src/utils/s3-uploader";
+import { S3Config } from "../../src/types";
 import path from "path";
-import { ensureDir } from "../src/utils/file-utils";
+import { ensureDir } from "../../src/utils/file-utils";
 
 // Use a temporary directory for test images
 const TEST_IMAGES_DIR = path.join(import.meta.dir, "test-images");
 
 describe("S3Uploader", () => {
-  it("should initialize with config", () => {
+  test("should initialize with config", () => {
     const config: S3Config = {
       accessKeyId: "test-key",
       secretAccessKey: "test-secret",
@@ -63,7 +63,7 @@ describe("S3Uploader", () => {
       }
     });
 
-    it("should preserve directory structure when uploading images", async () => {
+    test("should preserve directory structure when uploading images", async () => {
       const config: S3Config = {
         accessKeyId: "test-key",
         secretAccessKey: "test-secret",
@@ -111,7 +111,7 @@ describe("S3Uploader", () => {
       delete process.env.BUNKI_DRY_RUN;
     });
 
-    it("should find all images including those in nested directories", async () => {
+    test("should find all images including those in nested directories", async () => {
       const config: S3Config = {
         accessKeyId: "test-key",
         secretAccessKey: "test-secret",
@@ -144,7 +144,7 @@ describe("S3Uploader", () => {
     });
   });
 
-  it("should handle createUploader function", async () => {
+  test("should handle createUploader function", async () => {
     const config: S3Config = {
       accessKeyId: "test-key",
       secretAccessKey: "test-secret",
