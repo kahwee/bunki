@@ -89,7 +89,9 @@ Servers & I/O:
 
 Fall back to Node.js APIs only when Bun doesn't provide an equivalent:
 
-- `fs.promises.mkdir()` - For recursive directory creation (Bun doesn't provide this)
+- `mkdir()` from `node:fs/promises` - For recursive directory creation (Bun doesn't provide this)
+  - Use: `import { mkdir } from "node:fs/promises"`
+  - Call: `await mkdir("path", { recursive: true })` (like `mkdir -p`)
 
 ## Testing
 

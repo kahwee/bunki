@@ -20,20 +20,17 @@ import {
   writeToStdout,
 } from "../../src/utils/file-utils";
 import path from "path";
-import fs from "fs";
+import { mkdir, writeFile as fsWriteFile, rm } from "node:fs/promises";
 
 const testDir = path.join(import.meta.dir, "file-utils-test");
 
 describe("File Utils - Basic Operations", () => {
   beforeEach(async () => {
-    await fs.promises.mkdir(testDir, { recursive: true });
-    await fs.promises.writeFile(
-      path.join(testDir, "test.txt"),
-      "Hello, world!",
-    );
-    await fs.promises.writeFile(path.join(testDir, "test.md"), "# Markdown");
-    await fs.promises.mkdir(path.join(testDir, "subdir"), { recursive: true });
-    await fs.promises.writeFile(
+    await mkdir(testDir, { recursive: true });
+    await fsWriteFile(path.join(testDir, "test.txt"), "Hello, world!");
+    await fsWriteFile(path.join(testDir, "test.md"), "# Markdown");
+    await mkdir(path.join(testDir, "subdir"), { recursive: true });
+    await fsWriteFile(
       path.join(testDir, "subdir", "nested.txt"),
       "Nested content",
     );
@@ -41,7 +38,7 @@ describe("File Utils - Basic Operations", () => {
 
   afterEach(async () => {
     try {
-      await fs.promises.rm(testDir, { recursive: true });
+      await rm(testDir, { recursive: true });
     } catch {}
   });
 
@@ -83,9 +80,9 @@ describe("File Utils - Basic Operations", () => {
 
 describe("File Utils - Reading Files", () => {
   beforeEach(async () => {
-    await fs.promises.mkdir(testDir, { recursive: true });
-    await fs.promises.writeFile(path.join(testDir, "test.txt"), "Hello!");
-    await fs.promises.writeFile(
+    await mkdir(testDir, { recursive: true });
+    await fsWriteFile(path.join(testDir, "test.txt"), "Hello!");
+    await fsWriteFile(
       path.join(testDir, "binary.bin"),
       Buffer.from([0xff, 0xfe, 0xfd]),
     );
@@ -93,7 +90,7 @@ describe("File Utils - Reading Files", () => {
 
   afterEach(async () => {
     try {
-      await fs.promises.rm(testDir, { recursive: true });
+      await rm(testDir, { recursive: true });
     } catch {}
   });
 
@@ -127,7 +124,7 @@ describe("File Utils - Reading Files", () => {
   test("should handle large text files", async () => {
     const largeFile = path.join(testDir, "large.txt");
     const largeContent = "x".repeat(1000000);
-    await fs.promises.writeFile(largeFile, largeContent);
+    await fsWriteFile(largeFile, largeContent);
     const content = await readFileAsText(largeFile);
     expect(content?.length).toBe(1000000);
   });
@@ -135,12 +132,12 @@ describe("File Utils - Reading Files", () => {
 
 describe("File Utils - Writing Files", () => {
   beforeEach(async () => {
-    await fs.promises.mkdir(testDir, { recursive: true });
+    await mkdir(testDir, { recursive: true });
   });
 
   afterEach(async () => {
     try {
-      await fs.promises.rm(testDir, { recursive: true });
+      await rm(testDir, { recursive: true });
     } catch {}
   });
 
@@ -182,14 +179,14 @@ describe("File Utils - Writing Files", () => {
 
 describe("File Utils - File Information", () => {
   beforeEach(async () => {
-    await fs.promises.mkdir(testDir, { recursive: true });
-    await fs.promises.mkdir(path.join(testDir, "subdir"), { recursive: true });
-    await fs.promises.writeFile(path.join(testDir, "test.txt"), "test");
+    await mkdir(testDir, { recursive: true });
+    await mkdir(path.join(testDir, "subdir"), { recursive: true });
+    await fsWriteFile(path.join(testDir, "test.txt"), "test");
   });
 
   afterEach(async () => {
     try {
-      await fs.promises.rm(testDir, { recursive: true });
+      await rm(testDir, { recursive: true });
     } catch {}
   });
 
@@ -258,12 +255,12 @@ describe("File Utils - File Information", () => {
 
 describe("File Utils - Directory Operations", () => {
   beforeEach(async () => {
-    await fs.promises.mkdir(testDir, { recursive: true });
+    await mkdir(testDir, { recursive: true });
   });
 
   afterEach(async () => {
     try {
-      await fs.promises.rm(testDir, { recursive: true });
+      await rm(testDir, { recursive: true });
     } catch {}
   });
 
@@ -276,14 +273,14 @@ describe("File Utils - Directory Operations", () => {
 
   test("should not throw when creating existing directory", async () => {
     const existingDir = path.join(testDir, "existing");
-    await fs.promises.mkdir(existingDir);
+    await mkdir(existingDir);
     await createDir(existingDir); // Should not throw
     expect(true).toBe(true);
   });
 
   test("should throw when path exists as file", async () => {
     const filePath = path.join(testDir, "file.txt");
-    await fs.promises.writeFile(filePath, "test");
+    await fsWriteFile(filePath, "test");
     try {
       await createDir(filePath);
       expect(false).toBe(true); // Should not reach
@@ -300,17 +297,17 @@ describe("File Utils - Directory Operations", () => {
   });
 
   test("should list files in directory", async () => {
-    await fs.promises.writeFile(path.join(testDir, "file1.txt"), "1");
-    await fs.promises.writeFile(path.join(testDir, "file2.txt"), "2");
+    await fsWriteFile(path.join(testDir, "file1.txt"), "1");
+    await fsWriteFile(path.join(testDir, "file2.txt"), "2");
     const files = await listDir(testDir, false);
     expect(files.length).toBeGreaterThanOrEqual(2);
   });
 
   test("should list files recursively", async () => {
     const subdir = path.join(testDir, "sub");
-    await fs.promises.mkdir(subdir, { recursive: true });
-    await fs.promises.writeFile(path.join(testDir, "file1.txt"), "1");
-    await fs.promises.writeFile(path.join(subdir, "file2.txt"), "2");
+    await mkdir(subdir, { recursive: true });
+    await fsWriteFile(path.join(testDir, "file1.txt"), "1");
+    await fsWriteFile(path.join(subdir, "file2.txt"), "2");
     const files = await listDir(testDir, true);
     expect(files.length).toBeGreaterThanOrEqual(2);
   });
@@ -318,13 +315,13 @@ describe("File Utils - Directory Operations", () => {
 
 describe("File Utils - File Operations", () => {
   beforeEach(async () => {
-    await fs.promises.mkdir(testDir, { recursive: true });
-    await fs.promises.writeFile(path.join(testDir, "source.txt"), "Source");
+    await mkdir(testDir, { recursive: true });
+    await fsWriteFile(path.join(testDir, "source.txt"), "Source");
   });
 
   afterEach(async () => {
     try {
-      await fs.promises.rm(testDir, { recursive: true });
+      await rm(testDir, { recursive: true });
     } catch {}
   });
 
@@ -351,7 +348,7 @@ describe("File Utils - File Operations", () => {
     const binSource = path.join(testDir, "source.bin");
     const binTarget = path.join(testDir, "target.bin");
     const data = new Uint8Array([0xaa, 0xbb, 0xcc]);
-    await fs.promises.writeFile(binSource, data);
+    await fsWriteFile(binSource, data);
     await copyFile(binSource, binTarget);
     const buffer = await readFileAsBuffer(binTarget);
     expect(buffer?.[0]).toBe(0xaa);
@@ -359,7 +356,7 @@ describe("File Utils - File Operations", () => {
 
   test("should delete file", async () => {
     const file = path.join(testDir, "to-delete.txt");
-    await fs.promises.writeFile(file, "delete me");
+    await fsWriteFile(file, "delete me");
     await deleteFile(file);
     const exists = await fileExists(file);
     expect(exists).toBe(false);
@@ -401,12 +398,12 @@ describe("File Utils - Filename Utilities", () => {
 
 describe("File Utils - Advanced Bun Features", () => {
   beforeEach(async () => {
-    await fs.promises.mkdir(testDir, { recursive: true });
+    await mkdir(testDir, { recursive: true });
   });
 
   afterEach(async () => {
     try {
-      await fs.promises.rm(testDir, { recursive: true });
+      await rm(testDir, { recursive: true });
     } catch {}
   });
 

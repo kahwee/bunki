@@ -1,6 +1,6 @@
 import { Glob } from "bun";
 import path from "path";
-import fs from "fs";
+import { mkdir } from "node:fs/promises";
 
 /**
  * Find files matching a glob pattern in a directory
@@ -167,8 +167,8 @@ export function getBaseFilename(
  */
 export async function createDir(dirPath: string): Promise<void> {
   try {
-    // Try to create directory with recursive flag
-    await fs.promises.mkdir(dirPath, { recursive: true });
+    // Try to create directory with recursive flag (like mkdir -p)
+    await mkdir(dirPath, { recursive: true });
   } catch (error) {
     // Check if it already exists as a directory
     if (await isDirectory(dirPath)) {
