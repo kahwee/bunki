@@ -106,20 +106,21 @@ export class S3Uploader implements Uploader, ImageUploader {
 
       // We need to check if the directory exists, not just a file
       try {
-        // Use a Glob to test directory existence by attempting to read content
-        const glob = new Bun.Glob("*");
-        let hasFiles = false;
+        // Use a recursive glob to test directory existence by attempting to read content
+        // This needs to check for files in subdirectories too, not just root level
+        const glob = new Bun.Glob("**/*");
+        let hasContent = false;
 
         // Try to get at least one file to verify directory exists
         for await (const file of glob.scan({
           cwd: imagesDir,
           absolute: false,
         })) {
-          hasFiles = true;
+          hasContent = true;
           break;
         }
 
-        if (!hasFiles) {
+        if (!hasContent) {
           console.warn(`Directory exists but is empty: ${imagesDir}`);
           // Continue execution to attempt to find images
         }
@@ -140,9 +141,9 @@ export class S3Uploader implements Uploader, ImageUploader {
       // Debug info
       console.log(`[S3] Scanning directory ${imagesDir} for image files...`);
 
-      // List all files in the directory for debugging
+      // List all files in the directory for debugging (including nested directories)
       try {
-        const dirGlob = new Bun.Glob("*");
+        const dirGlob = new Bun.Glob("**/*");
         const allFiles: string[] = [];
 
         for await (const file of dirGlob.scan({
@@ -153,7 +154,7 @@ export class S3Uploader implements Uploader, ImageUploader {
         }
 
         console.log(
-          `[S3] Files in directory: ${allFiles.join(", ") || "none"}`,
+          `[S3] Files in directory (including subdirs): ${allFiles.length > 0 ? allFiles.slice(0, 10).join(", ") + (allFiles.length > 10 ? "..." : "") : "none"}`,
         );
       } catch (err) {
         console.error(`[S3] Error reading directory:`, err);
