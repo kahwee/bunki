@@ -1,6 +1,8 @@
 # Bunki
 
-# Bunki
+[![CI](https://github.com/kahwee/bunki/actions/workflows/ci.yml/badge.svg)](https://github.com/kahwee/bunki/actions/workflows/ci.yml)
+[![Coverage Status](https://coveralls.io/repos/github/kahwee/bunki/badge.svg?branch=main)](https://coveralls.io/github/kahwee/bunki?branch=main)
+[![npm version](https://badge.fury.io/js/bunki.svg)](https://badge.fury.io/js/bunki)
 
 Fast static site generator for blogs/docs built with Bun. Core features: Markdown + frontmatter, tags, year archives, pagination, RSS, sitemap, secure sanitized HTML, syntax highlighting, optional PostCSS pipeline, image uploading (S3/R2), tiny Nunjucks templates.
 
@@ -12,7 +14,7 @@ bun install -g bunki     # or global
 npm i bunki              # Node (>=18)
 ```
 
-Requires Bun >= 1.2.21 (recommended runtime).
+Requires Bun >= 1.3.0 (recommended runtime).
 
 ## Quick Start
 
