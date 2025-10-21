@@ -140,31 +140,31 @@ const x = 1;
     const markdown = `![Alt text](image.jpg)`;
     const html = convertMarkdownToHtml(markdown);
 
-    expect(html).toInclude('<img');
+    expect(html).toInclude("<img");
     expect(html).toInclude('loading="lazy"');
     expect(html).toInclude('src="image.jpg"');
   });
 
   test("convertMarkdownToHtml should convert YouTube links to embedded videos", () => {
     const youtubeMarkdown =
-      '[Watch this](https://www.youtube.com/watch?v=dQw4w9WgXcQ)';
+      "[Watch this](https://www.youtube.com/watch?v=dQw4w9WgXcQ)";
     const html = convertMarkdownToHtml(youtubeMarkdown);
 
-    expect(html).toInclude('<iframe');
+    expect(html).toInclude("<iframe");
     expect(html).toInclude('src="https://www.youtube.com/embed/dQw4w9WgXcQ"');
-    expect(html).toInclude('video-container');
+    expect(html).toInclude("video-container");
   });
 
   test("convertMarkdownToHtml should handle short YouTube URLs", () => {
-    const youtubeMarkdown = '[Watch](https://youtu.be/dQw4w9WgXcQ)';
+    const youtubeMarkdown = "[Watch](https://youtu.be/dQw4w9WgXcQ)";
     const html = convertMarkdownToHtml(youtubeMarkdown);
 
-    expect(html).toInclude('<iframe');
+    expect(html).toInclude("<iframe");
     expect(html).toInclude('src="https://www.youtube.com/embed/dQw4w9WgXcQ"');
   });
 
   test("convertMarkdownToHtml should add noopener noreferrer to external links", () => {
-    const markdown = '[External](https://example.com)';
+    const markdown = "[External](https://example.com)";
     const html = convertMarkdownToHtml(markdown);
 
     expect(html).toInclude('rel="noopener noreferrer nofollow"');
@@ -173,15 +173,15 @@ const x = 1;
 
   test("convertMarkdownToHtml should add nofollow to external domains by default", () => {
     setNoFollowExceptions([]); // Reset exceptions
-    const markdown = '[Example](https://example.com)';
+    const markdown = "[Example](https://example.com)";
     const html = convertMarkdownToHtml(markdown);
 
-    expect(html).toInclude('nofollow');
+    expect(html).toInclude("nofollow");
   });
 
   test("convertMarkdownToHtml should respect nofollow exceptions", () => {
-    setNoFollowExceptions(['example.com', 'github.com']);
-    const markdown = '[Example](https://example.com)';
+    setNoFollowExceptions(["example.com", "github.com"]);
+    const markdown = "[Example](https://example.com)";
     const html = convertMarkdownToHtml(markdown);
 
     // Should NOT have nofollow for exception domain
@@ -190,29 +190,28 @@ const x = 1;
   });
 
   test("convertMarkdownToHtml should strip www from domain in exceptions", () => {
-    setNoFollowExceptions(['www.example.com']);
-    const markdown = '[Link](https://example.com)';
+    setNoFollowExceptions(["www.example.com"]);
+    const markdown = "[Link](https://example.com)";
     const html = convertMarkdownToHtml(markdown);
 
     // Should NOT have nofollow because www.example.com matches example.com
-    expect(html).not.toInclude('nofollow');
+    expect(html).not.toInclude("nofollow");
   });
 
   test("convertMarkdownToHtml should sanitize XSS attempts in markdown links", () => {
-    const xssMarkdown =
-      '[Click me](javascript:alert("XSS"))';
+    const xssMarkdown = '[Click me](javascript:alert("XSS"))';
     const html = convertMarkdownToHtml(xssMarkdown);
 
-    expect(html).not.toInclude('javascript:');
-    expect(html).not.toInclude('alert');
+    expect(html).not.toInclude("javascript:");
+    expect(html).not.toInclude("alert");
   });
 
   test("convertMarkdownToHtml should sanitize XSS attempts in HTML content", () => {
     const xssMarkdown = '<img src="x" onerror="alert(\'XSS\')">';
     const html = convertMarkdownToHtml(xssMarkdown);
 
-    expect(html).not.toInclude('onerror');
-    expect(html).not.toInclude('alert');
+    expect(html).not.toInclude("onerror");
+    expect(html).not.toInclude("alert");
   });
 
   test("extractExcerpt should handle exact max length", () => {

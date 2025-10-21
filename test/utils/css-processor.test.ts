@@ -455,10 +455,7 @@ body {
       verbose: false,
     });
 
-    const outputPath = path.join(
-      OUTPUT_DIR,
-      "dist/assets/css/styles/main.css",
-    );
+    const outputPath = path.join(OUTPUT_DIR, "dist/assets/css/styles/main.css");
     const outputExists = await fs.promises
       .access(outputPath)
       .then(() => true)

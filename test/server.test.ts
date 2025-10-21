@@ -372,3 +372,316 @@ describe("Server Error Handling Tests", () => {
     server8.stop?.();
   });
 });
+
+describe("Server Image and Media Types Tests", () => {
+  beforeAll(async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    // Create image files
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.png"), "PNG data");
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.jpg"), "JPEG data");
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.jpeg"), "JPEG data");
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.svg"), "<svg></svg>");
+    await createTestFile(
+      path.join(TEST_OUTPUT_DIR, "test.xml"),
+      "<?xml version='1.0'?><root/>",
+    );
+  });
+
+  afterAll(async () => {
+    try {
+      await fs.promises.rm(TEST_OUTPUT_DIR, { recursive: true });
+    } catch {}
+  });
+
+  test("should serve PNG images with correct content type", async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.png"), "PNG data");
+
+    const server9 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 9);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const response = await makeRequest(
+      `http://localhost:${TEST_PORT + 9}/test.png`,
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("image/png");
+
+    server9.stop?.();
+  });
+
+  test("should serve JPEG images with correct content type", async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.jpg"), "JPEG data");
+
+    const server10 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 10);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const response = await makeRequest(
+      `http://localhost:${TEST_PORT + 10}/test.jpg`,
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("image/jpeg");
+
+    server10.stop?.();
+  });
+
+  test("should serve SVG with correct content type", async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.svg"), "<svg></svg>");
+
+    const server11 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 11);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const response = await makeRequest(
+      `http://localhost:${TEST_PORT + 11}/test.svg`,
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("image/svg+xml");
+
+    server11.stop?.();
+  });
+
+  test("should serve XML with correct content type", async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    await createTestFile(
+      path.join(TEST_OUTPUT_DIR, "test.xml"),
+      "<?xml version='1.0'?><root/>",
+    );
+
+    const server12 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 12);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const response = await makeRequest(
+      `http://localhost:${TEST_PORT + 12}/test.xml`,
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("application/xml");
+
+    server12.stop?.();
+  });
+});
+
+describe("Server Pagination Routes Tests", () => {
+  beforeAll(async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    // Create pagination structure
+    await createTestFile(
+      path.join(TEST_OUTPUT_DIR, "page", "2", "index.html"),
+      "<html><body>Page 2</body></html>",
+    );
+    await createTestFile(
+      path.join(
+        TEST_OUTPUT_DIR,
+        "tags",
+        "javascript",
+        "page",
+        "1",
+        "index.html",
+      ),
+      "<html><body>JavaScript Tag Page 1</body></html>",
+    );
+    await createTestFile(
+      path.join(TEST_OUTPUT_DIR, "2025", "page", "1", "index.html"),
+      "<html><body>Year 2025 Page 1</body></html>",
+    );
+  });
+
+  afterAll(async () => {
+    try {
+      await fs.promises.rm(TEST_OUTPUT_DIR, { recursive: true });
+    } catch {}
+  });
+
+  test("should serve home pagination routes", async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    await createTestFile(
+      path.join(TEST_OUTPUT_DIR, "page", "2", "index.html"),
+      "<html><body>Page 2</body></html>",
+    );
+
+    const server13 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 13);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const response = await makeRequest(
+      `http://localhost:${TEST_PORT + 13}/page/2`,
+    );
+    expect(response.status).toBe(200);
+
+    const content = await response.text();
+    expect(content).toInclude("Page 2");
+
+    server13.stop?.();
+  });
+
+  test("should serve tag pagination routes", async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    await createTestFile(
+      path.join(
+        TEST_OUTPUT_DIR,
+        "tags",
+        "javascript",
+        "page",
+        "1",
+        "index.html",
+      ),
+      "<html><body>JavaScript Tag Page 1</body></html>",
+    );
+
+    const server14 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 14);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const response = await makeRequest(
+      `http://localhost:${TEST_PORT + 14}/tags/javascript/page/1`,
+    );
+    expect(response.status).toBe(200);
+
+    const content = await response.text();
+    expect(content).toInclude("JavaScript Tag Page 1");
+
+    server14.stop?.();
+  });
+
+  test("should serve year archive pagination routes", async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    await createTestFile(
+      path.join(TEST_OUTPUT_DIR, "2025", "page", "1", "index.html"),
+      "<html><body>Year 2025 Page 1</body></html>",
+    );
+
+    const server15 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 15);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const response = await makeRequest(
+      `http://localhost:${TEST_PORT + 15}/2025/page/1`,
+    );
+    expect(response.status).toBe(200);
+
+    const content = await response.text();
+    expect(content).toInclude("Year 2025 Page 1");
+
+    server15.stop?.();
+  });
+});
+
+describe("Server File Resolution Tests", () => {
+  test("should resolve paths with and without .html extension", async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    await createTestFile(
+      path.join(TEST_OUTPUT_DIR, "about.html"),
+      "<html><body>About Page</body></html>",
+    );
+
+    const server16 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 16);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Request without .html extension
+    const response1 = await makeRequest(
+      `http://localhost:${TEST_PORT + 16}/about`,
+    );
+    expect(response1.status).toBe(200);
+
+    const content1 = await response1.text();
+    expect(content1).toInclude("About Page");
+
+    // Request with .html extension
+    const response2 = await makeRequest(
+      `http://localhost:${TEST_PORT + 16}/about.html`,
+    );
+    expect(response2.status).toBe(200);
+
+    const content2 = await response2.text();
+    expect(content2).toInclude("About Page");
+
+    server16.stop?.();
+  });
+
+  test("should serve directory index files", async () => {
+    const dir = path.join(TEST_OUTPUT_DIR, "docs");
+    await fs.promises.mkdir(dir, { recursive: true });
+    await createTestFile(
+      path.join(dir, "index.html"),
+      "<html><body>Documentation</body></html>",
+    );
+
+    const server17 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 17);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Request directory path
+    const response = await makeRequest(
+      `http://localhost:${TEST_PORT + 17}/docs`,
+    );
+    expect(response.status).toBe(200);
+
+    const content = await response.text();
+    expect(content).toInclude("Documentation");
+
+    server17.stop?.();
+  });
+});
+
+describe("Server Bun.file() Integration Tests", () => {
+  test("should use Bun.file() for efficient file serving", async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    const largeContent = "x".repeat(10000);
+    await createTestFile(
+      path.join(TEST_OUTPUT_DIR, "large.html"),
+      `<html><body>${largeContent}</body></html>`,
+    );
+
+    const server18 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 18);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const response = await makeRequest(
+      `http://localhost:${TEST_PORT + 18}/large.html`,
+    );
+    expect(response.status).toBe(200);
+
+    const content = await response.text();
+    expect(content).toInclude(largeContent);
+
+    server18.stop?.();
+  });
+
+  test("should handle files with special characters in names", async () => {
+    await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
+    await createTestFile(
+      path.join(TEST_OUTPUT_DIR, "file-with-dashes.html"),
+      "<html><body>File with dashes</body></html>",
+    );
+
+    const server19 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 19);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const response = await makeRequest(
+      `http://localhost:${TEST_PORT + 19}/file-with-dashes.html`,
+    );
+    expect(response.status).toBe(200);
+
+    const content = await response.text();
+    expect(content).toInclude("File with dashes");
+
+    server19.stop?.();
+  });
+
+  test("should handle deeply nested paths", async () => {
+    const deepPath = path.join(TEST_OUTPUT_DIR, "a", "b", "c", "d", "e", "f");
+    await fs.promises.mkdir(deepPath, { recursive: true });
+    await createTestFile(
+      path.join(deepPath, "index.html"),
+      "<html><body>Deep</body></html>",
+    );
+
+    const server20 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 20);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    const response = await makeRequest(
+      `http://localhost:${TEST_PORT + 20}/a/b/c/d/e/f/`,
+    );
+    expect(response.status).toBe(200);
+
+    const content = await response.text();
+    expect(content).toInclude("Deep");
+
+    server20.stop?.();
+  });
+});
