@@ -74,7 +74,12 @@ File Operations:
 
 Path Operations:
 
-- `Glob` from "bun" - Native glob pattern matching with async iteration
+- `Glob` from "bun" - Native glob pattern matching with multiple modes:
+  - Recursive scanning: `for await (const file of glob.scan("."))`
+  - Pattern matching: `glob.match(filepath)` returns boolean
+  - Supports `**/*.ts`, `*.{ts,tsx}`, `???.ts` patterns
+  - Includes single char (`?`) and star (`*`) wildcards
+  - No external dependencies, built-in to Bun
 
 Servers & I/O:
 
@@ -190,6 +195,37 @@ writer.write("chunk 1\n");
 writer.write("chunk 2\n");
 await writer.flush();
 await writer.end();
+```
+
+### Pattern Matching with Glob
+
+Use Bun's native `Glob` for efficient path matching without external dependencies:
+
+**Recursive Directory Scan:**
+
+```typescript
+import { Glob } from "bun";
+
+// Find all TypeScript files recursively
+const glob = new Glob("**/*.ts");
+for await (const file of glob.scan(".")) {
+  console.log(file); // Full paths
+}
+```
+
+**Pattern Matching (no file system access):**
+
+```typescript
+import { Glob } from "bun";
+
+// Test if a path matches a pattern
+const g = new Glob("**/*.{ts,tsx}");
+g.match("src/index.tsx"); // true
+g.match("src/style.css"); // false
+
+// Single character and star wildcards
+new Glob("???.ts").match("foo.ts"); // true (? = single char)
+new Glob("*.ts").match("index.ts"); // true (* = any chars)
 ```
 
 ### File I/O Module (src/utils/file-utils.ts)
