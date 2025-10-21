@@ -56,12 +56,35 @@ bun run clean             # Remove build artifacts
 - ISO 8601 format: `2025-01-15T09:00:00-07:00`
 - Include timezone offset for consistency
 
-**Prefer Bun APIs:**
+**Prefer Bun Native APIs:**
 
-- Bun.file() for file operations
-- Bun.glob() for path matching
-- Bun.serve() for HTTP servers
-- Native fetch() instead of external libraries
+Always use Bun's native implementations for best performance and consistency.
+
+File Operations:
+
+- `Bun.file(path)` - Create BunFile reference
+- `await file.exists()` - Check file existence (files only, not directories)
+- `await file.stat()` - Get file metadata (size, mtime, isFile(), isDirectory())
+- `await file.text()` - Read as text (zero-copy)
+- `await file.arrayBuffer()` - Read as binary (zero-copy)
+- `await file.unlink()` - Delete file
+- `file.writer()` - Create buffered writer for streaming
+- `Bun.write(target, data)` - Write files (zero-copy file-to-file)
+- `Bun.write(Bun.stdout, file)` - Stream to stdout (zero-copy, like `cat`)
+
+Path Operations:
+
+- `Glob` from "bun" - Native glob pattern matching with async iteration
+
+Servers & I/O:
+
+- `Bun.serve()` - HTTP server (use instead of express, fastify for Bun)
+- `fetch()` - Native fetch API (built-in, no library needed)
+- `Bun.stdin`, `Bun.stdout`, `Bun.stderr` - Standard streams
+
+Fall back to Node.js APIs only when Bun doesn't provide an equivalent:
+
+- `fs.promises.mkdir()` - For recursive directory creation (Bun doesn't provide this)
 
 ## Testing
 
@@ -128,6 +151,70 @@ bunki/
 ├── templates/              # Example templates
 ├── fixtures/               # Test fixtures
 └── dist/                   # Built output
+```
+
+## Bun Native APIs & Performance
+
+### Zero-Copy File Operations
+
+Bun's native file APIs use zero-copy at the kernel level for maximum performance:
+
+**File-to-File Copy (like `cat`):**
+
+```typescript
+// ✅ Optimal: kernel-level zero-copy
+await Bun.write("./copy.bin", Bun.file("./source.bin"));
+
+// ❌ Avoid: loads entire file into memory
+const data = await Bun.file("./source.bin").arrayBuffer();
+await Bun.write("./copy.bin", data);
+```
+
+**Streaming to stdout:**
+
+```typescript
+// ✅ Optimal: zero-copy stream to stdout
+await Bun.write(Bun.stdout, Bun.file("./large-file.txt"));
+
+// ❌ Avoid: reads entire file into memory
+const content = await Bun.file("./large-file.txt").text();
+console.log(content);
+```
+
+**Buffered Incremental Writes:**
+
+```typescript
+// ✅ Optimal: buffered writing with 1MB watermark
+const writer = Bun.file("./output.txt").writer({ highWaterMark: 1024 * 1024 });
+writer.write("chunk 1\n");
+writer.write("chunk 2\n");
+await writer.flush();
+await writer.end();
+```
+
+### File I/O Module (src/utils/file-utils.ts)
+
+All file operations use Bun native APIs for consistency and performance:
+
+**Check File Existence (files only):**
+
+```typescript
+const file = Bun.file("./package.json");
+const exists = await file.exists(); // boolean (doesn't check directories)
+```
+
+**Get File Metadata:**
+
+```typescript
+const stat = await Bun.file("./file.txt").stat();
+if (stat?.isFile()) {
+  /* is a file */
+}
+if (stat?.isDirectory()) {
+  /* is a directory */
+}
+const size = stat?.size; // bytes
+const mtime = stat?.mtime; // Date object
 ```
 
 ## Key Concepts

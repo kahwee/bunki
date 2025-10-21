@@ -1,6 +1,6 @@
 ---
 title: Welcome to Bunki
-date: 2025-10-21T18:36:06.329Z
+date: 2025-10-21T18:37:22.912Z
 tags: [getting-started, bunki]
 ---
 
