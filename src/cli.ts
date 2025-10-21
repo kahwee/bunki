@@ -24,6 +24,9 @@ program
 
 // When called directly (not imported)
 // This ensures it works both as ESM import and when executed directly
-if (import.meta.url === Bun.main) {
+// Handle both file:// URLs and plain paths for Bun compatibility
+const currentFile = import.meta.url.replace("file://", "");
+const mainFile = Bun.main;
+if (currentFile === mainFile || currentFile.endsWith(mainFile)) {
   program.parse(Bun.argv);
 }
