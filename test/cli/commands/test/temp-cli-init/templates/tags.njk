@@ -1,0 +1,24 @@
+{% extends "base.njk" %}
+
+  {% block title %}Tags | {{ site.title }}{% endblock %}
+  {% block description %}Browse all tags on {{ site.title }}{% endblock %}
+
+  {% block content %}
+    <h1>All Tags</h1>
+
+    {% if tags.length > 0 %}
+      <ul class="tags-list">
+        {% for tag in tags %}
+          <li>
+            <a href="/tags/{{ tag.slug }}/">{{ tag.name }}</a>
+            <span class="count">({{ tag.count }})</span>
+            {% if tag.description %}
+              <p class="description">{{ tag.description }}</p>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No tags found!</p>
+    {% endif %}
+  {% endblock %}

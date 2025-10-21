@@ -91,7 +91,7 @@ export async function createDefaultConfig(
   configPath: string = DEFAULT_CONFIG_FILE,
 ): Promise<boolean> {
   // Check if config file already exists
-  if (await configExists()) {
+  if (await configExists(configPath)) {
     console.log(`Config file already exists`);
     return false;
   }
