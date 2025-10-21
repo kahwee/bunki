@@ -147,15 +147,19 @@ HTML sanitized; external links hardened; unsafe tags stripped.
 
 ## Changelog
 
-v0.3.1 (this release)
+v0.5.3 (current)
 
-- Export map + sideEffects=false for tree-shaking
-- Prepack build cleanup
-- Concise docs & publish prep
+- Modularized CLI commands (init, new, generate, serve, css, images:push)
+- Dependency-injected command handlers for easier unit testing
+- Switched CLI entry to Bun.main/Bun.argv
+- Added/updated tests for init/new handlers; all suites green
+- Minor CSS command robustness and exit handling
 
-v0.3.0
+v0.3.x
 
 - PostCSS pipeline + `css` command
+- Export map + sideEffects=false for tree-shaking
+- Prepack build cleanup
 
 ## Contribute
 
