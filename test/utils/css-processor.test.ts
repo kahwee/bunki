@@ -568,3 +568,250 @@ describe("CSS Processor - Critical Paths", () => {
     expect(exists).toBe(true);
   });
 });
+
+describe("CSS Processor - Verbose Logging Paths", () => {
+  beforeEach(async () => {
+    await fs.promises.mkdir(TEST_DIR, { recursive: true });
+    await fs.promises.mkdir(OUTPUT_DIR, { recursive: true });
+    await fs.promises.writeFile(
+      path.join(TEST_DIR, "main.css"),
+      `body { margin: 0; }`,
+    );
+  });
+
+  afterEach(async () => {
+    try {
+      await fs.promises.rm(OUTPUT_DIR, { recursive: true });
+    } catch {}
+  });
+
+  test("should log when CSS processing is disabled with verbose=true", async () => {
+    const cssConfig = {
+      input: "main.css",
+      output: "style.css",
+      enabled: false,
+      watch: false,
+    };
+
+    let logOutput = "";
+    const originalLog = console.log;
+    console.log = (msg: any) => {
+      logOutput += msg;
+    };
+
+    try {
+      await processCSS({
+        css: cssConfig,
+        projectRoot: TEST_DIR,
+        outputDir: OUTPUT_DIR,
+        verbose: true,
+      });
+      expect(logOutput).toInclude("disabled");
+    } finally {
+      console.log = originalLog;
+    }
+  });
+
+  test("should log when PostCSS config not found with verbose=true", async () => {
+    const cssConfig = {
+      input: "main.css",
+      output: "style.css",
+      postcssConfig: "nonexistent.config.js",
+      enabled: true,
+      watch: false,
+    };
+
+    let logOutput = "";
+    const originalLog = console.log;
+    console.log = (msg: any) => {
+      logOutput += msg;
+    };
+
+    try {
+      await processCSS({
+        css: cssConfig,
+        projectRoot: TEST_DIR,
+        outputDir: OUTPUT_DIR,
+        verbose: true,
+      });
+      expect(logOutput).toInclude("fallback") ||
+        expect(logOutput).toInclude("copy");
+    } finally {
+      console.log = originalLog;
+    }
+  });
+
+  test("should log build steps with verbose=true", async () => {
+    const cssConfig = {
+      input: "main.css",
+      output: "style.css",
+      enabled: true,
+      watch: false,
+    };
+
+    let logOutput = "";
+    const originalLog = console.log;
+    console.log = (msg: any) => {
+      logOutput += msg;
+    };
+
+    try {
+      await processCSS({
+        css: cssConfig,
+        projectRoot: TEST_DIR,
+        outputDir: OUTPUT_DIR,
+        verbose: true,
+      });
+      expect(logOutput.length).toBeGreaterThan(0);
+    } finally {
+      console.log = originalLog;
+    }
+  });
+});
+
+describe("CSS Processor - Error Handling & Validation", () => {
+  beforeEach(async () => {
+    await fs.promises.mkdir(TEST_DIR, { recursive: true });
+    await fs.promises.mkdir(OUTPUT_DIR, { recursive: true });
+  });
+
+  afterEach(async () => {
+    try {
+      await fs.promises.rm(OUTPUT_DIR, { recursive: true });
+    } catch {}
+  });
+
+  test("should throw error for missing input file", async () => {
+    const cssConfig = {
+      input: "nonexistent.css",
+      output: "style.css",
+      enabled: true,
+      watch: false,
+    };
+
+    try {
+      await processCSS({
+        css: cssConfig,
+        projectRoot: TEST_DIR,
+        outputDir: OUTPUT_DIR,
+        verbose: false,
+      });
+      expect(true).toBe(false); // Should not reach
+    } catch (error: any) {
+      expect(error.message).toInclude("CSS input file not found");
+    }
+  });
+
+  test("should validate config with missing input path", () => {
+    const invalidConfig = {
+      input: "",
+      output: "style.css",
+      enabled: true,
+      watch: false,
+    };
+
+    const errors = validateCSSConfig(invalidConfig);
+    expect(errors).toContain("CSS input path is required");
+  });
+
+  test("should validate config with missing output path", () => {
+    const invalidConfig = {
+      input: "main.css",
+      output: "",
+      enabled: true,
+      watch: false,
+    };
+
+    const errors = validateCSSConfig(invalidConfig);
+    expect(errors).toContain("CSS output path is required");
+  });
+
+  test("should validate config with non-boolean enabled field", () => {
+    const invalidConfig = {
+      input: "main.css",
+      output: "style.css",
+      enabled: "true" as any,
+      watch: false,
+    };
+
+    const errors = validateCSSConfig(invalidConfig);
+    expect(errors).toContain("CSS enabled must be a boolean");
+  });
+
+  test("should validate config with all required fields", () => {
+    const validConfig = {
+      input: "main.css",
+      output: "style.css",
+      enabled: true,
+      watch: false,
+    };
+
+    const errors = validateCSSConfig(validConfig);
+    expect(errors).toHaveLength(0);
+  });
+
+  test("should detect multiple validation errors", () => {
+    const invalidConfig = {
+      input: "",
+      output: "",
+      enabled: 123 as any,
+      watch: false,
+    };
+
+    const errors = validateCSSConfig(invalidConfig);
+    expect(errors.length).toBeGreaterThanOrEqual(3);
+    expect(errors.some((e) => e.includes("input"))).toBe(true);
+    expect(errors.some((e) => e.includes("output"))).toBe(true);
+    expect(errors.some((e) => e.includes("enabled"))).toBe(true);
+  });
+
+  test("should handle null config values", () => {
+    const invalidConfig = {
+      input: null as any,
+      output: null as any,
+      enabled: null as any,
+      watch: false,
+    };
+
+    const errors = validateCSSConfig(invalidConfig);
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  test("should validate optional postcssConfig field", () => {
+    const configWithoutPostcss = {
+      input: "main.css",
+      output: "style.css",
+      enabled: true,
+      watch: false,
+    };
+
+    const errors = validateCSSConfig(configWithoutPostcss);
+    expect(errors).toHaveLength(0);
+  });
+
+  test("should handle fallback copy when no PostCSS config", async () => {
+    await fs.promises.writeFile(
+      path.join(TEST_DIR, "simple.css"),
+      "body { color: red; }",
+    );
+
+    const cssConfig = {
+      input: "simple.css",
+      output: "output.css",
+      postcssConfig: "missing.config.js",
+      enabled: true,
+      watch: false,
+    };
+
+    await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+    });
+
+    const outputPath = path.join(OUTPUT_DIR, "output.css");
+    const content = await fs.promises.readFile(outputPath, "utf-8");
+    expect(content).toInclude("body");
+  });
+});
