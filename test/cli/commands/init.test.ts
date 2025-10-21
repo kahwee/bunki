@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import path from "path";
 import { handleInitCommand } from "../../../src/cli/commands/init";
-import { fileExists } from "../../../src/utils/file-utils";
+import { fileExists, isDirectory } from "../../../src/utils/file-utils";
 
 const tmpRoot = path.join(process.cwd(), "test", "temp-cli-init");
 
@@ -29,19 +29,12 @@ describe("CLI Init Command (modular)", () => {
     expect(await fileExists(path.join(tmpRoot, "bunki.config.ts"))).toBeTrue();
 
     // Directories
-    // ensureDir creates a .gitkeep file to materialize directories
+    expect(await isDirectory(path.join(tmpRoot, "content"))).toBeTrue();
+    expect(await isDirectory(path.join(tmpRoot, "templates"))).toBeTrue();
     expect(
-      await fileExists(path.join(tmpRoot, "content", ".gitkeep")),
+      await isDirectory(path.join(tmpRoot, "templates", "styles")),
     ).toBeTrue();
-    expect(
-      await fileExists(path.join(tmpRoot, "templates", ".gitkeep")),
-    ).toBeTrue();
-    expect(
-      await fileExists(path.join(tmpRoot, "templates", "styles", ".gitkeep")),
-    ).toBeTrue();
-    expect(
-      await fileExists(path.join(tmpRoot, "public", ".gitkeep")),
-    ).toBeTrue();
+    expect(await isDirectory(path.join(tmpRoot, "public"))).toBeTrue();
 
     // Files
     expect(
