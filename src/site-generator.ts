@@ -466,33 +466,139 @@ export class SiteGenerator {
     }
   }
 
+  /**
+   * Extract the first image URL from HTML content
+   */
+  private extractFirstImageUrl(html: string): string | null {
+    const imgRegex = /<img[^>]+src=["']([^"']+)["']/;
+    const match = html.match(imgRegex);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Escape special characters in XML text to prevent CDATA issues
+   */
+  private escapeXml(text: string): string {
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&apos;");
+  }
+
   private async generateRSSFeed(): Promise<void> {
     const posts = this.site.posts.slice(0, 15);
     const config = this.options.config;
+    const now = this.getPacificDate(new Date());
 
+    // Determine the latest post date for lastBuildDate
+    const latestPostDate = posts.length > 0 ? posts[0].date : now.toISOString();
+    const lastBuildDate = this.formatRSSDate(latestPostDate);
+
+    // Build RSS items with full metadata
     const rssItems = posts
       .map((post) => {
         const postUrl = `${config.baseUrl}${post.url}`;
         const pubDate = this.formatRSSDate(post.date);
 
-        return `    <item>
+        // Extract featured image from HTML
+        const featuredImage = this.extractFirstImageUrl(post.html);
+
+        // Build category tags
+        const categoryTags = post.tags
+          .map((tag) => `      <category>${this.escapeXml(tag)}</category>`)
+          .join("\n");
+
+        // Construct item with all metadata
+        let itemXml = `    <item>
       <title><![CDATA[${post.title}]]></title>
       <link>${postUrl}</link>
-      <guid>${postUrl}</guid>
-      <pubDate>${pubDate}</pubDate>
-      <description><![CDATA[${post.excerpt}]]></description>
+      <guid isPermaLink="true">${postUrl}</guid>
+      <pubDate>${pubDate}</pubDate>`;
+
+        // Add author if configured
+        if (config.authorEmail && config.authorName) {
+          itemXml += `
+      <author>${config.authorEmail} (${config.authorName})</author>`;
+        } else if (config.authorEmail) {
+          itemXml += `
+      <author>${config.authorEmail}</author>`;
+        }
+
+        // Add description
+        itemXml += `
+      <description><![CDATA[${post.excerpt}]]></description>`;
+
+        // Add categories from tags
+        if (post.tags.length > 0) {
+          itemXml += `
+${categoryTags}`;
+        }
+
+        // Add full content with Content module
+        itemXml += `
+      <content:encoded><![CDATA[${post.html}]]></content:encoded>`;
+
+        // Add media thumbnail if featured image exists
+        if (featuredImage) {
+          // Make thumbnail URL absolute if it's relative
+          const absoluteImageUrl = featuredImage.startsWith("http")
+            ? featuredImage
+            : `${config.baseUrl}${featuredImage}`;
+          itemXml += `
+      <media:thumbnail url="${this.escapeXml(absoluteImageUrl)}" />`;
+        }
+
+        itemXml += `
     </item>`;
+
+        return itemXml;
       })
       .join("\n");
 
-    const rssContent = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-  <channel>
+    // Build channel-level metadata
+    let channelXml = `  <channel>
     <title><![CDATA[${config.title}]]></title>
-    <description><![CDATA[${config.description}]]></description>
     <link>${config.baseUrl}</link>
-    <atom:link href="${config.baseUrl}/feed.xml" rel="self" type="application/rss+xml" />
-    <lastBuildDate>${this.formatRSSDate(this.getPacificDate(new Date()).toISOString())}</lastBuildDate>
+    <description><![CDATA[${config.description}]]></description>`;
+
+    // Add language (default: en-US)
+    const language = config.rssLanguage || "en-US";
+    channelXml += `
+    <language>${language}</language>`;
+
+    // Add managingEditor if configured
+    if (config.authorEmail && config.authorName) {
+      channelXml += `
+    <managingEditor>${config.authorEmail} (${config.authorName})</managingEditor>`;
+    } else if (config.authorEmail) {
+      channelXml += `
+    <managingEditor>${config.authorEmail}</managingEditor>`;
+    }
+
+    // Add webMaster if configured
+    if (config.webMaster) {
+      channelXml += `
+    <webMaster>${config.webMaster}</webMaster>`;
+    }
+
+    // Add copyright if configured
+    if (config.copyright) {
+      channelXml += `
+    <copyright><![CDATA[${config.copyright}]]></copyright>`;
+    }
+
+    // Add feed discovery links
+    channelXml += `
+    <pubDate>${this.formatRSSDate(latestPostDate)}</pubDate>
+    <lastBuildDate>${lastBuildDate}</lastBuildDate>
+    <atom:link href="${config.baseUrl}/feed.xml" rel="self" type="application/rss+xml" />`;
+
+    // Build final RSS document with all namespaces
+    const rssContent = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:media="http://search.yahoo.com/mrss/">
+${channelXml}
 ${rssItems}
   </channel>
 </rss>`;
@@ -622,7 +728,7 @@ ${rssItems}
       sitemapContent += `  <url>
     <loc>${config.baseUrl}/${year}/</loc>
     <lastmod>${currentDate}</lastmod>
-    <changefreq>${isCurrentYear ? 'weekly' : 'monthly'}</changefreq>
+    <changefreq>${isCurrentYear ? "weekly" : "monthly"}</changefreq>
     <priority>${yearPriority.toFixed(1)}</priority>
   </url>
 `;
@@ -633,7 +739,7 @@ ${rssItems}
           sitemapContent += `  <url>
     <loc>${config.baseUrl}/${year}/page/${page}/</loc>
     <lastmod>${currentDate}</lastmod>
-    <changefreq>${isCurrentYear ? 'weekly' : 'monthly'}</changefreq>
+    <changefreq>${isCurrentYear ? "weekly" : "monthly"}</changefreq>
     <priority>${(yearPriority - 0.1).toFixed(1)}</priority>
   </url>
 `;
@@ -650,7 +756,8 @@ ${rssItems}
     console.log("Generated sitemap.xml");
 
     // Generate sitemap index if content is large (> 40KB or > 1000 URLs)
-    const urlCount = this.site.posts.length + Object.keys(this.site.tags).length + 10; // rough estimate
+    const urlCount =
+      this.site.posts.length + Object.keys(this.site.tags).length + 10; // rough estimate
     const sitemapSize = sitemapContent.length;
 
     if (urlCount > 1000 || sitemapSize > 40000) {

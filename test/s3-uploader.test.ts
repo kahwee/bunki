@@ -51,10 +51,7 @@ describe("S3Uploader", () => {
         path.join(TEST_IMAGES_DIR, "2025/travel-guides/singapore-1.jpg"),
         jpgContent,
       );
-      await Bun.write(
-        path.join(TEST_IMAGES_DIR, "root-image.jpg"),
-        jpgContent,
-      );
+      await Bun.write(path.join(TEST_IMAGES_DIR, "root-image.jpg"), jpgContent);
     });
 
     afterAll(async () => {

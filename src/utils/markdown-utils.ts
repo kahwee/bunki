@@ -74,10 +74,7 @@ function createMarked() {
           '<div class="video-container"><iframe src="https://www.youtube.com/embed/$4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>',
         );
 
-        html = html.replace(
-          /<img /g,
-          '<img loading="lazy" ',
-        );
+        html = html.replace(/<img /g, '<img loading="lazy" ');
 
         // Process external links and add rel attributes
         return html.replace(
@@ -93,11 +90,11 @@ function createMarked() {
 
               // Add nofollow if domain is not in exceptions list
               if (!noFollowExceptions.has(domain)) {
-                relAttr += ' nofollow';
+                relAttr += " nofollow";
               }
             } catch {
               // If URL parsing fails, add nofollow as default
-              relAttr += ' nofollow';
+              relAttr += " nofollow";
             }
 
             relAttr += '"';

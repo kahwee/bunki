@@ -196,7 +196,9 @@ describe("SiteGenerator", () => {
 
     // Verify tags are properly sorted (descending order)
     for (let i = 0; i < sortedTags.length - 1; i++) {
-      expect(sortedTags[i].count).toBeGreaterThanOrEqual(sortedTags[i + 1].count);
+      expect(sortedTags[i].count).toBeGreaterThanOrEqual(
+        sortedTags[i + 1].count,
+      );
     }
   });
 
@@ -216,5 +218,172 @@ describe("SiteGenerator", () => {
     if (allTags.length > maxTags) {
       expect(limited.length).toBe(maxTags);
     }
+  });
+
+  // ============================================
+  // RSS Feed Tests - Namespace & Module Support
+  // ============================================
+
+  test("RSS feed should include all required namespaces", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    // Verify Atom namespace for self-discovery links
+    expect(feedContent).toContain('xmlns:atom="http://www.w3.org/2005/Atom"');
+    // Verify Content module namespace for full-text RSS
+    expect(feedContent).toContain(
+      'xmlns:content="http://purl.org/rss/1.0/modules/content/"',
+    );
+    // Verify Media RSS module namespace for image/thumbnail support
+    expect(feedContent).toContain(
+      'xmlns:media="http://search.yahoo.com/mrss/"',
+    );
+  });
+
+  // ============================================
+  // RSS Channel Metadata Tests
+  // ============================================
+
+  test("RSS feed should include language metadata", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    expect(feedContent).toContain("<language>en-US</language>");
+  });
+
+  test("RSS feed should include managing editor and web master", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    expect(feedContent).toContain(
+      "<managingEditor>author@example.com (Test Author)</managingEditor>",
+    );
+    expect(feedContent).toContain(
+      "<webMaster>webmaster@example.com</webMaster>",
+    );
+  });
+
+  test("RSS feed should include copyright information", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    expect(feedContent).toContain(
+      "<copyright><![CDATA[Copyright © 2025 Bunki Test Blog]]></copyright>",
+    );
+  });
+
+  test("RSS feed should include pubDate and lastBuildDate", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    expect(feedContent).toContain("<pubDate>");
+    expect(feedContent).toContain("<lastBuildDate>");
+  });
+
+  // ============================================
+  // RSS Item-Level Metadata Tests
+  // ============================================
+
+  test("RSS feed items should have guid with isPermaLink attribute", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    // Check for guid with isPermaLink="true" attribute
+    expect(feedContent).toContain('isPermaLink="true"');
+
+    // Should have multiple guid entries (one per item)
+    const guidMatches = feedContent.match(/<guid isPermaLink="true">/g);
+    expect(guidMatches).toBeDefined();
+    expect(guidMatches!.length).toBeGreaterThan(0);
+  });
+
+  test("RSS feed items should include author information", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    // Check for author element in items with email and name
+    expect(feedContent).toContain("<author>");
+    expect(feedContent).toContain("author@example.com (Test Author)");
+  });
+
+  test("RSS feed items should include category tags from post tags", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    // Check for category elements
+    expect(feedContent).toContain("<category>");
+    expect(feedContent).toContain("</category>");
+
+    // Should have multiple categories from different posts
+    const categoryMatches = feedContent.match(/<category>/g);
+    expect(categoryMatches).toBeDefined();
+    expect(categoryMatches!.length).toBeGreaterThan(0);
+  });
+
+  // ============================================
+  // RSS Content Module Tests (Full-Text RSS)
+  // ============================================
+
+  test("RSS feed items should include full HTML content via content:encoded", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    // Check for content:encoded module elements
+    expect(feedContent).toContain("<content:encoded>");
+    expect(feedContent).toContain("</content:encoded>");
+
+    // Should have one content:encoded entry per item
+    const contentMatches = feedContent.match(/<content:encoded>/g);
+    expect(contentMatches).toBeDefined();
+    expect(contentMatches!.length).toBeGreaterThan(0);
+
+    // Verify it contains actual HTML content (not just empty tags)
+    expect(feedContent).toContain("<h1>");
+    expect(feedContent).toContain("<p>");
+  });
+
+  // ============================================
+  // RSS Media Module Tests (Image Support)
+  // ============================================
+
+  test("RSS feed items should support media:thumbnail for featured images", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    // Media thumbnails are optional (only if posts have images)
+    // Just verify the Media RSS module is available when images exist
+    if (feedContent.includes("<media:thumbnail")) {
+      expect(feedContent).toContain("<media:thumbnail url=");
+      expect(feedContent).toContain('" />');
+    } else {
+      // If no thumbnails, just verify the namespace is declared for future use
+      expect(feedContent).toContain("xmlns:media=");
+    }
+  });
+
+  // ============================================
+  // RSS Format Compliance Tests
+  // ============================================
+
+  test("RSS feed dates should be in RFC 822 format", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    // RFC 822 format: "Day, DD Mon YYYY HH:MM:SS GMT"
+    // Example: "Sat, 18 Oct 2025 16:00:00 GMT"
+    const rfc822Regex = /\w{3},\s\d{1,2}\s\w{3}\s\d{4}\s\d{2}:\d{2}:\d{2}\sGMT/;
+
+    // Should have at least one pubDate and lastBuildDate matching RFC 822
+    expect(feedContent).toMatch(rfc822Regex);
+  });
+
+  test("RSS feed should have proper atom:link for feed self-discovery", async () => {
+    const feedFile = Bun.file(path.join(OUTPUT_DIR, "feed.xml"));
+    const feedContent = await feedFile.text();
+
+    // Verify Atom self-link with correct attributes
+    expect(feedContent).toContain("atom:link href=");
+    expect(feedContent).toContain('rel="self"');
+    expect(feedContent).toContain('type="application/rss+xml"');
   });
 });

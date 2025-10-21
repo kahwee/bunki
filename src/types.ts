@@ -60,6 +60,16 @@ export interface SiteConfig {
   maxTagsOnHomepage?: number;
   /** Optional list of domains to exclude from nofollow attribute. Links to these domains will have follow attribute. */
   noFollowExceptions?: string[];
+  /** RSS feed language code (default: en-US) */
+  rssLanguage?: string;
+  /** Author name for RSS feed (used in managingEditor field) */
+  authorName?: string;
+  /** Author email for RSS feed (used in managingEditor field) */
+  authorEmail?: string;
+  /** Web master email for RSS feed (optional) */
+  webMaster?: string;
+  /** Copyright statement for RSS feed (e.g., "Copyright © 2025 Your Site Name") */
+  copyright?: string;
   /** Additional custom configuration options */
   [key: string]: any;
 }

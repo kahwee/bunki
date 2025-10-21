@@ -30,20 +30,44 @@ describe("CLI Init Command (modular)", () => {
 
     // Directories
     // ensureDir creates a .gitkeep file to materialize directories
-    expect(await fileExists(path.join(tmpRoot, "content", ".gitkeep"))).toBeTrue();
-    expect(await fileExists(path.join(tmpRoot, "templates", ".gitkeep"))).toBeTrue();
-    expect(await fileExists(path.join(tmpRoot, "templates", "styles", ".gitkeep"))).toBeTrue();
-    expect(await fileExists(path.join(tmpRoot, "public", ".gitkeep"))).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "content", ".gitkeep")),
+    ).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "templates", ".gitkeep")),
+    ).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "templates", "styles", ".gitkeep")),
+    ).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "public", ".gitkeep")),
+    ).toBeTrue();
 
     // Files
-    expect(await fileExists(path.join(tmpRoot, "content", "welcome.md"))).toBeTrue();
-    expect(await fileExists(path.join(tmpRoot, "templates", "base.njk"))).toBeTrue();
-    expect(await fileExists(path.join(tmpRoot, "templates", "index.njk"))).toBeTrue();
-    expect(await fileExists(path.join(tmpRoot, "templates", "post.njk"))).toBeTrue();
-    expect(await fileExists(path.join(tmpRoot, "templates", "tag.njk"))).toBeTrue();
-    expect(await fileExists(path.join(tmpRoot, "templates", "tags.njk"))).toBeTrue();
-    expect(await fileExists(path.join(tmpRoot, "templates", "archive.njk"))).toBeTrue();
-    expect(await fileExists(path.join(tmpRoot, "templates", "styles", "main.css"))).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "content", "welcome.md")),
+    ).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "templates", "base.njk")),
+    ).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "templates", "index.njk")),
+    ).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "templates", "post.njk")),
+    ).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "templates", "tag.njk")),
+    ).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "templates", "tags.njk")),
+    ).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "templates", "archive.njk")),
+    ).toBeTrue();
+    expect(
+      await fileExists(path.join(tmpRoot, "templates", "styles", "main.css")),
+    ).toBeTrue();
   });
 
   it("should be idempotent when config already exists", async () => {

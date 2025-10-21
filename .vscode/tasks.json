@@ -1,14 +1,14 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"label": "build-and-test",
-			"type": "shell",
-			"command": "bun run build && bun test",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [],
-			"group": "build"
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build-and-test",
+      "type": "shell",
+      "command": "bun run build && bun test",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    }
+  ]
 }

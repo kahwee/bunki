@@ -1,11 +1,18 @@
 import { Command } from "commander";
 import path from "path";
-import { DEFAULT_CONTENT_DIR, DEFAULT_OUTPUT_DIR, DEFAULT_TEMPLATES_DIR, loadConfig } from "../../config";
+import {
+  DEFAULT_CONTENT_DIR,
+  DEFAULT_OUTPUT_DIR,
+  DEFAULT_TEMPLATES_DIR,
+  loadConfig,
+} from "../../config";
 import { SiteGenerator } from "../../site-generator";
 
 interface GenerateDeps {
   loadConfig: typeof loadConfig;
-  createGenerator: (opts: ConstructorParameters<typeof SiteGenerator>[0]) => SiteGenerator;
+  createGenerator: (
+    opts: ConstructorParameters<typeof SiteGenerator>[0],
+  ) => SiteGenerator;
   logger: Pick<typeof console, "log" | "error">;
   exit: (code: number) => void;
 }
@@ -18,7 +25,12 @@ const defaultDeps: GenerateDeps = {
 };
 
 export async function handleGenerateCommand(
-  options: { config: string; content: string; output: string; templates: string },
+  options: {
+    config: string;
+    content: string;
+    output: string;
+    templates: string;
+  },
   deps: GenerateDeps = defaultDeps,
 ): Promise<void> {
   try {
@@ -34,7 +46,12 @@ export async function handleGenerateCommand(
     deps.logger.log(`- Templates directory: ${templatesDir}`);
 
     const config = await deps.loadConfig(configPath);
-    const generator = deps.createGenerator({ contentDir, outputDir, templatesDir, config });
+    const generator = deps.createGenerator({
+      contentDir,
+      outputDir,
+      templatesDir,
+      config,
+    });
     await generator.initialize();
     await generator.generate();
 
@@ -52,7 +69,11 @@ export function registerGenerateCommand(program: Command): Command {
     .option("-c, --config <file>", "Config file path", "bunki.config.ts")
     .option("-d, --content <dir>", "Content directory", DEFAULT_CONTENT_DIR)
     .option("-o, --output <dir>", "Output directory", DEFAULT_OUTPUT_DIR)
-    .option("-t, --templates <dir>", "Templates directory", DEFAULT_TEMPLATES_DIR)
+    .option(
+      "-t, --templates <dir>",
+      "Templates directory",
+      DEFAULT_TEMPLATES_DIR,
+    )
     .action(async (options) => {
       await handleGenerateCommand(options);
     });

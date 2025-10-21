@@ -1,51 +1,52 @@
 ---
-  title: Welcome to Bunki
-  date: 2025-10-21T06:57:40.706Z
-  tags: [getting-started, bunki]
-  ---
 
-  # Welcome to Your New Bunki Site
+title: Welcome to Bunki
+date: 2025-10-21T06:57:40.706Z
+tags: [getting-started, bunki]
 
-  This is a sample blog post to help you get started with Bunki. You can edit this file or create new markdown files in the `content` directory.
+---
 
-  ## Features
+# Welcome to Your New Bunki Site
 
-  - Markdown support with frontmatter
-  - Syntax highlighting for code blocks
-  - Tag-based organization
-  - Pagination for post listings
-  - RSS feed generation
-  - Sitemap generation
+This is a sample blog post to help you get started with Bunki. You can edit this file or create new markdown files in the `content` directory.
 
-  ## Adding Content
+## Features
 
-  Create new markdown files in the `content` directory with frontmatter like this:
+- Markdown support with frontmatter
+- Syntax highlighting for code blocks
+- Tag-based organization
+- Pagination for post listings
+- RSS feed generation
+- Sitemap generation
 
-  ```markdown
-  ---
-  title: Your Post Title
-  date: 2025-01-01T12:00:00Z
-  tags: [tag1, tag2]
-  ---
+## Adding Content
 
-  Your post content goes here...
-  ```
+Create new markdown files in the `content` directory with frontmatter like this:
 
-  ## Code Highlighting
+```markdown
+---
+title: Your Post Title
+date: 2025-01-01T12:00:00Z
+tags: [tag1, tag2]
+---
 
-  Bunki supports syntax highlighting for code blocks:
+Your post content goes here...
+```
 
-  ```javascript
-  function hello() {
-    console.log('Hello, world!');
-  }
-  ```
+## Code Highlighting
 
-  ## Next Steps
+Bunki supports syntax highlighting for code blocks:
 
-  1. Edit the site configuration in `bunki.config.ts`
-  2. Create your own templates in the `templates` directory
-  3. Add more blog posts in the `content` directory
-  4. Run `bunki generate` to build your site
-  5. Run `bunki serve` to preview your site locally
-  
+```javascript
+function hello() {
+  console.log("Hello, world!");
+}
+```
+
+## Next Steps
+
+1. Edit the site configuration in `bunki.config.ts`
+2. Create your own templates in the `templates` directory
+3. Add more blog posts in the `content` directory
+4. Run `bunki generate` to build your site
+5. Run `bunki serve` to preview your site locally

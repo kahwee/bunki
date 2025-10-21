@@ -1,7 +1,11 @@
 import { Command } from "commander";
 import path from "path";
 import { DEFAULT_OUTPUT_DIR, loadConfig } from "../../config";
-import { getDefaultCSSConfig, processCSS, watchCSS } from "../../utils/css-processor";
+import {
+  getDefaultCSSConfig,
+  processCSS,
+  watchCSS,
+} from "../../utils/css-processor";
 
 interface CssDeps {
   loadConfig: typeof loadConfig;

@@ -14,7 +14,7 @@ describe("CLI New Command (handler)", () => {
         return 0;
       },
       now: () => fixedDate,
-      logger: { log: (_: string) => { }, error: (_: string) => { } },
+      logger: { log: (_: string) => {}, error: (_: string) => {} },
       exit: (_: number) => {
         throw new Error("exit should not be called");
       },
@@ -27,7 +27,11 @@ describe("CLI New Command (handler)", () => {
     const resultPath = await handleNewCommand(title, options, deps);
 
     // Path should resolve to <cwd>/content/<slug>.md
-    const expectedPath = path.join(process.cwd(), "content", `${expectedSlug}.md`);
+    const expectedPath = path.join(
+      process.cwd(),
+      "content",
+      `${expectedSlug}.md`,
+    );
     expect(resultPath).toBe(expectedPath);
     expect(calls.filePath).toBe(expectedPath);
 

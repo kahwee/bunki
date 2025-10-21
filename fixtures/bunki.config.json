@@ -2,5 +2,10 @@
   "title": "Bunki Test Blog",
   "description": "A test blog for demonstrating the Bunki static site generator",
   "baseUrl": "https://example.com",
-  "domain": "example.com"
+  "domain": "example.com",
+  "authorName": "Test Author",
+  "authorEmail": "author@example.com",
+  "webMaster": "webmaster@example.com",
+  "copyright": "Copyright © 2025 Bunki Test Blog",
+  "rssLanguage": "en-US"
 }

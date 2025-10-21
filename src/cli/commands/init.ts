@@ -13,7 +13,6 @@ interface InitDependencies {
   exit: (code: number) => void;
 }
 
-
 const defaultDependencies: InitDependencies = {
   createDefaultConfig,
   ensureDir,
@@ -56,10 +55,7 @@ export async function handleInitCommand(
 
     await deps.writeFile(path.join(stylesDir, "main.css"), getDefaultCss());
 
-    await deps.writeFile(
-      path.join(contentDir, "welcome.md"),
-      getSamplePost(),
-    );
+    await deps.writeFile(path.join(contentDir, "welcome.md"), getSamplePost());
 
     deps.logger.log("\nInitialization complete! Here are the next steps:");
     deps.logger.log("1. Edit bunki.config.ts to configure your site");
@@ -70,7 +66,6 @@ export async function handleInitCommand(
     deps.logger.error("Error initializing site:", error);
     deps.exit(1);
   }
-
 }
 
 export function registerInitCommand(

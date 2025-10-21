@@ -19,7 +19,10 @@ const defaultDeps: NewDeps = {
 };
 
 function createSlug(title: string): string {
-  return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 export async function handleNewCommand(
@@ -32,10 +35,14 @@ export async function handleNewCommand(
     const date = deps.now().toISOString();
 
     const tags = options.tags
-      ? options.tags.split(",").map((tag: string) => tag.trim()).filter(Boolean)
+      ? options.tags
+          .split(",")
+          .map((tag: string) => tag.trim())
+          .filter(Boolean)
       : [];
 
-    const frontmatter = `---\n` +
+    const frontmatter =
+      `---\n` +
       `title: ${title}\n` +
       `date: ${date}\n` +
       `tags: [${tags.join(", ")}]\n` +
