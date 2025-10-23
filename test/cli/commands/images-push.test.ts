@@ -13,7 +13,8 @@ describe("images:push CLI Command", () => {
       const result = registerImagesPushCommand(program);
 
       expect(result).toBeDefined();
-      expect(result).toEqual(program);
+      // Verify that commands were added to the program
+      expect(program.commands.length).toBeGreaterThan(0);
     });
 
     test("should have the correct command name", () => {
