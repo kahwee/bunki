@@ -14,7 +14,12 @@ const defaultDeps: ImagesPushDeps = {
 };
 
 export async function handleImagesPushCommand(
-  options: { domain?: string; images: string; outputJson?: string },
+  options: {
+    domain?: string;
+    images: string;
+    outputJson?: string;
+    minYear?: string;
+  },
   deps: ImagesPushDeps = defaultDeps,
 ): Promise<void> {
   try {
@@ -22,6 +27,7 @@ export async function handleImagesPushCommand(
       domain: options.domain,
       images: options.images,
       outputJson: options.outputJson,
+      minYear: options.minYear ? parseInt(options.minYear, 10) : undefined,
     });
   } catch (error) {
     deps.logger.error("Error uploading images:", error);
@@ -39,6 +45,10 @@ export function registerImagesPushCommand(program: Command): Command {
     )
     .option("-i, --images <dir>", "Images directory path", DEFAULT_IMAGES_DIR)
     .option("--output-json <file>", "Output URL mapping to JSON file")
+    .option(
+      "--min-year <year>",
+      "Only upload images from the specified year onwards (e.g., 2023 uploads 2023, 2024, etc.)",
+    )
     .action(async (options) => {
       await handleImagesPushCommand(options);
     });

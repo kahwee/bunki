@@ -60,9 +60,13 @@ export async function uploadImages(
       `Uploading images from ${imagesDir} to bucket ${s3Config.bucket}`,
     );
 
+    if (options.minYear) {
+      console.log(`Filtering images from year ${options.minYear} onwards`);
+    }
+
     // Create uploader and upload images
     const uploader = createUploader(s3Config);
-    const imageUrlMap = await uploader.uploadImages(imagesDir);
+    const imageUrlMap = await uploader.uploadImages(imagesDir, options.minYear);
 
     // Output URL mapping to JSON if requested
     if (options.outputJson) {

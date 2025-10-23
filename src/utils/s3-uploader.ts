@@ -93,10 +93,17 @@ export class S3Uploader implements Uploader, ImageUploader {
     }
   }
 
-  async uploadImages(imagesDir: string): Promise<Record<string, string>> {
+  async uploadImages(
+    imagesDir: string,
+    minYear?: number,
+  ): Promise<Record<string, string>> {
     console.log(
       `[S3] Uploading all images from ${imagesDir} to bucket ${this.s3Config.bucket}...`,
     );
+
+    if (minYear) {
+      console.log(`[S3] Filtering images from year ${minYear} onwards`);
+    }
 
     const imageUrls: Record<string, string> = {};
 
@@ -164,11 +171,23 @@ export class S3Uploader implements Uploader, ImageUploader {
         cwd: imagesDir,
         absolute: false,
       })) {
-        console.log(`[S3] Found image file: ${file}`);
-        files.push(file);
+        // If minYear is specified, filter by year directory
+        if (minYear) {
+          const yearMatch = file.match(/^(\d{4})\//);
+          if (yearMatch) {
+            const fileYear = parseInt(yearMatch[1], 10);
+            if (fileYear >= minYear) {
+              console.log(`[S3] Found image file: ${file}`);
+              files.push(file);
+            }
+          }
+        } else {
+          console.log(`[S3] Found image file: ${file}`);
+          files.push(file);
+        }
       }
 
-      // The files are already filtered by glob pattern
+      // The files are already filtered by glob pattern and year (if specified)
       const imageFiles = files;
 
       if (imageFiles.length === 0) {

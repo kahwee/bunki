@@ -428,4 +428,154 @@ describe("S3Uploader", () => {
       } catch {}
     });
   });
+
+  describe("Year Filtering with minYear Parameter", () => {
+    const yearFilterDir = path.join(import.meta.dir, "test-year-filter-images");
+
+    beforeAll(async () => {
+      // Create test image structure with multiple years
+      await ensureDir(path.join(yearFilterDir, "2021/post-1"));
+      await ensureDir(path.join(yearFilterDir, "2022/post-2"));
+      await ensureDir(path.join(yearFilterDir, "2023/post-3"));
+      await ensureDir(path.join(yearFilterDir, "2024/post-4"));
+
+      const jpgContent = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+
+      // Create images in each year
+      await Bun.write(
+        path.join(yearFilterDir, "2021/post-1/image.jpg"),
+        jpgContent,
+      );
+      await Bun.write(
+        path.join(yearFilterDir, "2022/post-2/image.jpg"),
+        jpgContent,
+      );
+      await Bun.write(
+        path.join(yearFilterDir, "2023/post-3/image.jpg"),
+        jpgContent,
+      );
+      await Bun.write(
+        path.join(yearFilterDir, "2024/post-4/image.jpg"),
+        jpgContent,
+      );
+    });
+
+    afterAll(async () => {
+      try {
+        await Bun.file(yearFilterDir).rm?.({ recursive: true });
+      } catch {}
+    });
+
+    test("should upload all images when minYear is not specified", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "test-bucket",
+        publicUrl: "https://test-bucket.example.com",
+        region: "us-east-1",
+      };
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const result = await uploader.uploadImages(yearFilterDir);
+
+      // Should have all 4 images
+      expect(Object.keys(result).length).toBe(4);
+      expect(result["2021/post-1/image.jpg"]).toBeDefined();
+      expect(result["2022/post-2/image.jpg"]).toBeDefined();
+      expect(result["2023/post-3/image.jpg"]).toBeDefined();
+      expect(result["2024/post-4/image.jpg"]).toBeDefined();
+
+      delete process.env.BUNKI_DRY_RUN;
+    });
+
+    test("should filter images by minYear 2023 or later", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "test-bucket",
+        publicUrl: "https://test-bucket.example.com",
+        region: "us-east-1",
+      };
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const result = await uploader.uploadImages(yearFilterDir, 2023);
+
+      // Should only have images from 2023 and 2024
+      expect(Object.keys(result).length).toBe(2);
+      expect(result["2023/post-3/image.jpg"]).toBeDefined();
+      expect(result["2024/post-4/image.jpg"]).toBeDefined();
+      expect(result["2021/post-1/image.jpg"]).toBeUndefined();
+      expect(result["2022/post-2/image.jpg"]).toBeUndefined();
+
+      delete process.env.BUNKI_DRY_RUN;
+    });
+
+    test("should filter images by minYear 2022 or later", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "test-bucket",
+        publicUrl: "https://test-bucket.example.com",
+        region: "us-east-1",
+      };
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const result = await uploader.uploadImages(yearFilterDir, 2022);
+
+      // Should have images from 2022, 2023, and 2024
+      expect(Object.keys(result).length).toBe(3);
+      expect(result["2022/post-2/image.jpg"]).toBeDefined();
+      expect(result["2023/post-3/image.jpg"]).toBeDefined();
+      expect(result["2024/post-4/image.jpg"]).toBeDefined();
+      expect(result["2021/post-1/image.jpg"]).toBeUndefined();
+
+      delete process.env.BUNKI_DRY_RUN;
+    });
+
+    test("should handle minYear greater than all available years", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "test-bucket",
+        publicUrl: "https://test-bucket.example.com",
+        region: "us-east-1",
+      };
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const result = await uploader.uploadImages(yearFilterDir, 2025);
+
+      // Should have no images
+      expect(Object.keys(result).length).toBe(0);
+
+      delete process.env.BUNKI_DRY_RUN;
+    });
+
+    test("should handle minYear matching earliest year", async () => {
+      const config: S3Config = {
+        accessKeyId: "test-key",
+        secretAccessKey: "test-secret",
+        bucket: "test-bucket",
+        publicUrl: "https://test-bucket.example.com",
+        region: "us-east-1",
+      };
+
+      process.env.BUNKI_DRY_RUN = "true";
+      const uploader = new S3Uploader(config);
+
+      const result = await uploader.uploadImages(yearFilterDir, 2021);
+
+      // Should have all images
+      expect(Object.keys(result).length).toBe(4);
+
+      delete process.env.BUNKI_DRY_RUN;
+    });
+  });
 });

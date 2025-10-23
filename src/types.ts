@@ -154,9 +154,13 @@ export interface ImageUploader {
   /**
    * Upload all images from a directory
    * @param imagesDir Directory containing images to upload
+   * @param minYear Optional minimum year to filter (e.g., 2023 uploads 2023, 2024, etc.)
    * @returns Record of image filenames to their public URLs
    */
-  uploadImages(imagesDir: string): Promise<Record<string, string>>;
+  uploadImages(
+    imagesDir: string,
+    minYear?: number,
+  ): Promise<Record<string, string>>;
 }
 
 // We'll use S3Config directly instead of having a separate S3ClientOptions interface
@@ -181,4 +185,5 @@ export interface ImageUploadOptions {
   domain?: string;
   images?: string;
   outputJson?: string;
+  minYear?: number;
 }
