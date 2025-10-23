@@ -4,7 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/kahwee/bunki/badge.svg?branch=main)](https://coveralls.io/github/kahwee/bunki?branch=main)
 [![npm version](https://badge.fury.io/js/bunki.svg)](https://badge.fury.io/js/bunki)
 
-Fast static site generator for blogs and documentation built with Bun. Supports Markdown + frontmatter, tags, year-based archives, pagination, RSS feeds, sitemaps, secure HTML sanitization, syntax highlighting, PostCSS pipelines, image uploads (S3/R2), and Nunjucks templating.
+Fast static site generator for blogs and documentation built with Bun. Supports Markdown + frontmatter, tags, year-based archives, pagination, RSS feeds, sitemaps, secure HTML sanitization, syntax highlighting, PostCSS pipelines, media uploads (images & videos to S3/R2), incremental uploads with year filtering, and Nunjucks templating.
 
 ## Install
 
@@ -126,9 +126,12 @@ CSS is processed automatically during `bunki generate`.
 
 ### Overview
 
-The `images:push` command uploads local images to Cloudflare R2, AWS S3, or any S3-compatible storage provider. Images are organized by year in the `images/` directory and uploaded with their full directory structure preserved.
+The `images:push` command uploads local media (images and videos) to Cloudflare R2, AWS S3, or any S3-compatible storage provider. Media files are organized by year in the `images/` directory and uploaded with their full directory structure preserved.
 
-**Supported formats:** JPG, JPEG, PNG, GIF, WebP, SVG
+**Supported formats:**
+
+- **Images:** JPG, JPEG, PNG, GIF, WebP, SVG
+- **Video:** MP4
 
 ### Directory Structure
 
@@ -146,10 +149,12 @@ images/
 │   └── travel-guide/
 │       ├── paris-1.jpg
 │       ├── london-2.jpg
-│       └── tokyo-3.png
+│       ├── tokyo-3.png
+│       └── travel-vlog.mp4
 └── 2025/
     └── new-post/
-        └── screenshot.jpg
+        ├── screenshot.jpg
+        └── demo-video.mp4
 ```
 
 The directory structure is preserved when uploading to cloud storage.
@@ -349,6 +354,88 @@ The Parisian streets at night are magical.
 ![Seine River at night](https://cdn.example.com/2024/paris-trip/seine-night.jpg)
 ```
 
+### Using Uploaded Videos in Markdown
+
+Upload MP4 videos alongside your images and embed them in your posts:
+
+```markdown
+---
+title: "Travel Vlog"
+date: 2024-06-15T10:00:00
+tags: [travel, video]
+---
+
+# My Paris Adventure
+
+Watch my trip to Paris:
+
+<video controls width="640" height="360">
+  <source src="https://cdn.example.com/2024/paris-trip/travel-vlog.mp4" type="video/mp4">
+  Your browser does not support HTML5 video.
+</video>
+
+## Behind the Scenes
+
+Check out the making of the vlog:
+
+<video controls width="640" height="360">
+  <source src="https://cdn.example.com/2024/paris-trip/behind-scenes.mp4" type="video/mp4">
+  Your browser does not support HTML5 video.
+</video>
+```
+
+**Video Upload Example:**
+
+```bash
+# Upload all images and videos (including MP4 files)
+bunki images:push
+
+# Upload only 2024 videos and images
+bunki images:push --min-year 2024
+
+# Preview what would be uploaded without actually uploading
+BUNKI_DRY_RUN=true bunki images:push --min-year 2024
+```
+
+**Video File Organization:**
+
+Keep videos organized the same way as images for consistency:
+
+```
+images/
+├── 2024/
+│   └── travel-vlog/
+│       ├── intro.mp4
+│       ├── highlights.mp4
+│       ├── thumbnail.jpg
+│       └── poster.jpg
+└── 2025/
+    └── tutorial/
+        ├── part-1.mp4
+        ├── part-2.mp4
+        └── preview.jpg
+```
+
+**Video Tips:**
+
+1. **File Size**: Keep MP4 files optimized (under 50MB recommended)
+   - Use tools like FFmpeg to compress before uploading
+   - Example: `ffmpeg -i input.mp4 -crf 28 output.mp4`
+
+2. **Format & Codec**:
+   - Use H.264 video codec for best compatibility
+   - Use AAC audio codec
+   - Container: MP4 (.mp4 extension)
+
+3. **Video Dimensions**:
+   - Keep 16:9 aspect ratio for web
+   - Common resolutions: 640x360, 1280x720, 1920x1080
+
+4. **Hosting**:
+   - MP4s benefit from CDN caching via S3/R2
+   - Cloudflare R2 provides excellent video delivery
+   - AWS S3 with CloudFront for additional acceleration
+
 ### Dry Run Mode
 
 Test the upload process without actually uploading:
@@ -479,7 +566,8 @@ dist/
 - **Performance**: Static files, optional gzip, optimized output
 - **Templating**: Nunjucks with custom filters and macros
 - **Styling**: Built-in PostCSS support for modern CSS frameworks
-- **Images**: Direct S3/R2 uploads with URL mapping
+- **Media Management**: Direct S3/R2 uploads for images and MP4 videos with URL mapping
+- **Incremental Uploads**: Year-based filtering (`--min-year`) for large media collections
 - **SEO**: Automatic RSS feeds, sitemaps, meta tags
 - **Pagination**: Configurable posts per page
 - **Archives**: Year-based and tag-based organization
@@ -518,7 +606,21 @@ bunki/
 
 ## Changelog
 
-### v0.5.3 (Current)
+### v0.7.0 (Current)
+
+- **Media uploads**: Added MP4 video support alongside image uploads
+- **Incremental uploads**: Year-based filtering with `--min-year` option
+- **Enhanced documentation**: Comprehensive video upload guide with examples
+- **Test coverage**: Added 10+ tests for image/video uploader functionality
+- **Fixed timestamps**: Stable dates in test fixtures to prevent flipping
+
+### v0.6.1
+
+- Version bump and welcome date stabilization
+- Test formatting improvements
+- Code style consistency updates
+
+### v0.5.3
 
 - Modularized CLI commands with dependency injection
 - Enhanced test coverage (130+ tests, 539+ assertions)
