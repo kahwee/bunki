@@ -30,7 +30,9 @@ describe("images:push CLI Command", () => {
       registerImagesPushCommand(program);
 
       const command = program.commands.find((c) => c.name() === "images:push");
-      expect(command?.description()).toBe("Upload images to S3-compatible storage");
+      expect(command?.description()).toBe(
+        "Upload images to S3-compatible storage",
+      );
     });
 
     test("should support --domain option", () => {
@@ -56,7 +58,9 @@ describe("images:push CLI Command", () => {
       registerImagesPushCommand(program);
 
       const command = program.commands.find((c) => c.name() === "images:push");
-      const outputOption = command?.options.find((o) => o.long === "--output-json");
+      const outputOption = command?.options.find(
+        (o) => o.long === "--output-json",
+      );
       expect(outputOption).toBeDefined();
     });
 
@@ -65,7 +69,9 @@ describe("images:push CLI Command", () => {
       registerImagesPushCommand(program);
 
       const command = program.commands.find((c) => c.name() === "images:push");
-      const minYearOption = command?.options.find((o) => o.long === "--min-year");
+      const minYearOption = command?.options.find(
+        (o) => o.long === "--min-year",
+      );
       expect(minYearOption).toBeDefined();
     });
 
@@ -74,7 +80,9 @@ describe("images:push CLI Command", () => {
       registerImagesPushCommand(program);
 
       const command = program.commands.find((c) => c.name() === "images:push");
-      const minYearOption = command?.options.find((o) => o.long === "--min-year");
+      const minYearOption = command?.options.find(
+        (o) => o.long === "--min-year",
+      );
       const description = minYearOption?.description || "";
       expect(description.toLowerCase()).toContain("year");
     });

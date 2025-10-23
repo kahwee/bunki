@@ -165,7 +165,10 @@ describe("S3Uploader", () => {
       await ensureDir(testUploadDir);
       // Create some test files to upload
       await Bun.write(path.join(testUploadDir, "index.html"), "<h1>Test</h1>");
-      await Bun.write(path.join(testUploadDir, "style.css"), "body { color: red; }");
+      await Bun.write(
+        path.join(testUploadDir, "style.css"),
+        "body { color: red; }",
+      );
     });
 
     afterAll(async () => {
@@ -194,7 +197,9 @@ describe("S3Uploader", () => {
         domain: "test",
       };
 
-      await expect(uploader.upload(testUploadDir, siteConfig)).resolves.toBeUndefined();
+      await expect(
+        uploader.upload(testUploadDir, siteConfig),
+      ).resolves.toBeUndefined();
 
       delete process.env.BUNKI_DRY_RUN;
     });
@@ -375,7 +380,9 @@ describe("S3Uploader", () => {
 
       // Should not duplicate bucket name since it's already in publicUrl
       const imageUrl = result["photo.jpg"];
-      expect(imageUrl).toContain("https://cdn.example.com/test-bucket/photo.jpg");
+      expect(imageUrl).toContain(
+        "https://cdn.example.com/test-bucket/photo.jpg",
+      );
 
       delete process.env.BUNKI_DRY_RUN;
 

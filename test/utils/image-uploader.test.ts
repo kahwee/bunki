@@ -16,7 +16,10 @@ describe("Image Uploader", () => {
 
       // Create test image files
       const jpgContent = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
-      await Bun.write(path.join(imagesDir, "2023/travel/paris.jpg"), jpgContent);
+      await Bun.write(
+        path.join(imagesDir, "2023/travel/paris.jpg"),
+        jpgContent,
+      );
       await Bun.write(path.join(imagesDir, "2024/food/pizza.jpg"), jpgContent);
 
       // Create a minimal bunki.config.ts for testing

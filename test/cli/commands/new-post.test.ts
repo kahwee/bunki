@@ -1,6 +1,9 @@
 import { describe, expect, test } from "bun:test";
 import path from "path";
-import { handleNewCommand, registerNewCommand } from "../../../src/cli/commands/new-post";
+import {
+  handleNewCommand,
+  registerNewCommand,
+} from "../../../src/cli/commands/new-post";
 import { Command } from "commander";
 
 describe("CLI New Command (handler)", () => {
@@ -221,7 +224,7 @@ describe("CLI New Command (registration)", () => {
       // Verify options - check that the command has the tags option
       const options = newCmd.options;
       const tagsOption = options.find(
-        (opt) => opt.short === "-t" || opt.long === "--tags"
+        (opt) => opt.short === "-t" || opt.long === "--tags",
       );
       expect(tagsOption).toBeDefined();
 

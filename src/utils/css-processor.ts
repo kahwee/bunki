@@ -52,7 +52,13 @@ export async function processCSS(options: CSSProcessorOptions): Promise<void> {
     console.log(`Config: ${postcssConfigPath}`);
   }
 
-  await runPostCSS(inputPath, outputPath, postcssConfigPath, projectRoot, verbose);
+  await runPostCSS(
+    inputPath,
+    outputPath,
+    postcssConfigPath,
+    projectRoot,
+    verbose,
+  );
 }
 
 /**
@@ -67,7 +73,14 @@ function runPostCSS(
   verbose: boolean,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const args = ["postcss", inputPath, "-o", outputPath, "--config", configPath];
+    const args = [
+      "postcss",
+      inputPath,
+      "-o",
+      outputPath,
+      "--config",
+      configPath,
+    ];
 
     const postcss = spawn("bunx", args, {
       stdio: verbose ? "inherit" : ["ignore", "pipe", "pipe"],
