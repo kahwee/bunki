@@ -170,7 +170,7 @@ export default (): SiteConfig => ({
     accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
     bucket: process.env.S3_BUCKET || "",
-    endpoint: process.env.S3_ENDPOINT,           // Optional: for R2, etc.
+    endpoint: process.env.S3_ENDPOINT, // Optional: for R2, etc.
     region: process.env.S3_REGION || "auto",
     publicUrl: process.env.S3_PUBLIC_URL || "",
   },
@@ -205,6 +205,7 @@ bunki images:push
 ```
 
 This command:
+
 1. Scans the `images/` directory recursively
 2. Uploads all supported image formats
 3. Preserves the directory structure (year/slug/filename)
@@ -213,6 +214,7 @@ This command:
 ### Command Options
 
 #### `--images <dir>`
+
 Specify a custom images directory (default: `./images`)
 
 ```bash
@@ -220,6 +222,7 @@ bunki images:push --images ./assets/images
 ```
 
 #### `--domain <domain>`
+
 Set a custom domain for bucket identification (optional)
 
 ```bash
@@ -227,6 +230,7 @@ bunki images:push --domain my-blog
 ```
 
 #### `--output-json <file>`
+
 Export a JSON mapping of filenames to their public URLs
 
 ```bash
@@ -234,6 +238,7 @@ bunki images:push --output-json image-urls.json
 ```
 
 This creates a JSON file with the structure:
+
 ```json
 {
   "2023/post-slug/image.jpg": "https://cdn.example.com/2023/post-slug/image.jpg",
@@ -242,6 +247,7 @@ This creates a JSON file with the structure:
 ```
 
 #### `--min-year <year>`
+
 Upload only images from the specified year onwards
 
 ```bash
@@ -256,6 +262,7 @@ bunki images:push --min-year 2022
 ```
 
 This is useful for:
+
 - Incremental uploads (upload only new images)
 - Testing uploads for specific years
 - Managing large image collections across multiple uploads
@@ -267,6 +274,7 @@ This is useful for:
 1. **Create R2 bucket and API token** in Cloudflare dashboard
 
 2. **Set environment variables:**
+
 ```bash
 export S3_ACCESS_KEY_ID="your-r2-api-token-id"
 export S3_SECRET_ACCESS_KEY="your-r2-api-token-secret"
@@ -277,6 +285,7 @@ export S3_PUBLIC_URL="https://cdn.example.com"
 ```
 
 3. **Upload images:**
+
 ```bash
 bunki images:push --output-json image-urls.json
 ```
@@ -286,6 +295,7 @@ bunki images:push --output-json image-urls.json
 1. **Create S3 bucket and IAM user** in AWS Console
 
 2. **Set environment variables:**
+
 ```bash
 export S3_ACCESS_KEY_ID="AKIAIOSFODNN7EXAMPLE"
 export S3_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
@@ -295,6 +305,7 @@ export S3_PUBLIC_URL="https://my-blog-bucket.s3.amazonaws.com"
 ```
 
 3. **Upload images:**
+
 ```bash
 bunki images:push
 ```
@@ -348,6 +359,7 @@ BUNKI_DRY_RUN=true bunki images:push
 ```
 
 This shows:
+
 - Which images would be uploaded
 - The directory structure that would be created
 - Generated public URLs
@@ -355,19 +367,23 @@ This shows:
 ### Troubleshooting
 
 #### "Missing S3 configuration"
+
 Ensure all required environment variables are set. Check `bunki.config.ts` and your `.env` file.
 
 #### "No image files found"
+
 - Verify images exist in `images/` directory
 - Check that files have supported extensions (.jpg, .png, .gif, .webp, .svg)
 - Ensure the directory structure is correct (e.g., `images/2024/post-slug/image.jpg`)
 
 #### "Unauthorized" or "Access Denied"
+
 - Verify S3 credentials (access key and secret key)
 - Check that the IAM user/API token has S3 permissions
 - Confirm the bucket name is correct
 
 #### "Invalid bucket name"
+
 - S3 bucket names must be globally unique
 - Use only lowercase letters, numbers, and hyphens
 - Bucket names must be 3-63 characters long
@@ -406,11 +422,13 @@ export S3_PUBLIC_URL="https://img.example.com"
 ### Performance Tips
 
 1. **Use year-based filtering** for large image collections:
+
    ```bash
    bunki images:push --min-year 2024  # Only newest images
    ```
 
 2. **Organize by post slug** for better directory structure:
+
    ```
    images/2024/post-title/image.jpg
    images/2024/post-title/photo.jpg
