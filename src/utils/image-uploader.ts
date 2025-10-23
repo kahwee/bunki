@@ -87,6 +87,6 @@ export async function uploadImages(
     return imageUrlMap;
   } catch (error) {
     console.error("Error uploading images:", error);
-    process.exit(1);
+    throw error;
   }
 }

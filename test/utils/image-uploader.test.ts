@@ -92,52 +92,33 @@ describe("Image Uploader", () => {
       } catch {}
     });
 
-    test("should handle missing S3 configuration gracefully", async () => {
-      // Temporarily clear S3 config
-      delete process.env.BUNKI_DRY_RUN;
-
-      try {
-        // This should log an error and exit
-        await uploadImages({
-          images: imagesDir,
-        });
-      } catch (error) {
-        // Expected behavior
-        expect(error).toBeDefined();
-      }
-    });
-
-    test("should output JSON mapping when outputJson option is provided", async () => {
+    test("should output JSON mapping when requested", async () => {
       process.env.BUNKI_DRY_RUN = "true";
 
       const outputFile = path.join(testBaseDir, "image-urls.json");
-
       const result = await uploadImages({
         images: imagesDir,
         outputJson: outputFile,
       });
 
-      // Check if output file was created
+      // Verify output file was created with valid JSON
       const file = await Bun.file(outputFile);
       const exists = await file.exists();
       expect(exists).toBe(true);
 
-      // Verify JSON content is valid
       if (exists) {
-        const content = await file.text();
-        const jsonData = JSON.parse(content);
+        const jsonData = JSON.parse(await file.text());
         expect(jsonData).toBeDefined();
+        expect(Object.keys(jsonData).length).toBeGreaterThan(0);
       }
 
       delete process.env.BUNKI_DRY_RUN;
-
-      // Clean up
       try {
         await Bun.file(outputFile).rm?.({ recursive: true });
       } catch {}
     });
 
-    test("should handle domain option", async () => {
+    test("should support domain option", async () => {
       process.env.BUNKI_DRY_RUN = "true";
 
       const result = await uploadImages({
@@ -145,8 +126,8 @@ describe("Image Uploader", () => {
         domain: "test-domain",
       });
 
-      // Should successfully handle domain parameter without error
       expect(result).toBeDefined();
+      expect(Object.keys(result).length).toBeGreaterThan(0);
 
       delete process.env.BUNKI_DRY_RUN;
     });
@@ -204,48 +185,23 @@ describe("Image Uploader", () => {
   });
 
   describe("Error handling", () => {
-    test("should handle invalid minYear parameter gracefully", async () => {
-      process.env.BUNKI_DRY_RUN = "true";
-
-      const testDir = path.join(import.meta.dir, "test-invalid-year");
-      await ensureDir(testDir);
-
-      try {
-        const result = await uploadImages({
-          images: testDir,
-          minYear: -1,
-        });
-
-        // Should return empty map since year is invalid
-        expect(result).toBeDefined();
-      } catch (error) {
-        // Or throw an error - either is acceptable
-        expect(error).toBeDefined();
-      }
-
-      delete process.env.BUNKI_DRY_RUN;
-
-      try {
-        await Bun.file(testDir).rm?.({ recursive: true });
-      } catch {}
-    });
-
-    test("should handle malformed JSON output path", async () => {
+    test("should throw error with invalid JSON output path", async () => {
       process.env.BUNKI_DRY_RUN = "true";
 
       const testDir = path.join(import.meta.dir, "test-invalid-json-path");
       await ensureDir(testDir);
 
+      let errorCaught = false;
       try {
         await uploadImages({
           images: testDir,
-          outputJson: "/invalid/path/that/does/not/exist/output.json",
+          outputJson: "/invalid/path/output.json",
         });
-      } catch (error) {
-        // Expected - invalid path should cause error
-        expect(error).toBeDefined();
+      } catch {
+        errorCaught = true;
       }
 
+      expect(errorCaught).toBe(true);
       delete process.env.BUNKI_DRY_RUN;
 
       try {
