@@ -506,7 +506,7 @@ function getDefaultCss(): string {
 function getSamplePost(): string {
   return `---
 title: Welcome to Bunki
-date: ${new Date().toISOString()}
+date: 2025-01-15T12:00:00Z
 tags: [getting-started, bunki]
 ---
 
