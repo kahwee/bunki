@@ -93,6 +93,43 @@ export class S3Uploader implements Uploader, ImageUploader {
     }
   }
 
+  /**
+   * Execute async tasks with concurrency limit
+   * @param tasks Array of task functions that return promises
+   * @param concurrency Maximum number of concurrent tasks
+   */
+  private async executeWithConcurrency<T>(
+    tasks: (() => Promise<T>)[],
+    concurrency: number,
+  ): Promise<T[]> {
+    const results: T[] = [];
+    const executing: Promise<any>[] = [];
+
+    for (const task of tasks) {
+      const promise = task()
+        .then((result) => {
+          results.push(result);
+          // Remove from executing when done
+          const index = executing.indexOf(promise);
+          if (index > -1) executing.splice(index, 1);
+        })
+        .catch((error) => {
+          // Still remove from executing on error
+          const index = executing.indexOf(promise);
+          if (index > -1) executing.splice(index, 1);
+        });
+
+      executing.push(promise);
+
+      if (executing.length >= concurrency) {
+        await Promise.race(executing);
+      }
+    }
+
+    await Promise.all(executing);
+    return results;
+  }
+
   async uploadImages(
     imagesDir: string,
     minYear?: number,
@@ -108,83 +145,36 @@ export class S3Uploader implements Uploader, ImageUploader {
     const imageUrls: Record<string, string> = {};
 
     try {
-      // Check if directory exists
-      console.log(`[S3] Checking if directory exists: ${imagesDir}`);
-
-      // We need to check if the directory exists, not just a file
-      try {
-        // Use a recursive glob to test directory existence by attempting to read content
-        // This needs to check for files in subdirectories too, not just root level
-        const glob = new Bun.Glob("**/*");
-        let hasContent = false;
-
-        // Try to get at least one file to verify directory exists
-        for await (const file of glob.scan({
-          cwd: imagesDir,
-          absolute: false,
-        })) {
-          hasContent = true;
-          break;
-        }
-
-        if (!hasContent) {
-          console.warn(`Directory exists but is empty: ${imagesDir}`);
-          // Continue execution to attempt to find images
-        }
-
-        console.log(`[S3] Directory exists and is accessible`);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        console.warn(
-          `No images directory found at ${imagesDir}, skipping image upload. Error: ${errorMessage}`,
-        );
-        return imageUrls;
-      }
-
       // Get all files in the images directory using Bun.glob (recursively)
       const glob = new Bun.Glob("**/*.{jpg,jpeg,png,gif,webp,svg}");
       const files: string[] = [];
 
-      // Debug info
       console.log(`[S3] Scanning directory ${imagesDir} for image files...`);
 
-      // List all files in the directory for debugging (including nested directories)
       try {
-        const dirGlob = new Bun.Glob("**/*");
-        const allFiles: string[] = [];
-
-        for await (const file of dirGlob.scan({
+        for await (const file of glob.scan({
           cwd: imagesDir,
           absolute: false,
         })) {
-          allFiles.push(file);
-        }
-
-        console.log(
-          `[S3] Files in directory (including subdirs): ${allFiles.length > 0 ? allFiles.slice(0, 10).join(", ") + (allFiles.length > 10 ? "..." : "") : "none"}`,
-        );
-      } catch (err) {
-        console.error(`[S3] Error reading directory:`, err);
-      }
-
-      for await (const file of glob.scan({
-        cwd: imagesDir,
-        absolute: false,
-      })) {
-        // If minYear is specified, filter by year directory
-        if (minYear) {
-          const yearMatch = file.match(/^(\d{4})\//);
-          if (yearMatch) {
-            const fileYear = parseInt(yearMatch[1], 10);
-            if (fileYear >= minYear) {
-              console.log(`[S3] Found image file: ${file}`);
-              files.push(file);
+          // If minYear is specified, filter by year directory
+          if (minYear) {
+            const yearMatch = file.match(/^(\d{4})\//);
+            if (yearMatch) {
+              const fileYear = parseInt(yearMatch[1], 10);
+              if (fileYear >= minYear) {
+                files.push(file);
+              }
             }
+          } else {
+            files.push(file);
           }
-        } else {
-          console.log(`[S3] Found image file: ${file}`);
-          files.push(file);
         }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.warn(
+          `Error scanning images directory: ${errorMessage}`,
+        );
+        return imageUrls;
       }
 
       // The files are already filtered by glob pattern and year (if specified)
@@ -196,16 +186,18 @@ export class S3Uploader implements Uploader, ImageUploader {
       }
 
       console.log(`Found ${imageFiles.length} images to upload`);
+      console.log(`[S3] Processing with 10 concurrent uploads...`);
 
-      // Upload each image and collect URLs
-      for (const imageFile of imageFiles) {
+      // Upload images in parallel with concurrency limit
+      const concurrencyLimit = 10;
+      let uploadedCount = 0;
+      let failedCount = 0;
+
+      // Create upload tasks for each image
+      const uploadTasks = imageFiles.map((imageFile) => async () => {
         try {
           const imagePath = path.join(imagesDir, imageFile);
           const filename = path.basename(imagePath);
-
-          console.log(
-            `[S3] Uploading image ${imagePath} to S3 bucket ${this.s3Config.bucket}/${imageFile}...`,
-          );
 
           // Read the file content using Bun.file
           const file = Bun.file(imagePath);
@@ -215,9 +207,7 @@ export class S3Uploader implements Uploader, ImageUploader {
 
           // Check if we're in dry run mode
           if (process.env.BUNKI_DRY_RUN === "true") {
-            console.log(
-              `[S3] Dry run: would upload ${imageFile} with content type ${contentType}`,
-            );
+            // Dry run: just simulate
           } else {
             const s3File = this.client.file(imageFile);
             await s3File.write(file);
@@ -225,17 +215,29 @@ export class S3Uploader implements Uploader, ImageUploader {
 
           // Get the public URL
           const imageUrl = this.getPublicUrl(imageFile);
-          console.log(`[S3] Image uploaded to ${imageUrl}`);
-
           imageUrls[imageFile] = imageUrl;
+          uploadedCount++;
+
+          // Progress update every 10 images
+          if (uploadedCount % 10 === 0) {
+            console.log(
+              `[S3] Progress: ${uploadedCount}/${imageFiles.length} images uploaded`,
+            );
+          }
+
+          return { success: true, file: imageFile };
         } catch (error) {
-          console.error(`Error uploading ${imageFile}:`, error);
-          // Continue with other images even if one fails
+          failedCount++;
+          console.error(`[S3] Error uploading ${imageFile}:`, error);
+          return { success: false, file: imageFile };
         }
-      }
+      });
+
+      // Execute uploads with concurrency limit
+      await this.executeWithConcurrency(uploadTasks, concurrencyLimit);
 
       console.log(
-        `[S3] Successfully uploaded ${Object.keys(imageUrls).length} of ${imageFiles.length} images`,
+        `[S3] Upload complete: ${uploadedCount} succeeded, ${failedCount} failed out of ${imageFiles.length} images`,
       );
       return imageUrls;
     } catch (error) {
