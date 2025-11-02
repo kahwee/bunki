@@ -171,9 +171,7 @@ export class S3Uploader implements Uploader, ImageUploader {
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
-        console.warn(
-          `Error scanning images directory: ${errorMessage}`,
-        );
+        console.warn(`Error scanning images directory: ${errorMessage}`);
         return imageUrls;
       }
 
