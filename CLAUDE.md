@@ -2,12 +2,12 @@
 
 ## Environment Setup
 
-Requires **Bun v1.3.0+** (recommended) or Node.js v18+
+Requires **Bun v1.3.2+** (recommended) or Node.js v18+
 
 ```bash
 # Install Bun
 curl -fsSL https://bun.sh/install | bash
-bun upgrade --version 1.3.0
+bun upgrade --version 1.3.2
 
 # Clone and setup
 git clone git@github.com:kahwee/bunki.git
