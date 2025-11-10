@@ -4,7 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/kahwee/bunki/badge.svg?branch=main)](https://coveralls.io/github/kahwee/bunki?branch=main)
 [![npm version](https://badge.fury.io/js/bunki.svg)](https://badge.fury.io/js/bunki)
 
-Fast static site generator for blogs and documentation built with Bun. Supports Markdown + frontmatter, tags, year-based archives, pagination, RSS feeds, sitemaps, secure HTML sanitization, syntax highlighting, PostCSS pipelines, media uploads (images & videos to S3/R2), incremental uploads with year filtering, and Nunjucks templating.
+Fast static site generator for blogs and documentation built with Bun. Supports Markdown + frontmatter, tags, year-based archives, pagination, RSS feeds, sitemaps, JSON-LD structured data for SEO, secure HTML sanitization, syntax highlighting, PostCSS pipelines, media uploads (images & videos to S3/R2), incremental uploads with year filtering, and Nunjucks templating.
 
 ## Install
 
@@ -121,6 +121,188 @@ Create `templates/styles/main.css`:
 ```
 
 CSS is processed automatically during `bunki generate`.
+
+## JSON-LD Structured Data for SEO
+
+Bunki automatically generates [JSON-LD](https://json-ld.org/) structured data markup for enhanced SEO and search engine visibility. JSON-LD (JavaScript Object Notation for Linked Data) is Google's recommended format for structured data.
+
+### What is JSON-LD?
+
+JSON-LD helps search engines better understand your content by providing explicit, structured information about your pages. This can lead to:
+
+- **Rich snippets** in search results (article previews, star ratings, etc.)
+- **Better content indexing** and understanding by search engines
+- **Improved click-through rates** from search results
+- **Knowledge graph integration** with Google, Bing, and other search engines
+
+### Automatic Schema Generation
+
+Bunki automatically generates appropriate schemas for different page types:
+
+#### Blog Posts (BlogPosting Schema)
+
+Every blog post includes comprehensive `BlogPosting` schema with:
+
+- Headline and description
+- Publication and modification dates
+- Author information
+- Publisher details
+- Article keywords (from tags)
+- Word count
+- Featured image (automatically extracted)
+- Language information
+
+Example output in your HTML:
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Getting Started with Bun",
+  "description": "Learn how to get started with Bun, the fast JavaScript runtime.",
+  "url": "https://example.com/2025/getting-started-with-bun/",
+  "datePublished": "2025-01-15T10:30:00.000Z",
+  "dateModified": "2025-01-15T10:30:00.000Z",
+  "author": {
+    "@type": "Person",
+    "name": "John Doe",
+    "email": "john@example.com"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "My Blog",
+    "url": "https://example.com"
+  },
+  "keywords": "bun, javascript, performance",
+  "image": "https://example.com/images/bun-logo.png"
+}
+</script>
+```
+
+#### Homepage (WebSite & Organization Schemas)
+
+The homepage includes dual schemas:
+
+1. **WebSite Schema**: Defines the website entity
+2. **Organization Schema**: Defines the publisher/organization
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "My Blog",
+  "url": "https://example.com",
+  "description": "My thoughts and ideas",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://example.com/search?q={search_term_string}"
+    }
+  }
+}
+</script>
+```
+
+#### Breadcrumbs (BreadcrumbList Schema)
+
+All pages include breadcrumb navigation for better site hierarchy understanding:
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": "https://example.com"
+    },
+    {
+      "@type": "ListItem",
+      "position": 2,
+      "name": "Getting Started with Bun",
+      "item": "https://example.com/2025/getting-started-with-bun/"
+    }
+  ]
+}
+</script>
+```
+
+### Configuration for SEO
+
+Enhance your JSON-LD output by providing complete author and site information in `bunki.config.ts`:
+
+```typescript
+import { SiteConfig } from "bunki";
+
+export default (): SiteConfig => ({
+  title: "My Blog",
+  description: "My thoughts and ideas on web development",
+  baseUrl: "https://example.com",
+  domain: "example.com",
+
+  // Author information (used in BlogPosting schema)
+  authorName: "John Doe",
+  authorEmail: "john@example.com",
+
+  // RSS/SEO configuration
+  rssLanguage: "en-US", // Language code for content
+  copyright: "Copyright © 2025 My Blog",
+
+  // ... other config
+});
+```
+
+### Testing Your JSON-LD
+
+You can validate your structured data using these tools:
+
+1. **[Google Rich Results Test](https://search.google.com/test/rich-results)** - Test how Google sees your structured data
+2. **[Schema.org Validator](https://validator.schema.org/)** - Validate JSON-LD syntax
+3. **[Structured Data Linter](http://linter.structured-data.org/)** - Check for errors and warnings
+
+### Supported Schema Types
+
+Bunki currently supports these Schema.org types:
+
+- **BlogPosting** - Individual blog posts and articles
+- **WebSite** - Homepage and site-wide metadata
+- **Organization** - Publisher/organization information
+- **Person** - Author information
+- **BreadcrumbList** - Navigation breadcrumbs
+
+### How It Works
+
+JSON-LD generation is completely automatic:
+
+1. **Post Creation**: When you write a post with frontmatter, Bunki extracts metadata
+2. **Site Generation**: During `bunki generate`, appropriate schemas are created
+3. **Template Injection**: JSON-LD scripts are automatically injected into `<head>`
+4. **Image Extraction**: The first image in your post content is automatically used as the featured image
+
+No manual configuration needed - just run `bunki generate` and your site will have complete structured data!
+
+### Best Practices
+
+To maximize SEO benefits:
+
+1. **Use descriptive titles** - Your post title becomes the schema headline
+2. **Write good excerpts** - These become schema descriptions
+3. **Include images** - First image in content is used as featured image
+4. **Tag your posts** - Tags become schema keywords
+5. **Set author info** - Complete `authorName` and `authorEmail` in config
+6. **Use ISO 8601 dates** - Format: `2025-01-15T10:30:00-07:00`
+
+### Further Reading
+
+- [Schema.org Documentation](https://schema.org/)
+- [Google Search Central - Structured Data](https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data)
+- [JSON-LD Official Spec](https://json-ld.org/)
 
 ## Image Management
 
@@ -568,7 +750,8 @@ dist/
 - **Styling**: Built-in PostCSS support for modern CSS frameworks
 - **Media Management**: Direct S3/R2 uploads for images and MP4 videos with URL mapping
 - **Incremental Uploads**: Year-based filtering (`--min-year`) for large media collections
-- **SEO**: Automatic RSS feeds, sitemaps, meta tags
+- **SEO**: Automatic RSS feeds, sitemaps, meta tags, and JSON-LD structured data
+- **JSON-LD Structured Data**: Automatic Schema.org markup (BlogPosting, WebSite, Organization, BreadcrumbList)
 - **Pagination**: Configurable posts per page
 - **Archives**: Year-based and tag-based organization
 
@@ -606,7 +789,20 @@ bunki/
 
 ## Changelog
 
-### v0.7.0 (Current)
+### v0.8.0 (Current)
+
+- **JSON-LD Structured Data**: Automatic Schema.org markup generation for enhanced SEO
+  - BlogPosting schema for individual blog posts with author, keywords, images
+  - WebSite schema for homepage with search action
+  - Organization schema for publisher information
+  - BreadcrumbList schema for navigation hierarchy
+  - Automatic featured image extraction from post content
+- **Comprehensive SEO**: Complete structured data support following Google best practices
+- **Zero configuration**: JSON-LD automatically generated during site build
+- **Well documented**: Extensive README section with examples and validation tools
+- **Fully tested**: 60+ new tests covering all JSON-LD schema types
+
+### v0.7.0
 
 - **Media uploads**: Added MP4 video support alongside image uploads
 - **Incremental uploads**: Year-based filtering with `--min-year` option
