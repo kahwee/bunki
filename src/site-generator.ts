@@ -7,6 +7,12 @@ import { parseMarkdownDirectory } from "./parser";
 import { GeneratorOptions, PaginationData, Post, Site, TagData } from "./types";
 import { getDefaultCSSConfig, processCSS } from "./utils/css-processor";
 import { copyFile, ensureDir } from "./utils/file-utils";
+import {
+  extractFirstImageUrl,
+  generatePostPageSchemas,
+  generateHomePageSchemas,
+  toScriptTag,
+} from "./utils/json-ld.js";
 import { setNoFollowExceptions } from "./utils/markdown-utils";
 
 export class SiteGenerator {
@@ -255,11 +261,21 @@ export class SiteGenerator {
         "/",
       );
 
+      // Generate JSON-LD structured data for the homepage (first page only)
+      let jsonLd = "";
+      if (page === 1) {
+        const schemas = generateHomePageSchemas({
+          site: this.options.config,
+        });
+        jsonLd = schemas.map((schema) => toScriptTag(schema)).join("\n");
+      }
+
       const pageHtml = nunjucks.render("index.njk", {
         site: this.options.config,
         posts: paginatedPosts,
         tags: this.getSortedTags(this.options.config.maxTagsOnHomepage),
         pagination,
+        jsonLd,
       });
 
       if (page === 1) {
@@ -286,9 +302,22 @@ export class SiteGenerator {
 
       await ensureDir(postDir);
 
+      // Generate JSON-LD structured data for the post
+      const imageUrl = extractFirstImageUrl(
+        post.html,
+        this.options.config.baseUrl,
+      );
+      const schemas = generatePostPageSchemas({
+        post,
+        site: this.options.config,
+        imageUrl,
+      });
+      const jsonLd = schemas.map((schema) => toScriptTag(schema)).join("\n");
+
       const postHtml = nunjucks.render("post.njk", {
         site: this.options.config,
         post,
+        jsonLd,
       });
 
       await Bun.write(path.join(postDir, "index.html"), postHtml);

@@ -7,6 +7,9 @@
     <meta name="description" content="{% block description %}{{ site.description }}{% endblock %}">
     <link rel="stylesheet" href="/css/style.css">
     {% block head %}{% endblock %}
+    {% if jsonLd %}
+    {{ jsonLd | safe }}
+    {% endif %}
   </head>
   <body>
     <header>
