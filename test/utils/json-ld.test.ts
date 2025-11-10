@@ -312,13 +312,13 @@ describe("JSON-LD Utilities", () => {
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        url: "https://example.com",
+        item: "https://example.com",
       });
       expect(schema.itemListElement[2]).toEqual({
         "@type": "ListItem",
         position: 3,
         name: "2025",
-        url: "https://example.com/blog/2025",
+        item: "https://example.com/blog/2025",
       });
     });
   });
