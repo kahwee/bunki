@@ -99,9 +99,7 @@ export function generatePersonSchema(
  * const org = generateOrganizationSchema({ title: "My Blog", baseUrl: "https://example.com" });
  * // Returns: { "@type": "Organization", "name": "My Blog", "url": "https://example.com" }
  */
-export function generateOrganizationSchema(
-  site: SiteConfig,
-): SchemaOrgThing {
+export function generateOrganizationSchema(site: SiteConfig): SchemaOrgThing {
   const organization: SchemaOrgThing = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -213,9 +211,7 @@ export function generateBlogPostingSchema(
  *
  * @see https://schema.org/WebSite
  */
-export function generateWebSiteSchema(
-  options: WebSiteOptions,
-): SchemaOrgThing {
+export function generateWebSiteSchema(options: WebSiteOptions): SchemaOrgThing {
   const { site } = options;
 
   const webSite: SchemaOrgThing = {

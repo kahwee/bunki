@@ -28,7 +28,11 @@ describe("JSON-LD Utilities", () => {
     title: "Getting Started with Bun",
     date: "2025-01-15T10:30:00.000Z",
     tags: ["bun", "javascript", "performance"],
-    tagSlugs: { bun: "bun", javascript: "javascript", performance: "performance" },
+    tagSlugs: {
+      bun: "bun",
+      javascript: "javascript",
+      performance: "performance",
+    },
     content:
       "Bun is a fast JavaScript runtime that aims to be a drop-in replacement for Node.js. It includes a bundler, test runner, and package manager.",
     slug: "getting-started-with-bun",

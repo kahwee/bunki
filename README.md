@@ -156,27 +156,27 @@ Example output in your HTML:
 
 ```html
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  "headline": "Getting Started with Bun",
-  "description": "Learn how to get started with Bun, the fast JavaScript runtime.",
-  "url": "https://example.com/2025/getting-started-with-bun/",
-  "datePublished": "2025-01-15T10:30:00.000Z",
-  "dateModified": "2025-01-15T10:30:00.000Z",
-  "author": {
-    "@type": "Person",
-    "name": "John Doe",
-    "email": "john@example.com"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "My Blog",
-    "url": "https://example.com"
-  },
-  "keywords": "bun, javascript, performance",
-  "image": "https://example.com/images/bun-logo.png"
-}
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Getting Started with Bun",
+    "description": "Learn how to get started with Bun, the fast JavaScript runtime.",
+    "url": "https://example.com/2025/getting-started-with-bun/",
+    "datePublished": "2025-01-15T10:30:00.000Z",
+    "dateModified": "2025-01-15T10:30:00.000Z",
+    "author": {
+      "@type": "Person",
+      "name": "John Doe",
+      "email": "john@example.com"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "My Blog",
+      "url": "https://example.com"
+    },
+    "keywords": "bun, javascript, performance",
+    "image": "https://example.com/images/bun-logo.png"
+  }
 </script>
 ```
 
@@ -189,20 +189,20 @@ The homepage includes dual schemas:
 
 ```html
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "My Blog",
-  "url": "https://example.com",
-  "description": "My thoughts and ideas",
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": {
-      "@type": "EntryPoint",
-      "urlTemplate": "https://example.com/search?q={search_term_string}"
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "My Blog",
+    "url": "https://example.com",
+    "description": "My thoughts and ideas",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://example.com/search?q={search_term_string}"
+      }
     }
   }
-}
 </script>
 ```
 
@@ -212,24 +212,24 @@ All pages include breadcrumb navigation for better site hierarchy understanding:
 
 ```html
 <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": "https://example.com"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Getting Started with Bun",
-      "item": "https://example.com/2025/getting-started-with-bun/"
-    }
-  ]
-}
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://example.com"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Getting Started with Bun",
+        "item": "https://example.com/2025/getting-started-with-bun/"
+      }
+    ]
+  }
 </script>
 ```
 
