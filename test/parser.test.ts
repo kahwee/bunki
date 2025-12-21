@@ -9,22 +9,23 @@ const SAMPLE_FILE = path.join(CONTENT_DIR, "2025", "test-post-1.md");
 
 describe("Markdown Parser", () => {
   test("parseMarkdownFile should parse a single markdown file", async () => {
-    const post = await parseMarkdownFile(SAMPLE_FILE);
+    const result = await parseMarkdownFile(SAMPLE_FILE);
 
-    expect(post).not.toBeNull();
-    expect(post).toHaveProperty(
+    expect(result.post).not.toBeNull();
+    expect(result.error).toBeNull();
+    expect(result.post).toHaveProperty(
       "title",
       "Testing Bunki: A New Static Site Generator",
     );
-    expect(post).toHaveProperty("date");
-    expect(post).toHaveProperty("tags");
-    expect(post?.tags).toContain("technology");
-    expect(post?.tags).toContain("web development");
-    expect(post?.tags).toContain("open source");
-    expect(post).toHaveProperty("content");
-    expect(post).toHaveProperty("html");
-    expect(post).toHaveProperty("excerpt");
-    expect(post?.excerpt).toInclude("Bunki is a fast");
+    expect(result.post).toHaveProperty("date");
+    expect(result.post).toHaveProperty("tags");
+    expect(result.post?.tags).toContain("technology");
+    expect(result.post?.tags).toContain("web development");
+    expect(result.post?.tags).toContain("open source");
+    expect(result.post).toHaveProperty("content");
+    expect(result.post).toHaveProperty("html");
+    expect(result.post).toHaveProperty("excerpt");
+    expect(result.post?.excerpt).toInclude("Bunki is a fast");
   });
 
   test("parseMarkdownDirectory should parse all markdown files", async () => {
@@ -49,10 +50,13 @@ describe("Markdown Parser", () => {
     expect(firstPost).toHaveProperty("excerpt");
   });
 
-  test("parseMarkdownDirectory should handle errors gracefully", async () => {
-    const posts = await parseMarkdownDirectory("/non/existent/directory");
-
-    expect(posts).toBeArray();
-    expect(posts.length).toBe(0);
+  test("parseMarkdownDirectory should throw on non-existent directory", async () => {
+    // Both strict and non-strict mode should throw when directory doesn't exist
+    try {
+      await parseMarkdownDirectory("/non/existent/directory", false);
+      expect(true).toBe(false); // Should not reach here
+    } catch (error: any) {
+      expect(error.code).toBe("ENOENT");
+    }
   });
 });

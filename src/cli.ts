@@ -6,6 +6,7 @@ import { registerImagesPushCommand } from "./cli/commands/images-push";
 import { registerInitCommand } from "./cli/commands/init";
 import { registerNewCommand } from "./cli/commands/new-post";
 import { registerServeCommand } from "./cli/commands/serve";
+import { registerValidateCommand } from "./cli/commands/validate";
 
 const program = new Command();
 
@@ -16,6 +17,7 @@ registerGenerateCommand(program);
 registerServeCommand(program);
 registerCssCommand(program);
 registerImagesPushCommand(program);
+registerValidateCommand(program);
 
 program
   .name("bunki")

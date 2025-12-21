@@ -70,6 +70,8 @@ export interface SiteConfig {
   webMaster?: string;
   /** Copyright statement for RSS feed (e.g., "Copyright © 2025 Your Site Name") */
   copyright?: string;
+  /** Strict mode: fail build on parsing errors (default: false) */
+  strictMode?: boolean;
   /** Additional custom configuration options */
   [key: string]: any;
 }

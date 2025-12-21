@@ -70,21 +70,25 @@ const x = 1;
 
   test("parseMarkdownFile should handle non-existent files", async () => {
     const result = await parseMarkdownFile("/non/existent/file.md");
-    expect(result).toBeNull();
+    expect(result.post).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error?.type).toBe("file_not_found");
+    expect(result.error?.file).toBe("/non/existent/file.md");
   });
 
   test("parseMarkdownFile should parse a markdown file", async () => {
-    const post = await parseMarkdownFile(SAMPLE_FILE);
+    const result = await parseMarkdownFile(SAMPLE_FILE);
 
-    expect(post).not.toBeNull();
-    expect(post).toHaveProperty("title");
-    expect(post).toHaveProperty("date");
-    expect(post).toHaveProperty("tags");
-    expect(post).toHaveProperty("content");
-    expect(post).toHaveProperty("html");
-    expect(post).toHaveProperty("slug");
-    expect(post).toHaveProperty("url");
-    expect(post).toHaveProperty("excerpt");
+    expect(result.post).not.toBeNull();
+    expect(result.error).toBeNull();
+    expect(result.post).toHaveProperty("title");
+    expect(result.post).toHaveProperty("date");
+    expect(result.post).toHaveProperty("tags");
+    expect(result.post).toHaveProperty("content");
+    expect(result.post).toHaveProperty("html");
+    expect(result.post).toHaveProperty("slug");
+    expect(result.post).toHaveProperty("url");
+    expect(result.post).toHaveProperty("excerpt");
   });
 
   test("convertMarkdownToHtml should preserve video tags", () => {
@@ -354,8 +358,10 @@ tags: [test]
 Content here`,
     );
 
-    const post = await parseMarkdownFile(testFile);
-    expect(post).toBeNull();
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error?.type).toBe("missing_field");
 
     await fs.promises.rm(testDir, { recursive: true });
   });
@@ -375,8 +381,10 @@ tags: [test]
 Content here`,
     );
 
-    const post = await parseMarkdownFile(testFile);
-    expect(post).toBeNull();
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error?.type).toBe("missing_field");
 
     await fs.promises.rm(testDir, { recursive: true });
   });
@@ -398,8 +406,8 @@ tags: [test]
 Content here`,
     );
 
-    const post = await parseMarkdownFile(testFile);
-    expect(post?.slug).toBe("my-custom-slug");
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post?.slug).toBe("my-custom-slug");
 
     await fs.promises.rm(testDir, { recursive: true });
   });
@@ -422,9 +430,9 @@ tags: [test]
 ${content}`,
     );
 
-    const post = await parseMarkdownFile(testFile);
-    expect(post?.excerpt).toBeDefined();
-    expect(post?.excerpt).toInclude("This is a test post");
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post?.excerpt).toBeDefined();
+    expect(result.post?.excerpt).toInclude("This is a test post");
 
     await fs.promises.rm(testDir, { recursive: true });
   });
@@ -446,8 +454,8 @@ tags: [test]
 Content here`,
     );
 
-    const post = await parseMarkdownFile(testFile);
-    expect(post?.excerpt).toBe("Custom excerpt here");
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post?.excerpt).toBe("Custom excerpt here");
 
     await fs.promises.rm(testDir, { recursive: true });
   });

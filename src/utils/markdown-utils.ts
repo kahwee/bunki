@@ -195,24 +195,51 @@ export function convertMarkdownToHtml(markdownContent: string): string {
   return sanitized;
 }
 
+export interface ParseError {
+  file: string;
+  type: "yaml" | "missing_field" | "file_not_found" | "unknown";
+  message: string;
+  suggestion?: string;
+}
+
+export interface ParseMarkdownResult {
+  post: Post | null;
+  error: ParseError | null;
+}
+
 export async function parseMarkdownFile(
   filePath: string,
-): Promise<Post | null> {
+): Promise<ParseMarkdownResult> {
   try {
     const fileContent = await readFileAsText(filePath);
 
     if (fileContent === null) {
-      console.warn(`File not found or couldn't be read: ${filePath}`);
-      return null;
+      return {
+        post: null,
+        error: {
+          file: filePath,
+          type: "file_not_found",
+          message: "File not found or couldn't be read",
+        },
+      };
     }
 
     const { data, content } = matter(fileContent);
 
     if (!data.title || !data.date) {
-      console.warn(
-        `Skipping ${filePath}: missing required frontmatter (title or date)`,
-      );
-      return null;
+      const missingFields = [];
+      if (!data.title) missingFields.push("title");
+      if (!data.date) missingFields.push("date");
+
+      return {
+        post: null,
+        error: {
+          file: filePath,
+          type: "missing_field",
+          message: `Missing required fields: ${missingFields.join(", ")}`,
+          suggestion: "Add required frontmatter fields (title and date)",
+        },
+      };
     }
 
     let slug = data.slug || getBaseFilename(filePath);
@@ -236,9 +263,31 @@ export async function parseMarkdownFile(
       html: sanitizedHtml,
     };
 
-    return post;
-  } catch (error) {
-    console.error(`Error parsing markdown file ${filePath}:`, error);
-    return null;
+    return { post, error: null };
+  } catch (error: any) {
+    // Check if it's a YAML parsing error
+    const isYamlError =
+      error?.name === "YAMLException" ||
+      error?.message?.includes("YAML") ||
+      error?.message?.includes("mapping pair");
+
+    let suggestion: string | undefined;
+    if (isYamlError) {
+      if (error?.message?.includes("mapping pair") || error?.message?.includes("colon")) {
+        suggestion = "Quote titles/descriptions containing colons (e.g., title: \"My Post: A Guide\")";
+      } else if (error?.message?.includes("multiline key")) {
+        suggestion = "Remove nested quotes or use single quotes inside double quotes";
+      }
+    }
+
+    return {
+      post: null,
+      error: {
+        file: filePath,
+        type: isYamlError ? "yaml" : "unknown",
+        message: error?.message || String(error),
+        suggestion,
+      },
+    };
   }
 }

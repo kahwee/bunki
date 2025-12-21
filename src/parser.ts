@@ -1,24 +1,105 @@
 import { Post } from "./types";
 import { findFilesByPattern } from "./utils/file-utils";
-import { parseMarkdownFile } from "./utils/markdown-utils";
+import { parseMarkdownFile, type ParseError } from "./utils/markdown-utils";
+
+export interface ParseResult {
+  posts: Post[];
+  errors: ParseError[];
+}
 
 export async function parseMarkdownDirectory(
   contentDir: string,
+  strictMode: boolean = false,
 ): Promise<Post[]> {
   try {
     const markdownFiles = await findFilesByPattern("**/*.md", contentDir, true);
     console.log(`Found ${markdownFiles.length} markdown files`);
 
-    const postsPromises = markdownFiles.map((filePath) =>
+    const resultsPromises = markdownFiles.map((filePath) =>
       parseMarkdownFile(filePath),
     );
-    const posts = await Promise.all(postsPromises);
+    const results = await Promise.all(resultsPromises);
 
-    return posts
-      .filter((post): post is Post => post !== null)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    // Separate successful posts from errors
+    const posts: Post[] = [];
+    const errors: ParseError[] = [];
+
+    for (const result of results) {
+      if (result.post) {
+        posts.push(result.post);
+      } else if (result.error) {
+        errors.push(result.error);
+      }
+    }
+
+    // Display error summary if there are errors
+    if (errors.length > 0) {
+      console.error(`\n⚠️  Found ${errors.length} parsing error(s):\n`);
+
+      // Group errors by type for better readability
+      const yamlErrors = errors.filter((e) => e.type === "yaml");
+      const missingFieldErrors = errors.filter((e) => e.type === "missing_field");
+      const otherErrors = errors.filter(
+        (e) => e.type !== "yaml" && e.type !== "missing_field",
+      );
+
+      if (yamlErrors.length > 0) {
+        console.error(`  YAML Parsing Errors (${yamlErrors.length}):`);
+        yamlErrors.slice(0, 5).forEach((e) => {
+          console.error(`    ❌ ${e.file}`);
+          if (e.suggestion) {
+            console.error(`       💡 ${e.suggestion}`);
+          }
+        });
+        if (yamlErrors.length > 5) {
+          console.error(`    ... and ${yamlErrors.length - 5} more`);
+        }
+        console.error("");
+      }
+
+      if (missingFieldErrors.length > 0) {
+        console.error(`  Missing Required Fields (${missingFieldErrors.length}):`);
+        missingFieldErrors.slice(0, 5).forEach((e) => {
+          console.error(`    ⚠️  ${e.file}: ${e.message}`);
+        });
+        if (missingFieldErrors.length > 5) {
+          console.error(`    ... and ${missingFieldErrors.length - 5} more`);
+        }
+        console.error("");
+      }
+
+      if (otherErrors.length > 0) {
+        console.error(`  Other Errors (${otherErrors.length}):`);
+        otherErrors.slice(0, 3).forEach((e) => {
+          console.error(`    ❌ ${e.file}: ${e.message}`);
+        });
+        if (otherErrors.length > 3) {
+          console.error(`    ... and ${otherErrors.length - 3} more`);
+        }
+        console.error("");
+      }
+
+      console.error(`📝 Tip: Fix YAML errors by quoting titles/descriptions with colons`);
+      console.error(
+        `   Example: title: "My Post: A Guide"  (quotes required for colons)\n`,
+      );
+
+      if (strictMode) {
+        throw new Error(
+          `Build failed: ${errors.length} parsing error(s) found (strictMode enabled)`,
+        );
+      }
+    }
+
+    const sortedPosts = posts.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+
+    console.log(`Parsed ${sortedPosts.length} posts`);
+
+    return sortedPosts;
   } catch (error) {
     console.error(`Error parsing markdown directory:`, error);
-    return [];
+    throw error;
   }
 }
