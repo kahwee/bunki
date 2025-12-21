@@ -38,7 +38,9 @@ export async function parseMarkdownDirectory(
 
       // Group errors by type for better readability
       const yamlErrors = errors.filter((e) => e.type === "yaml");
-      const missingFieldErrors = errors.filter((e) => e.type === "missing_field");
+      const missingFieldErrors = errors.filter(
+        (e) => e.type === "missing_field",
+      );
       const otherErrors = errors.filter(
         (e) => e.type !== "yaml" && e.type !== "missing_field",
       );
@@ -58,7 +60,9 @@ export async function parseMarkdownDirectory(
       }
 
       if (missingFieldErrors.length > 0) {
-        console.error(`  Missing Required Fields (${missingFieldErrors.length}):`);
+        console.error(
+          `  Missing Required Fields (${missingFieldErrors.length}):`,
+        );
         missingFieldErrors.slice(0, 5).forEach((e) => {
           console.error(`    ⚠️  ${e.file}: ${e.message}`);
         });
@@ -79,7 +83,9 @@ export async function parseMarkdownDirectory(
         console.error("");
       }
 
-      console.error(`📝 Tip: Fix YAML errors by quoting titles/descriptions with colons`);
+      console.error(
+        `📝 Tip: Fix YAML errors by quoting titles/descriptions with colons`,
+      );
       console.error(
         `   Example: title: "My Post: A Guide"  (quotes required for colons)\n`,
       );

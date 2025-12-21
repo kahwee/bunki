@@ -273,10 +273,15 @@ export async function parseMarkdownFile(
 
     let suggestion: string | undefined;
     if (isYamlError) {
-      if (error?.message?.includes("mapping pair") || error?.message?.includes("colon")) {
-        suggestion = "Quote titles/descriptions containing colons (e.g., title: \"My Post: A Guide\")";
+      if (
+        error?.message?.includes("mapping pair") ||
+        error?.message?.includes("colon")
+      ) {
+        suggestion =
+          'Quote titles/descriptions containing colons (e.g., title: "My Post: A Guide")';
       } else if (error?.message?.includes("multiline key")) {
-        suggestion = "Remove nested quotes or use single quotes inside double quotes";
+        suggestion =
+          "Remove nested quotes or use single quotes inside double quotes";
       }
     }
 

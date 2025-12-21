@@ -138,7 +138,10 @@ export class SiteGenerator {
     }
 
     const strictMode = this.options.config.strictMode ?? false;
-    const posts = await parseMarkdownDirectory(this.options.contentDir, strictMode);
+    const posts = await parseMarkdownDirectory(
+      this.options.contentDir,
+      strictMode,
+    );
 
     const tags: Record<string, TagData> = {};
 
