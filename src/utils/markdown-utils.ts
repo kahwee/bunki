@@ -25,7 +25,12 @@ hljs.registerLanguage("swift", swift);
 
 let noFollowExceptions: Set<string> = new Set();
 
+/**
+ * Creates an isolated Marked instance with custom configuration.
+ * V17 best practice: Use instance-scoped configuration to avoid global mutations.
+ */
 function createMarked() {
+  // Create isolated Marked instance with syntax highlighting extension
   const marked = new Marked(
     markedHighlight({
       emptyLangClass: "hljs",
@@ -37,11 +42,15 @@ function createMarked() {
     }),
   );
 
+  // Configure GitHub-flavored markdown and line breaks
   marked.setOptions({
     gfm: true,
     breaks: true,
   });
 
+  // V17 best practice: Apply all extensions immediately after instance creation
+  // walkTokens processes each token for custom transformations (synchronous)
+  // hooks provide lifecycle methods for pre/post processing
   marked.use({
     walkTokens(token) {
       if (token.type === "link") {
@@ -137,8 +146,9 @@ export function extractExcerpt(content: string, maxLength = 200): string {
 }
 
 export function convertMarkdownToHtml(markdownContent: string): string {
-  const html = marked.parse(markdownContent);
-  let sanitized = sanitizeHtml(html.toString(), {
+  // Use async: false for explicit type safety (we don't have async walkTokens)
+  const html = marked.parse(markdownContent, { async: false }) as string;
+  let sanitized = sanitizeHtml(html, {
     allowedTags: sanitizeHtml.defaults.allowedTags.concat([
       "img",
       "h1",
