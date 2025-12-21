@@ -22,7 +22,7 @@ registerValidateCommand(program);
 program
   .name("bunki")
   .description("An opinionated static site generator built with Bun")
-  .version("0.5.3");
+  .version("0.9.1");
 
 // When called directly (not imported)
 // This ensures it works both as ESM import and when executed directly
