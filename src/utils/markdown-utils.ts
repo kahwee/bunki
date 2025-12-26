@@ -12,6 +12,7 @@ import { Marked } from "marked";
 import { markedHighlight } from "marked-highlight";
 import sanitizeHtml from "sanitize-html";
 import { Post } from "../types";
+import { toPacificTime, getPacificYear } from "./date-utils";
 import { getBaseFilename, readFileAsText } from "./file-utils";
 
 hljs.registerLanguage("javascript", javascript);
@@ -244,12 +245,8 @@ export async function parseMarkdownFile(
 
     let slug = data.slug || getBaseFilename(filePath);
     const sanitizedHtml = convertMarkdownToHtml(content);
-    const pacificDate = new Date(
-      new Date(data.date).toLocaleString("en-US", {
-        timeZone: "America/Los_Angeles",
-      }),
-    );
-    const postYear = pacificDate.getFullYear();
+    const pacificDate = toPacificTime(data.date);
+    const postYear = getPacificYear(data.date);
 
     const post: Post = {
       title: data.title,

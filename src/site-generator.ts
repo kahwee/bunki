@@ -6,6 +6,7 @@ import slugify from "slugify";
 import { parseMarkdownDirectory } from "./parser";
 import { GeneratorOptions, PaginationData, Post, Site, TagData } from "./types";
 import { getDefaultCSSConfig, processCSS } from "./utils/css-processor";
+import { toPacificTime, getPacificYear } from "./utils/date-utils";
 import { copyFile, ensureDir } from "./utils/file-utils";
 import {
   extractFirstImageUrl,
@@ -20,20 +21,23 @@ export class SiteGenerator {
   private site: Site;
 
   private formatRSSDate(date: string): string {
-    const pacificDate = new Date(
-      new Date(date).toLocaleString("en-US", {
-        timeZone: "America/Los_Angeles",
-      }),
-    );
-    return pacificDate.toUTCString();
+    return toPacificTime(date).toUTCString();
   }
 
-  private getPacificDate(date: string | Date): Date {
-    return new Date(
-      new Date(date).toLocaleString("en-US", {
-        timeZone: "America/Los_Angeles",
-      }),
-    );
+  private groupPostsByYear(posts: Post[]): Record<string, Post[]> {
+    const postsByYear: Record<string, Post[]> = {};
+
+    for (const post of posts) {
+      const year = getPacificYear(post.date).toString();
+
+      if (!postsByYear[year]) {
+        postsByYear[year] = [];
+      }
+
+      postsByYear[year].push(post);
+    }
+
+    return postsByYear;
   }
 
   private getSortedTags(limit?: number): TagData[] {
@@ -71,6 +75,7 @@ export class SiteGenerator {
       name: options.config.domain,
       posts: [],
       tags: {},
+      postsByYear: {},
     };
 
     const env = nunjucks.configure(this.options.templatesDir, {
@@ -79,10 +84,7 @@ export class SiteGenerator {
     });
 
     env.addFilter("date", function (date, format) {
-      const pstDate = new Date(date).toLocaleString("en-US", {
-        timeZone: "America/Los_Angeles",
-      });
-      const d = new Date(pstDate);
+      const d = toPacificTime(date);
       const months = [
         "January",
         "February",
@@ -176,6 +178,7 @@ export class SiteGenerator {
       name: this.options.config.domain,
       posts,
       tags,
+      postsByYear: this.groupPostsByYear(posts),
     };
   }
 
@@ -183,34 +186,27 @@ export class SiteGenerator {
     console.log("Generating static site...");
 
     await ensureDir(this.options.outputDir);
+
+    // Generate stylesheet first (CSS needed for all pages)
     await this.generateStylesheet();
-    await this.generateIndexPage();
-    await this.generatePostPages();
-    await this.generateTagPages();
-    await this.generateYearArchives();
-    await this.generateRSSFeed();
-    await this.generateSitemap();
-    await this.generateRobotsTxt();
-    await this.copyStaticAssets();
+
+    // Parallelize independent page generation tasks
+    await Promise.all([
+      this.generateIndexPage(),
+      this.generatePostPages(),
+      this.generateTagPages(),
+      this.generateYearArchives(),
+      this.generateRSSFeed(),
+      this.generateSitemap(),
+      this.generateRobotsTxt(),
+      this.copyStaticAssets(),
+    ]);
 
     console.log("Site generation complete!");
   }
 
   private async generateYearArchives(): Promise<void> {
-    const postsByYear: Record<string, Post[]> = {};
-
-    for (const post of this.site.posts) {
-      const postDate = new Date(post.date);
-      const year = postDate.getFullYear().toString();
-
-      if (!postsByYear[year]) {
-        postsByYear[year] = [];
-      }
-
-      postsByYear[year].push(post);
-    }
-
-    for (const [year, yearPosts] of Object.entries(postsByYear)) {
+    for (const [year, yearPosts] of Object.entries(this.site.postsByYear)) {
       const yearDir = path.join(this.options.outputDir, year);
       await ensureDir(yearDir);
 
@@ -522,7 +518,7 @@ export class SiteGenerator {
   private async generateRSSFeed(): Promise<void> {
     const posts = this.site.posts.slice(0, 15);
     const config = this.options.config;
-    const now = this.getPacificDate(new Date());
+    const now = toPacificTime(new Date());
 
     // Determine the latest post date for lastBuildDate
     const latestPostDate = posts.length > 0 ? posts[0].date : now.toISOString();
@@ -639,10 +635,10 @@ ${rssItems}
   }
 
   private async generateSitemap(): Promise<void> {
-    const currentDate = this.getPacificDate(new Date()).toISOString();
+    const currentDate = toPacificTime(new Date()).toISOString();
     const pageSize = 10;
     const config = this.options.config;
-    const now = this.getPacificDate(new Date()).getTime();
+    const now = toPacificTime(new Date()).getTime();
     const ONE_DAY = 24 * 60 * 60 * 1000;
     const ONE_WEEK = 7 * ONE_DAY;
     const ONE_MONTH = 30 * ONE_DAY;
@@ -740,19 +736,7 @@ ${rssItems}
       }
     }
 
-    const postsByYear: Record<string, Post[]> = {};
-    for (const post of this.site.posts) {
-      const postDate = new Date(post.date);
-      const year = postDate.getFullYear().toString();
-
-      if (!postsByYear[year]) {
-        postsByYear[year] = [];
-      }
-
-      postsByYear[year].push(post);
-    }
-
-    for (const [year, yearPosts] of Object.entries(postsByYear)) {
+    for (const [year, yearPosts] of Object.entries(this.site.postsByYear)) {
       const currentYear = new Date().getFullYear();
       const isCurrentYear = parseInt(year) === currentYear;
       const yearPriority = isCurrentYear ? 0.7 : 0.5;
@@ -798,7 +782,7 @@ ${rssItems}
   }
 
   private async generateSitemapIndex(): Promise<void> {
-    const currentDate = this.getPacificDate(new Date()).toISOString();
+    const currentDate = toPacificTime(new Date()).toISOString();
     const config = this.options.config;
 
     let sitemapIndexContent = `<?xml version="1.0" encoding="UTF-8"?>

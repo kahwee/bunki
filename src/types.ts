@@ -140,6 +140,8 @@ export interface Site {
   posts: Post[];
   /** Map of tag names to tag data */
   tags: Record<string, TagData>;
+  /** Posts grouped by year for efficient year archive generation */
+  postsByYear: Record<string, Post[]>;
 }
 
 /**
