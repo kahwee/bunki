@@ -9,6 +9,7 @@ import swift from "highlight.js/lib/languages/swift";
 import typescript from "highlight.js/lib/languages/typescript";
 import xml from "highlight.js/lib/languages/xml";
 import { Marked } from "marked";
+import markedAlert from "marked-alert";
 import { markedHighlight } from "marked-highlight";
 import sanitizeHtml from "sanitize-html";
 import { Post } from "../types";
@@ -48,6 +49,9 @@ function createMarked() {
     gfm: true,
     breaks: true,
   });
+
+  // Add GitHub-style alerts support ([!NOTE], [!TIP], [!IMPORTANT], [!WARNING], [!CAUTION])
+  marked.use(markedAlert());
 
   // V17 best practice: Apply all extensions immediately after instance creation
   // walkTokens processes each token for custom transformations (synchronous)
@@ -159,6 +163,8 @@ export function convertMarkdownToHtml(markdownContent: string): string {
       "div",
       "video",
       "source",
+      "svg",
+      "path",
     ]),
     allowedAttributes: {
       ...sanitizeHtml.defaults.allowedAttributes,
@@ -181,12 +187,31 @@ export function convertMarkdownToHtml(markdownContent: string): string {
         "poster",
       ],
       source: ["src", "type"],
+      svg: [
+        "class",
+        "viewBox",
+        "width",
+        "height",
+        "aria-hidden",
+        "fill",
+        "xmlns",
+      ],
+      path: ["d", "fill", "fill-rule", "stroke", "stroke-width"],
     },
     allowedClasses: {
       code: ["*"],
       pre: ["*"],
       span: ["*"],
-      div: ["video-container"],
+      div: [
+        "video-container",
+        "markdown-alert",
+        "markdown-alert-note",
+        "markdown-alert-tip",
+        "markdown-alert-important",
+        "markdown-alert-warning",
+        "markdown-alert-caution",
+      ],
+      p: ["markdown-alert-title"],
     },
     nonTextTags: ["style", "script", "textarea", "option", "noscript"],
   });
