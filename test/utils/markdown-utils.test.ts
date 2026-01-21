@@ -473,3 +473,75 @@ Content here`,
     expect(html).toInclude("<td>");
   });
 });
+
+describe("GitHub-style Markdown Alerts", () => {
+  test("should render NOTE alert", () => {
+    const markdown = `> [!NOTE]
+> This is a note.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude("markdown-alert");
+    expect(html).toInclude("markdown-alert-note");
+    expect(html).toInclude("This is a note");
+  });
+
+  test("should render TIP alert", () => {
+    const markdown = `> [!TIP]
+> This is a tip.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude("markdown-alert");
+    expect(html).toInclude("markdown-alert-tip");
+    expect(html).toInclude("This is a tip");
+  });
+
+  test("should render IMPORTANT alert", () => {
+    const markdown = `> [!IMPORTANT]
+> This is important.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude("markdown-alert");
+    expect(html).toInclude("markdown-alert-important");
+    expect(html).toInclude("This is important");
+  });
+
+  test("should render WARNING alert", () => {
+    const markdown = `> [!WARNING]
+> This is a warning.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude("markdown-alert");
+    expect(html).toInclude("markdown-alert-warning");
+    expect(html).toInclude("This is a warning");
+  });
+
+  test("should render CAUTION alert", () => {
+    const markdown = `> [!CAUTION]
+> This is a caution.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude("markdown-alert");
+    expect(html).toInclude("markdown-alert-caution");
+    expect(html).toInclude("This is a caution");
+  });
+
+  test("should include SVG icon in alerts", () => {
+    const markdown = `> [!NOTE]
+> Alert with icon.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude("<svg");
+    expect(html).toInclude("</svg>");
+  });
+
+  test("should handle multi-line alert content", () => {
+    const markdown = `> [!TIP]
+> First line.
+> Second line.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude("markdown-alert-tip");
+    expect(html).toInclude("First line");
+    expect(html).toInclude("Second line");
+  });
+});
