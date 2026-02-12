@@ -610,7 +610,7 @@ ${categoryTags}`;
     // Build channel-level metadata
     let channelXml = `  <channel>
     <title><![CDATA[${config.title}]]></title>
-    <link>${config.baseUrl}</link>
+    <link>${config.baseUrl}/</link>
     <description><![CDATA[${config.description}]]></description>`;
 
     // Add language (default: en-US)

@@ -68,7 +68,7 @@ describe("JSON-LD Utilities", () => {
       expect(schema["@context"]).toBe("https://schema.org");
       expect(schema["@type"]).toBe("Organization");
       expect(schema.name).toBe("My Awesome Blog");
-      expect(schema.url).toBe("https://example.com");
+      expect(schema.url).toBe("https://example.com/");
       expect(schema.description).toBe(
         "A blog about web development and technology",
       );
@@ -146,7 +146,7 @@ describe("JSON-LD Utilities", () => {
       expect(schema.publisher).toEqual({
         "@type": "Organization",
         name: "My Awesome Blog",
-        url: "https://example.com",
+        url: "https://example.com/",
       });
     });
 
@@ -233,7 +233,7 @@ describe("JSON-LD Utilities", () => {
       expect(schema["@context"]).toBe("https://schema.org");
       expect(schema["@type"]).toBe("WebSite");
       expect(schema.name).toBe("My Awesome Blog");
-      expect(schema.url).toBe("https://example.com");
+      expect(schema.url).toBe("https://example.com/");
       expect(schema.description).toBe(
         "A blog about web development and technology",
       );
@@ -274,7 +274,7 @@ describe("JSON-LD Utilities", () => {
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: "https://example.com",
+        item: "https://example.com/",
       });
     });
 
@@ -289,7 +289,7 @@ describe("JSON-LD Utilities", () => {
         "@type": "ListItem",
         position: 1,
         name: "Home",
-        item: "https://example.com",
+        item: "https://example.com/",
       });
       expect(schema.itemListElement[1]).toEqual({
         "@type": "ListItem",
@@ -443,9 +443,9 @@ describe("JSON-LD Utilities", () => {
       const organization = schemas[1];
 
       expect(webSite.name).toBe("My Awesome Blog");
-      expect(webSite.url).toBe("https://example.com");
+      expect(webSite.url).toBe("https://example.com/");
       expect(organization.name).toBe("My Awesome Blog");
-      expect(organization.url).toBe("https://example.com");
+      expect(organization.url).toBe("https://example.com/");
     });
   });
 });

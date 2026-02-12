@@ -104,7 +104,7 @@ export function generateOrganizationSchema(site: SiteConfig): SchemaOrgThing {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: site.title,
-    url: site.baseUrl,
+    url: `${site.baseUrl}/`,
   };
 
   if (site.description) {
@@ -165,7 +165,7 @@ export function generateBlogPostingSchema(
   blogPosting.publisher = {
     "@type": "Organization",
     name: site.title,
-    url: site.baseUrl,
+    url: `${site.baseUrl}/`,
   };
 
   // Add image if available
@@ -218,7 +218,7 @@ export function generateWebSiteSchema(options: WebSiteOptions): SchemaOrgThing {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: site.title,
-    url: site.baseUrl,
+    url: `${site.baseUrl}/`,
   };
 
   if (site.description) {
@@ -284,7 +284,7 @@ export function generateBreadcrumbListSchema(
     "@type": "ListItem",
     position: 1,
     name: "Home",
-    item: site.baseUrl,
+    item: `${site.baseUrl}/`,
   };
 
   breadcrumbs.itemListElement.push(homeItem);
