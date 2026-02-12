@@ -199,10 +199,32 @@ export class SiteGenerator {
       this.generateRSSFeed(),
       this.generateSitemap(),
       this.generateRobotsTxt(),
+      this.generate404Page(),
       this.copyStaticAssets(),
     ]);
 
     console.log("Site generation complete!");
+  }
+
+  private async generate404Page(): Promise<void> {
+    try {
+      const notFoundHtml = nunjucks.render("404.njk", {
+        site: this.options.config,
+      });
+
+      await Bun.write(
+        path.join(this.options.outputDir, "404.html"),
+        notFoundHtml,
+      );
+      console.log("Generated 404.html");
+    } catch (error) {
+      // If 404.njk template doesn't exist, skip generation silently
+      if (error instanceof Error && error.message.includes("404.njk")) {
+        console.log("No 404.njk template found, skipping 404 page generation");
+      } else {
+        console.warn("Error generating 404 page:", error);
+      }
+    }
   }
 
   private async generateYearArchives(): Promise<void> {
