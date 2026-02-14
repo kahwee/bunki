@@ -151,6 +151,15 @@ export class SiteGenerator {
     posts.forEach((post) => {
       post.tagSlugs = {};
 
+      // Extract first image URL from post content for thumbnail/social sharing
+      const imageUrl = extractFirstImageUrl(
+        post.html,
+        this.options.config.baseUrl,
+      );
+      if (imageUrl) {
+        post.image = imageUrl;
+      }
+
       post.tags.forEach((tagName) => {
         const tagSlug = slugify(tagName, { lower: true, strict: true });
         post.tagSlugs[tagName] = tagSlug;

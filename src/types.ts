@@ -64,6 +64,8 @@ export interface Post {
   category?: string;
   /** Optional business schema data for LocalBusiness structured data */
   business?: Business;
+  /** Optional image URL (first image from post content, used for thumbnails and social sharing) */
+  image?: string;
 }
 
 /**
