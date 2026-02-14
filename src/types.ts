@@ -12,6 +12,33 @@ export interface Location {
   lng: number;
 }
 
+/**
+ * Business schema data for LocalBusiness structured data
+ * Includes location data for map display and geo coordinates
+ */
+export interface Business {
+  /** Schema.org type (e.g., Restaurant, Bakery, CafeOrCoffeeShop) */
+  type: string;
+  /** Business name */
+  name: string;
+  /** Full address of the business */
+  address: string;
+  /** Latitude coordinate */
+  lat: number;
+  /** Longitude coordinate */
+  lng: number;
+  /** Cuisine type for restaurants (e.g., "Mexican, Oaxacan") */
+  cuisine?: string;
+  /** Price range (e.g., "$", "$$", "$$$") */
+  priceRange?: string;
+  /** Business phone number */
+  telephone?: string;
+  /** Business website URL */
+  url?: string;
+  /** Opening hours in schema.org format */
+  openingHours?: string;
+}
+
 export interface Post {
   /** Title of the post */
   title: string;
@@ -33,6 +60,10 @@ export interface Post {
   html: string;
   /** Optional location data for map display */
   location?: Location;
+  /** Optional category for the post */
+  category?: string;
+  /** Optional business schema data for LocalBusiness structured data */
+  business?: Business;
 }
 
 /**

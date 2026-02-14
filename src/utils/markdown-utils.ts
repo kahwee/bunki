@@ -317,6 +317,27 @@ export async function parseMarkdownFile(
           lng: data.location.lng,
         },
       }),
+      ...(data.category && { category: data.category }),
+      ...(data.business && {
+        business: {
+          type: data.business.type,
+          name: data.business.name,
+          address: data.business.address,
+          lat: data.business.lat,
+          lng: data.business.lng,
+          ...(data.business.cuisine && { cuisine: data.business.cuisine }),
+          ...(data.business.priceRange && {
+            priceRange: data.business.priceRange,
+          }),
+          ...(data.business.telephone && {
+            telephone: data.business.telephone,
+          }),
+          ...(data.business.url && { url: data.business.url }),
+          ...(data.business.openingHours && {
+            openingHours: data.business.openingHours,
+          }),
+        },
+      }),
     };
 
     return { post, error: null };
