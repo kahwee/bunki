@@ -3,6 +3,12 @@
   {% block title %}{{ post.title }} | {{ site.title }}{% endblock %}
   {% block description %}{{ post.excerpt }}{% endblock %}
 
+  {% block head %}
+  {% if post.location %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  {% endif %}
+  {% endblock %}
+
   {% block content %}
     <article class="post">
       <header class="post-header">
@@ -19,8 +25,29 @@
         </div>
       </header>
 
+      {% if post.location %}
+      <div id="post-map" style="height: 300px; margin: 2rem 0; border-radius: 8px;"></div>
+      {% endif %}
+
       <div class="post-content">
         {{ post.html | safe }}
       </div>
     </article>
+  {% endblock %}
+
+  {% block scripts %}
+  {% if post.location %}
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('post-map').setView([{{ post.location.lat }}, {{ post.location.lng }}], 15);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    L.marker([{{ post.location.lat }}, {{ post.location.lng }}])
+      .addTo(map)
+      .bindPopup('<b>{{ post.location.name }}</b><br>{{ post.location.address }}');
+  </script>
+  {% endif %}
   {% endblock %}

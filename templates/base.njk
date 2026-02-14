@@ -19,6 +19,7 @@
           <ul>
             <li><a href="/">Home</a></li>
             <li><a href="/tags/">Tags</a></li>
+            <li><a href="/map/">Map</a></li>
           </ul>
         </nav>
       </div>
@@ -33,5 +34,7 @@
         <p>&copy; {{ "now" | date("YYYY") }} {{ site.title }}</p>
       </div>
     </footer>
+
+    {% block scripts %}{% endblock %}
   </body>
   </html>

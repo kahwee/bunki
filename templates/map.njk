@@ -1,0 +1,58 @@
+{% extends "base.njk" %}
+
+{% block title %}Map View | {{ site.title }}{% endblock %}
+{% block description %}Interactive map of all locations featured on {{ site.title }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+{% endblock %}
+
+{% block content %}
+<h1>Map View</h1>
+<p>Explore all locations featured on {{ site.title }}</p>
+
+<div id="map" style="height: 600px; border-radius: 8px; margin: 2rem 0;"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+  const map = L.map('map').setView([37.7749, -122.4194], 12);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+
+  const markers = L.markerClusterGroup();
+
+  const locations = [
+    {% for post in posts %}
+    {% if post.location %}
+    {
+      lat: {{ post.location.lat }},
+      lng: {{ post.location.lng }},
+      title: {{ post.title | dump | safe }},
+      url: "{{ post.url }}",
+      name: {{ post.location.name | dump | safe }},
+      address: {{ post.location.address | dump | safe }}
+    }{% if not loop.last %},{% endif %}
+    {% endif %}
+    {% endfor %}
+  ];
+
+  locations.forEach(loc => {
+    const marker = L.marker([loc.lat, loc.lng]);
+    marker.bindPopup(`
+      <strong><a href="${loc.url}">${loc.title}</a></strong><br>
+      ${loc.name}<br>
+      <small>${loc.address}</small>
+    `);
+    markers.addLayer(marker);
+  });
+
+  map.addLayer(markers);
+</script>
+{% endblock %}

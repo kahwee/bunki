@@ -12,6 +12,7 @@ import {
   extractFirstImageUrl,
   generatePostPageSchemas,
   generateHomePageSchemas,
+  generateCollectionPageSchema,
   toScriptTag,
 } from "./utils/json-ld.js";
 import { setNoFollowExceptions } from "./utils/markdown-utils";
@@ -195,6 +196,7 @@ export class SiteGenerator {
       this.generateIndexPage(),
       this.generatePostPages(),
       this.generateTagPages(),
+      this.generateMapPage(),
       this.generateYearArchives(),
       this.generateRSSFeed(),
       this.generateSitemap(),
@@ -247,12 +249,27 @@ export class SiteGenerator {
           `/${year}/`,
         );
 
+        // Generate CollectionPage schema for first page only
+        let jsonLd = "";
+        if (page === 1) {
+          const schema = generateCollectionPageSchema({
+            title: `Posts from ${year}`,
+            description: `Articles published in ${year}`,
+            url: `${this.options.config.baseUrl}/${year}/`,
+            posts: yearPosts,
+            site: this.options.config,
+          });
+          jsonLd = toScriptTag(schema);
+        }
+
         const yearPageHtml = nunjucks.render("archive.njk", {
           site: this.options.config,
           posts: paginatedPosts,
           tags: this.getSortedTags(this.options.config.maxTagsOnHomepage),
           year: year,
           pagination,
+          noindex: page > 2, // Add noindex for pages beyond page 2
+          jsonLd,
         });
 
         if (page === 1) {
@@ -297,6 +314,7 @@ export class SiteGenerator {
         tags: this.getSortedTags(this.options.config.maxTagsOnHomepage),
         pagination,
         jsonLd,
+        noindex: page > 2, // Add noindex for pages beyond page 2
       });
 
       if (page === 1) {
@@ -380,11 +398,28 @@ export class SiteGenerator {
           `/tags/${tagData.slug}/`,
         );
 
+        // Generate CollectionPage schema for first page only
+        let jsonLd = "";
+        if (page === 1) {
+          const description =
+            tagData.description || `Articles tagged with ${tagName}`;
+          const schema = generateCollectionPageSchema({
+            title: `${tagName}`,
+            description: description,
+            url: `${this.options.config.baseUrl}/tags/${tagData.slug}/`,
+            posts: tagData.posts,
+            site: this.options.config,
+          });
+          jsonLd = toScriptTag(schema);
+        }
+
         const tagPageHtml = nunjucks.render("tag.njk", {
           site: this.options.config,
           tag: paginatedTagData,
           tags: Object.values(this.site.tags),
           pagination,
+          noindex: page > 2, // Add noindex for pages beyond page 2
+          jsonLd,
         });
 
         if (page === 1) {
@@ -394,6 +429,28 @@ export class SiteGenerator {
           await ensureDir(pageDir);
           await Bun.write(path.join(pageDir, "index.html"), tagPageHtml);
         }
+      }
+    }
+  }
+
+  private async generateMapPage(): Promise<void> {
+    try {
+      const mapDir = path.join(this.options.outputDir, "map");
+      await ensureDir(mapDir);
+
+      const mapHtml = nunjucks.render("map.njk", {
+        site: this.options.config,
+        posts: this.site.posts,
+      });
+
+      await Bun.write(path.join(mapDir, "index.html"), mapHtml);
+      console.log("Generated map page");
+    } catch (error) {
+      // If map.njk template doesn't exist, skip generation silently
+      if (error instanceof Error && error.message.includes("map.njk")) {
+        console.log("No map.njk template found, skipping map page generation");
+      } else {
+        console.warn("Error generating map page:", error);
       }
     }
   }
@@ -576,9 +633,16 @@ export class SiteGenerator {
       <author>${config.authorEmail}</author>`;
         }
 
-        // Add description
+        // Add description (with inline image if available for feed readers)
+        let description = post.excerpt;
+        if (featuredImage) {
+          const absoluteImageUrl = featuredImage.startsWith("http")
+            ? featuredImage
+            : `${config.baseUrl}${featuredImage}`;
+          description = `<img src="${this.escapeXml(absoluteImageUrl)}" alt="" style="max-width:100%; height:auto;" /><br/><br/>${post.excerpt}`;
+        }
         itemXml += `
-      <description><![CDATA[${post.excerpt}]]></description>`;
+      <description><![CDATA[${description}]]></description>`;
 
         // Add categories from tags
         if (post.tags.length > 0) {
@@ -590,14 +654,20 @@ ${categoryTags}`;
         itemXml += `
       <content:encoded><![CDATA[${post.html}]]></content:encoded>`;
 
-        // Add media thumbnail if featured image exists
+        // Add media thumbnail and enclosure if featured image exists
         if (featuredImage) {
           // Make thumbnail URL absolute if it's relative
           const absoluteImageUrl = featuredImage.startsWith("http")
             ? featuredImage
             : `${config.baseUrl}${featuredImage}`;
+
+          // Add media:thumbnail for feed readers that support it
           itemXml += `
       <media:thumbnail url="${this.escapeXml(absoluteImageUrl)}" />`;
+
+          // Add enclosure for better feed reader compatibility (assumes JPEG)
+          itemXml += `
+      <enclosure url="${this.escapeXml(absoluteImageUrl)}" type="image/jpeg" length="0" />`;
         }
 
         itemXml += `
@@ -725,6 +795,14 @@ ${rssItems}
     <lastmod>${currentDate}</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
+  </url>
+`;
+
+    sitemapContent += `  <url>
+    <loc>${config.baseUrl}/map/</loc>
+    <lastmod>${currentDate}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
   </url>
 `;
 

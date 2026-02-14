@@ -62,6 +62,22 @@ export interface BreadcrumbListOptions {
 }
 
 /**
+ * Options for generating CollectionPage JSON-LD
+ */
+export interface CollectionPageOptions {
+  /** Page title */
+  title: string;
+  /** Page description */
+  description: string;
+  /** Page URL */
+  url: string;
+  /** Posts to include in the collection */
+  posts: Post[];
+  /** Site configuration */
+  site: SiteConfig;
+}
+
+/**
  * Generates a Person schema for author information
  *
  * @param name - Author's name
@@ -300,6 +316,48 @@ export function generateBreadcrumbListSchema(
   }
 
   return breadcrumbs;
+}
+
+/**
+ * Generates CollectionPage structured data for archive and tag pages
+ *
+ * This schema helps search engines understand that a page contains a collection
+ * of blog posts, improving indexing of archive, tag, and category pages.
+ *
+ * @param options - CollectionPage generation options
+ * @returns CollectionPage schema as JSON-LD object
+ *
+ * @example
+ * const jsonLd = generateCollectionPageSchema({
+ *   title: "Posts from 2025",
+ *   description: "All articles published in 2025",
+ *   url: "https://example.com/2025/",
+ *   posts: [...],
+ *   site: { title: "My Blog", baseUrl: "https://example.com" }
+ * });
+ *
+ * @see https://schema.org/CollectionPage
+ */
+export function generateCollectionPageSchema(
+  options: CollectionPageOptions,
+): SchemaOrgThing {
+  const { title, description, url, posts, site } = options;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: title,
+    description: description,
+    url: url,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: posts.slice(0, 10).map((post, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: `${site.baseUrl}${post.url}`,
+      })),
+    },
+  };
 }
 
 /**
