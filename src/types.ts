@@ -1,6 +1,17 @@
 /**
  * Post object representing a single markdown file
  */
+export interface Location {
+  /** Name of the location */
+  name: string;
+  /** Full address of the location */
+  address: string;
+  /** Latitude coordinate */
+  lat: number;
+  /** Longitude coordinate */
+  lng: number;
+}
+
 export interface Post {
   /** Title of the post */
   title: string;
@@ -20,6 +31,8 @@ export interface Post {
   excerpt: string;
   /** Rendered HTML content */
   html: string;
+  /** Optional location data for map display */
+  location?: Location;
 }
 
 /**

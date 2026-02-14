@@ -309,6 +309,14 @@ export async function parseMarkdownFile(
       url: `/${postYear}/${slug}/`,
       excerpt: data.excerpt || extractExcerpt(content),
       html: sanitizedHtml,
+      ...(data.location && {
+        location: {
+          name: data.location.name,
+          address: data.location.address,
+          lat: data.location.lat,
+          lng: data.location.lng,
+        },
+      }),
     };
 
     return { post, error: null };
