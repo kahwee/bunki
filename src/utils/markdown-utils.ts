@@ -310,33 +310,41 @@ export async function parseMarkdownFile(
       excerpt: data.excerpt || extractExcerpt(content),
       html: sanitizedHtml,
       ...(data.location && {
-        location: {
-          name: data.location.name,
-          address: data.location.address,
-          lat: data.location.lat,
-          lng: data.location.lng,
-        },
+        location: (() => {
+          // Handle array format - use first element
+          const loc = Array.isArray(data.location) ? data.location[0] : data.location;
+          return {
+            name: loc.name,
+            address: loc.address,
+            lat: loc.lat || loc.latitude,
+            lng: loc.lng || loc.longitude,
+          };
+        })(),
       }),
       ...(data.category && { category: data.category }),
       ...(data.business && {
-        business: {
-          type: data.business.type,
-          name: data.business.name,
-          address: data.business.address,
-          lat: data.business.lat,
-          lng: data.business.lng,
-          ...(data.business.cuisine && { cuisine: data.business.cuisine }),
-          ...(data.business.priceRange && {
-            priceRange: data.business.priceRange,
-          }),
-          ...(data.business.telephone && {
-            telephone: data.business.telephone,
-          }),
-          ...(data.business.url && { url: data.business.url }),
-          ...(data.business.openingHours && {
-            openingHours: data.business.openingHours,
-          }),
-        },
+        business: (() => {
+          // Handle array format - use first element
+          const biz = Array.isArray(data.business) ? data.business[0] : data.business;
+          return {
+            type: biz.type,
+            name: biz.name,
+            address: biz.address,
+            lat: biz.lat || biz.latitude,
+            lng: biz.lng || biz.longitude,
+            ...(biz.cuisine && { cuisine: biz.cuisine }),
+            ...(biz.priceRange && {
+              priceRange: biz.priceRange,
+            }),
+            ...(biz.telephone && {
+              telephone: biz.telephone,
+            }),
+            ...(biz.url && { url: biz.url }),
+            ...(biz.openingHours && {
+              openingHours: biz.openingHours,
+            }),
+          };
+        })(),
       }),
     };
 
