@@ -249,9 +249,66 @@ export function convertMarkdownToHtml(markdownContent: string): string {
 
 export interface ParseError {
   file: string;
-  type: "yaml" | "missing_field" | "file_not_found" | "unknown";
+  type: "yaml" | "missing_field" | "file_not_found" | "unknown" | "validation";
   message: string;
   suggestion?: string;
+}
+
+/**
+ * Validate business location format
+ * Required fields: type, name, address, lat/lng or latitude/longitude
+ */
+function validateBusinessLocation(
+  business: any,
+  filePath: string,
+): ParseError | null {
+  if (!business) return null;
+
+  // Handle both array and single object format
+  const locations = Array.isArray(business) ? business : [business];
+
+  for (let i = 0; i < locations.length; i++) {
+    const loc = locations[i];
+    const locIndex = locations.length > 1 ? ` (location ${i + 1})` : "";
+
+    // Check required fields
+    if (!loc.type) {
+      return {
+        file: filePath,
+        type: "validation",
+        message: `Missing required field 'type' in business${locIndex}`,
+        suggestion:
+          "Add 'type: Restaurant' (or Market, Park, Hotel, Museum, Cafe, Zoo, etc.) to frontmatter",
+      };
+    }
+
+    if (!loc.name) {
+      return {
+        file: filePath,
+        type: "validation",
+        message: `Missing required field 'name' in business${locIndex}`,
+        suggestion: "Add 'name: \"Full Business Name\"' to frontmatter",
+      };
+    }
+
+    // Check for coordinates (accept either lat/lng or latitude/longitude)
+    // Coordinates are REQUIRED
+    const hasLatLng =
+      (loc.lat !== undefined && loc.lng !== undefined) ||
+      (loc.latitude !== undefined && loc.longitude !== undefined);
+
+    if (!hasLatLng) {
+      return {
+        file: filePath,
+        type: "validation",
+        message: `Missing required coordinates in business${locIndex}`,
+        suggestion:
+          "Add 'lat: 47.6062' and 'lng: -122.3321' with numeric coordinates to frontmatter (REQUIRED)",
+      };
+    }
+  }
+
+  return null;
 }
 
 export interface ParseMarkdownResult {
@@ -292,6 +349,17 @@ export async function parseMarkdownFile(
           suggestion: "Add required frontmatter fields (title and date)",
         },
       };
+    }
+
+    // Validate business location format if present
+    if (data.business) {
+      const validationError = validateBusinessLocation(data.business, filePath);
+      if (validationError) {
+        return {
+          post: null,
+          error: validationError,
+        };
+      }
     }
 
     let slug = data.slug || getBaseFilename(filePath);

@@ -545,3 +545,264 @@ describe("GitHub-style Markdown Alerts", () => {
     expect(html).toInclude("Second line");
   });
 });
+
+describe("Business Location Validation", () => {
+  test("should reject business location without type field", async () => {
+    const testDir = path.join(import.meta.dir, "markdown-test-temp-biz1");
+    await fs.promises.mkdir(testDir, { recursive: true });
+
+    const testFile = path.join(testDir, "no-type.md");
+    await fs.promises.writeFile(
+      testFile,
+      `---
+title: Test Location
+date: 2025-01-01T00:00:00Z
+tags: [test]
+business:
+  - name: "Test Business"
+    address: "123 Main St, City, ST 12345"
+    lat: 47.6062
+    lng: -122.3321
+---
+
+Content here`,
+    );
+
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error?.type).toBe("validation");
+    expect(result.error?.message).toInclude("type");
+    expect(result.error?.suggestion).toInclude("type: Restaurant");
+
+    await fs.promises.rm(testDir, { recursive: true });
+  });
+
+  test("should reject business location without name field", async () => {
+    const testDir = path.join(import.meta.dir, "markdown-test-temp-biz2");
+    await fs.promises.mkdir(testDir, { recursive: true });
+
+    const testFile = path.join(testDir, "no-name.md");
+    await fs.promises.writeFile(
+      testFile,
+      `---
+title: Test Location
+date: 2025-01-01T00:00:00Z
+tags: [test]
+business:
+  - type: Restaurant
+    address: "123 Main St, City, ST 12345"
+    lat: 47.6062
+    lng: -122.3321
+---
+
+Content here`,
+    );
+
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error?.type).toBe("validation");
+    expect(result.error?.message).toInclude("name");
+
+    await fs.promises.rm(testDir, { recursive: true });
+  });
+
+  test("should accept business location without address field (address is optional)", async () => {
+    const testDir = path.join(import.meta.dir, "markdown-test-temp-biz3");
+    await fs.promises.mkdir(testDir, { recursive: true });
+
+    const testFile = path.join(testDir, "no-address.md");
+    await fs.promises.writeFile(
+      testFile,
+      `---
+title: Test Location
+date: 2025-01-01T00:00:00Z
+tags: [test]
+business:
+  - type: Restaurant
+    name: "Test Business"
+    lat: 47.6062
+    lng: -122.3321
+---
+
+Content here`,
+    );
+
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).not.toBeNull();
+    expect(result.error).toBeNull();
+    expect(result.post?.business).toBeDefined();
+    expect(result.post?.business?.type).toBe("Restaurant");
+    expect(result.post?.business?.name).toBe("Test Business");
+
+    await fs.promises.rm(testDir, { recursive: true });
+  });
+
+  test("should reject business location without coordinates", async () => {
+    const testDir = path.join(import.meta.dir, "markdown-test-temp-biz4");
+    await fs.promises.mkdir(testDir, { recursive: true });
+
+    const testFile = path.join(testDir, "no-coords.md");
+    await fs.promises.writeFile(
+      testFile,
+      `---
+title: Test Location
+date: 2025-01-01T00:00:00Z
+tags: [test]
+business:
+  - type: Restaurant
+    name: "Test Business"
+    address: "123 Main St, City, ST 12345"
+---
+
+Content here`,
+    );
+
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error?.type).toBe("validation");
+    expect(result.error?.message).toInclude("coordinates");
+    expect(result.error?.suggestion).toInclude("lat:");
+
+    await fs.promises.rm(testDir, { recursive: true });
+  });
+
+  test("should accept valid business location with lat/lng", async () => {
+    const testDir = path.join(import.meta.dir, "markdown-test-temp-biz5");
+    await fs.promises.mkdir(testDir, { recursive: true });
+
+    const testFile = path.join(testDir, "valid-latlng.md");
+    await fs.promises.writeFile(
+      testFile,
+      `---
+title: Test Location
+date: 2025-01-01T00:00:00Z
+tags: [test]
+business:
+  - type: Restaurant
+    name: "Test Business"
+    address: "123 Main St, City, ST 12345"
+    lat: 47.6062
+    lng: -122.3321
+---
+
+Content here`,
+    );
+
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).not.toBeNull();
+    expect(result.error).toBeNull();
+    expect(result.post?.business).toBeDefined();
+    expect(result.post?.business?.type).toBe("Restaurant");
+    expect(result.post?.business?.name).toBe("Test Business");
+    expect(result.post?.business?.address).toBe("123 Main St, City, ST 12345");
+    expect(result.post?.business?.lat).toBe(47.6062);
+    expect(result.post?.business?.lng).toBe(-122.3321);
+
+    await fs.promises.rm(testDir, { recursive: true });
+  });
+
+  test("should accept valid business location with latitude/longitude", async () => {
+    const testDir = path.join(import.meta.dir, "markdown-test-temp-biz6");
+    await fs.promises.mkdir(testDir, { recursive: true });
+
+    const testFile = path.join(testDir, "valid-latlong.md");
+    await fs.promises.writeFile(
+      testFile,
+      `---
+title: Test Location
+date: 2025-01-01T00:00:00Z
+tags: [test]
+business:
+  - type: Museum
+    name: "Test Museum"
+    address: "456 Museum Ave, City, ST 12345"
+    latitude: 47.6062
+    longitude: -122.3321
+---
+
+Content here`,
+    );
+
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).not.toBeNull();
+    expect(result.error).toBeNull();
+    expect(result.post?.business).toBeDefined();
+    expect(result.post?.business?.lat).toBe(47.6062);
+    expect(result.post?.business?.lng).toBe(-122.3321);
+
+    await fs.promises.rm(testDir, { recursive: true });
+  });
+
+  test("should validate multiple business locations", async () => {
+    const testDir = path.join(import.meta.dir, "markdown-test-temp-biz7");
+    await fs.promises.mkdir(testDir, { recursive: true });
+
+    const testFile = path.join(testDir, "multi-biz.md");
+    await fs.promises.writeFile(
+      testFile,
+      `---
+title: Test Location
+date: 2025-01-01T00:00:00Z
+tags: [test]
+business:
+  - type: Restaurant
+    name: "First Business"
+    address: "123 Main St, City, ST 12345"
+    lat: 47.6062
+    lng: -122.3321
+  - type: Museum
+    address: "456 Museum Ave, City, ST 12345"
+    lat: 47.6062
+    lng: -122.3321
+---
+
+Content here`,
+    );
+
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error?.type).toBe("validation");
+    expect(result.error?.message).toInclude("location 2");
+    expect(result.error?.message).toInclude("name");
+
+    await fs.promises.rm(testDir, { recursive: true });
+  });
+
+  test("should accept multiple valid business locations", async () => {
+    const testDir = path.join(import.meta.dir, "markdown-test-temp-biz8");
+    await fs.promises.mkdir(testDir, { recursive: true });
+
+    const testFile = path.join(testDir, "multi-biz-valid.md");
+    await fs.promises.writeFile(
+      testFile,
+      `---
+title: Test Location
+date: 2025-01-01T00:00:00Z
+tags: [test]
+business:
+  - type: Restaurant
+    name: "First Business"
+    address: "123 Main St, City, ST 12345"
+    lat: 47.6062
+    lng: -122.3321
+  - type: Museum
+    name: "Second Business"
+    address: "456 Museum Ave, City, ST 12345"
+    lat: 47.6000
+    lng: -122.3400
+---
+
+Content here`,
+    );
+
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).not.toBeNull();
+    expect(result.error).toBeNull();
+
+    await fs.promises.rm(testDir, { recursive: true });
+  });
+});

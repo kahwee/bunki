@@ -41,8 +41,12 @@ export async function parseMarkdownDirectory(
       const missingFieldErrors = errors.filter(
         (e) => e.type === "missing_field",
       );
+      const validationErrors = errors.filter((e) => e.type === "validation");
       const otherErrors = errors.filter(
-        (e) => e.type !== "yaml" && e.type !== "missing_field",
+        (e) =>
+          e.type !== "yaml" &&
+          e.type !== "missing_field" &&
+          e.type !== "validation",
       );
 
       if (yamlErrors.length > 0) {
@@ -72,6 +76,20 @@ export async function parseMarkdownDirectory(
         console.error("");
       }
 
+      if (validationErrors.length > 0) {
+        console.error(`  Validation Errors (${validationErrors.length}):`);
+        validationErrors.slice(0, 5).forEach((e) => {
+          console.error(`    ⚠️  ${e.file}: ${e.message}`);
+          if (e.suggestion) {
+            console.error(`       💡 ${e.suggestion}`);
+          }
+        });
+        if (validationErrors.length > 5) {
+          console.error(`    ... and ${validationErrors.length - 5} more`);
+        }
+        console.error("");
+      }
+
       if (otherErrors.length > 0) {
         console.error(`  Other Errors (${otherErrors.length}):`);
         otherErrors.slice(0, 3).forEach((e) => {
@@ -89,6 +107,15 @@ export async function parseMarkdownDirectory(
       console.error(
         `   Example: title: "My Post: A Guide"  (quotes required for colons)\n`,
       );
+
+      // Always fail on validation errors (business location format)
+      if (validationErrors.length > 0) {
+        throw new Error(
+          `❌ Build failed: ${validationErrors.length} validation error(s) found\n` +
+            `   Business locations must have: type, name, address, lat, lng\n` +
+            `   Run 'bunki validate' to see all errors`,
+        );
+      }
 
       if (strictMode) {
         throw new Error(
