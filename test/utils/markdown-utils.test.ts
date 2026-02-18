@@ -704,11 +704,11 @@ Content here`,
     await fs.promises.rm(testDir, { recursive: true });
   });
 
-  test("should accept valid business location with latitude/longitude", async () => {
+  test("should reject business location with deprecated latitude/longitude", async () => {
     const testDir = path.join(import.meta.dir, "markdown-test-temp-biz6");
     await fs.promises.mkdir(testDir, { recursive: true });
 
-    const testFile = path.join(testDir, "valid-latlong.md");
+    const testFile = path.join(testDir, "deprecated-latlong.md");
     await fs.promises.writeFile(
       testFile,
       `---
@@ -727,11 +727,12 @@ Content here`,
     );
 
     const result = await parseMarkdownFile(testFile);
-    expect(result.post).not.toBeNull();
-    expect(result.error).toBeNull();
-    expect(result.post?.business).toBeDefined();
-    expect(result.post?.business?.lat).toBe(47.6062);
-    expect(result.post?.business?.lng).toBe(-122.3321);
+    expect(result.post).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error?.type).toBe("validation");
+    expect(result.error?.message).toContain("lat");
+    expect(result.error?.message).toContain("lng");
+    expect(result.error?.suggestion).toContain("Replace");
 
     await fs.promises.rm(testDir, { recursive: true });
   });

@@ -291,11 +291,20 @@ function validateBusinessLocation(
       };
     }
 
-    // Check for coordinates (accept either lat/lng or latitude/longitude)
+    // Check for deprecated latitude/longitude fields
+    if (loc.latitude !== undefined || loc.longitude !== undefined) {
+      return {
+        file: filePath,
+        type: "validation",
+        message: `Use 'lat' and 'lng' instead of 'latitude' and 'longitude' in business${locIndex}`,
+        suggestion:
+          "Replace 'latitude:' with 'lat:' and 'longitude:' with 'lng:' in frontmatter",
+      };
+    }
+
+    // Check for coordinates (only lat/lng allowed)
     // Coordinates are REQUIRED
-    const hasLatLng =
-      (loc.lat !== undefined && loc.lng !== undefined) ||
-      (loc.latitude !== undefined && loc.longitude !== undefined);
+    const hasLatLng = loc.lat !== undefined && loc.lng !== undefined;
 
     if (!hasLatLng) {
       return {
