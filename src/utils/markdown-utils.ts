@@ -360,6 +360,20 @@ export async function parseMarkdownFile(
       };
     }
 
+    // Check for deprecated 'location:' field - should use 'business:' instead
+    if (data.location) {
+      return {
+        post: null,
+        error: {
+          file: filePath,
+          type: "validation",
+          message: "Use 'business:' instead of deprecated 'location:' field",
+          suggestion:
+            "Replace 'location:' with 'business:' in frontmatter (business requires type, name, lat, lng)",
+        },
+      };
+    }
+
     // Validate business location format if present
     if (data.business) {
       const validationError = validateBusinessLocation(data.business, filePath);
@@ -386,18 +400,6 @@ export async function parseMarkdownFile(
       url: `/${postYear}/${slug}/`,
       excerpt: data.excerpt || extractExcerpt(content),
       html: sanitizedHtml,
-      ...(data.location && {
-        location: (() => {
-          // Handle array format - use first element
-          const loc = Array.isArray(data.location) ? data.location[0] : data.location;
-          return {
-            name: loc.name,
-            address: loc.address,
-            lat: loc.lat || loc.latitude,
-            lng: loc.lng || loc.longitude,
-          };
-        })(),
-      }),
       ...(data.category && { category: data.category }),
       ...(data.business && {
         business: (() => {
@@ -407,8 +409,8 @@ export async function parseMarkdownFile(
             type: biz.type,
             name: biz.name,
             address: biz.address,
-            lat: biz.lat || biz.latitude,
-            lng: biz.lng || biz.longitude,
+            lat: biz.lat,
+            lng: biz.lng,
             ...(biz.cuisine && { cuisine: biz.cuisine }),
             ...(biz.priceRange && {
               priceRange: biz.priceRange,

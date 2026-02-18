@@ -806,4 +806,37 @@ Content here`,
 
     await fs.promises.rm(testDir, { recursive: true });
   });
+
+  test("should reject deprecated location field", async () => {
+    const testDir = path.join(import.meta.dir, "markdown-test-temp-biz9");
+    await fs.promises.mkdir(testDir, { recursive: true });
+
+    const testFile = path.join(testDir, "deprecated-location.md");
+    await fs.promises.writeFile(
+      testFile,
+      `---
+title: Test Location
+date: 2025-01-01T00:00:00Z
+tags: [test]
+location:
+  type: Museum
+  name: "Test Museum"
+  address: "456 Museum Ave, City, ST 12345"
+  lat: 47.6062
+  lng: -122.3321
+---
+
+Content here`,
+    );
+
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error?.type).toBe("validation");
+    expect(result.error?.message).toContain("business");
+    expect(result.error?.message).toContain("location");
+    expect(result.error?.suggestion).toContain("Replace");
+
+    await fs.promises.rm(testDir, { recursive: true });
+  });
 });
