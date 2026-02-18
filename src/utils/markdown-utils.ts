@@ -282,6 +282,52 @@ function validateBusinessLocation(
       };
     }
 
+    // Validate type against Schema.org Place types
+    const validTypes = [
+      "Accommodation",
+      "Apartment",
+      "Attraction",
+      "Beach",
+      "BodyOfWater",
+      "Bridge",
+      "Building",
+      "BusStation",
+      "Cafe",
+      "Campground",
+      "CivicStructure",
+      "EventVenue",
+      "Ferry",
+      "Garden",
+      "HistoricalSite",
+      "Hotel",
+      "Hostel",
+      "Landmark",
+      "LodgingBusiness",
+      "Market",
+      "Monument",
+      "Museum",
+      "NaturalFeature",
+      "Park",
+      "Playground",
+      "Restaurant",
+      "ServiceCenter",
+      "ShoppingCenter",
+      "Store",
+      "TouristAttraction",
+      "TrainStation",
+      "Viewpoint",
+      "Zoo",
+    ];
+
+    if (!validTypes.includes(loc.type)) {
+      return {
+        file: filePath,
+        type: "validation",
+        message: `Invalid business type '${loc.type}' in business${locIndex}`,
+        suggestion: `Use a valid Schema.org Place type: ${validTypes.slice(0, 10).join(", ")}, etc.`,
+      };
+    }
+
     if (!loc.name) {
       return {
         file: filePath,

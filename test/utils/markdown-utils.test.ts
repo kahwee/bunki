@@ -839,4 +839,37 @@ Content here`,
 
     await fs.promises.rm(testDir, { recursive: true });
   });
+
+  test("should reject invalid business type", async () => {
+    const testDir = path.join(import.meta.dir, "markdown-test-temp-biz10");
+    await fs.promises.mkdir(testDir, { recursive: true });
+
+    const testFile = path.join(testDir, "invalid-type.md");
+    await fs.promises.writeFile(
+      testFile,
+      `---
+title: Test Location
+date: 2025-01-01T00:00:00Z
+tags: [test]
+business:
+  - type: InvalidType
+    name: "Test Business"
+    address: "123 Main St, City, ST 12345"
+    lat: 47.6062
+    lng: -122.3321
+---
+
+Content here`,
+    );
+
+    const result = await parseMarkdownFile(testFile);
+    expect(result.post).toBeNull();
+    expect(result.error).not.toBeNull();
+    expect(result.error?.type).toBe("validation");
+    expect(result.error?.message).toContain("Invalid business type");
+    expect(result.error?.message).toContain("InvalidType");
+    expect(result.error?.suggestion).toContain("Schema.org");
+
+    await fs.promises.rm(testDir, { recursive: true });
+  });
 });

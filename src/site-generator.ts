@@ -13,6 +13,7 @@ import {
   generatePostPageSchemas,
   generateHomePageSchemas,
   generateCollectionPageSchema,
+  generateBreadcrumbListSchema,
   toScriptTag,
 } from "./utils/json-ld.js";
 import { setNoFollowExceptions } from "./utils/markdown-utils";
@@ -258,17 +259,30 @@ export class SiteGenerator {
           `/${year}/`,
         );
 
-        // Generate CollectionPage schema for first page only
+        // Generate CollectionPage and BreadcrumbList schemas for first page only
         let jsonLd = "";
         if (page === 1) {
-          const schema = generateCollectionPageSchema({
+          const schemas: any[] = [];
+
+          // Add CollectionPage schema
+          schemas.push(generateCollectionPageSchema({
             title: `Posts from ${year}`,
             description: `Articles published in ${year}`,
             url: `${this.options.config.baseUrl}/${year}/`,
             posts: yearPosts,
             site: this.options.config,
-          });
-          jsonLd = toScriptTag(schema);
+          }));
+
+          // Add BreadcrumbList schema
+          schemas.push(generateBreadcrumbListSchema({
+            site: this.options.config,
+            items: [
+              { name: "Home", url: `${this.options.config.baseUrl}/` },
+              { name: year, url: `${this.options.config.baseUrl}/${year}/` },
+            ],
+          }));
+
+          jsonLd = schemas.map((schema) => toScriptTag(schema)).join("\n");
         }
 
         const yearPageHtml = nunjucks.render("archive.njk", {
@@ -407,19 +421,32 @@ export class SiteGenerator {
           `/tags/${tagData.slug}/`,
         );
 
-        // Generate CollectionPage schema for first page only
+        // Generate CollectionPage and BreadcrumbList schemas for first page only
         let jsonLd = "";
         if (page === 1) {
+          const schemas: any[] = [];
           const description =
             tagData.description || `Articles tagged with ${tagName}`;
-          const schema = generateCollectionPageSchema({
+
+          // Add CollectionPage schema
+          schemas.push(generateCollectionPageSchema({
             title: `${tagName}`,
             description: description,
             url: `${this.options.config.baseUrl}/tags/${tagData.slug}/`,
             posts: tagData.posts,
             site: this.options.config,
-          });
-          jsonLd = toScriptTag(schema);
+          }));
+
+          // Add BreadcrumbList schema
+          schemas.push(generateBreadcrumbListSchema({
+            site: this.options.config,
+            items: [
+              { name: "Home", url: `${this.options.config.baseUrl}/` },
+              { name: tagName, url: `${this.options.config.baseUrl}/tags/${tagData.slug}/` },
+            ],
+          }));
+
+          jsonLd = schemas.map((schema) => toScriptTag(schema)).join("\n");
         }
 
         const tagPageHtml = nunjucks.render("tag.njk", {
