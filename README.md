@@ -96,6 +96,34 @@ performance = "Performance optimization and speed"
 web = "Web development and technology"
 ```
 
+### Business Location Data
+
+Add structured business/location data with automatic validation:
+
+```markdown
+---
+title: "Restaurant Review"
+date: 2025-01-15T09:00:00-07:00
+tags: [food, review]
+business:
+  - type: Restaurant
+    name: "Blue Bottle Coffee"
+    address: "123 Main St, San Francisco, CA 94102"
+    lat: 37.7749
+    lng: -122.4194
+---
+```
+
+**Required fields:** `type`, `name`, `lat`, `lng`
+**Optional fields:** `address`, `cuisine`, `priceRange`, `telephone`, `url`, `openingHours`
+
+The validator enforces:
+- Use `business:` (not deprecated `location:`)
+- Use `lat:`/`lng:` (not deprecated `latitude:`/`longitude:`)
+- All required fields must be present
+
+Validation runs automatically during `bunki generate` and `bunki validate`.
+
 ## CSS & Tailwind
 
 To use Tailwind CSS:
@@ -718,6 +746,7 @@ export S3_PUBLIC_URL="https://img.example.com"
 bunki init [--config FILE]                 # Initialize new site
 bunki new <TITLE> [--tags TAG1,TAG2]       # Create new post
 bunki generate [--config FILE]             # Build static site
+bunki validate [--config FILE]             # Validate frontmatter
 bunki serve [--port 3000]                  # Start dev server
 bunki css [--watch]                        # Process CSS
 bunki images:push [--domain DOMAIN]        # Upload images to cloud
@@ -744,6 +773,7 @@ dist/
 ## Features
 
 - **Markdown Processing**: Frontmatter extraction, code highlighting, HTML sanitization
+- **Frontmatter Validation**: Automatic validation of business location data with clear error messages
 - **Security**: XSS protection, sanitized HTML, link hardening
 - **Performance**: Static files, optional gzip, optimized output
 - **Templating**: Nunjucks with custom filters and macros
@@ -789,7 +819,18 @@ bunki/
 
 ## Changelog
 
-### v0.8.0 (Current)
+### v0.15.0 (Current)
+
+- **Frontmatter Validation**: Automatic validation of business location data
+  - Enforces `business:` field (rejects deprecated `location:`)
+  - Enforces `lat:`/`lng:` coordinates (rejects deprecated `latitude:`/`longitude:`)
+  - Validates required fields (type, name, lat, lng)
+  - Clear error messages with suggestions for fixes
+  - New `bunki validate` command for standalone validation
+- **Enhanced Testing**: 47 tests for markdown parsing and validation
+- **Breaking Change**: Deprecated `location:`, `latitude:`, and `longitude:` fields now rejected
+
+### v0.8.0
 
 - **JSON-LD Structured Data**: Automatic Schema.org markup generation for enhanced SEO
   - BlogPosting schema for individual blog posts with author, keywords, images
