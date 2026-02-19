@@ -389,7 +389,7 @@ Content here`,
     await fs.promises.rm(testDir, { recursive: true });
   });
 
-  test("parseMarkdownFile should use custom slug when provided", async () => {
+  test("parseMarkdownFile should generate slug from filename (ignoring frontmatter)", async () => {
     const testDir = path.join(import.meta.dir, "markdown-test-temp3");
     await fs.promises.mkdir(testDir, { recursive: true });
 
@@ -407,7 +407,8 @@ Content here`,
     );
 
     const result = await parseMarkdownFile(testFile);
-    expect(result.post?.slug).toBe("my-custom-slug");
+    // Slug should be generated from filename, not frontmatter
+    expect(result.post?.slug).toBe("custom-slug");
 
     await fs.promises.rm(testDir, { recursive: true });
   });

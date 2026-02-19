@@ -431,7 +431,7 @@ export async function parseMarkdownFile(
       }
     }
 
-    let slug = data.slug || getBaseFilename(filePath);
+    let slug = getBaseFilename(filePath);
     const sanitizedHtml = convertMarkdownToHtml(content);
     const pacificDate = toPacificTime(data.date);
     const postYear = getPacificYear(data.date);
