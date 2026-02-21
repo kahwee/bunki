@@ -1,6 +1,6 @@
 {
   "name": "bunki",
-  "version": "0.16.0",
+  "version": "0.16.1",
   "description": "An opinionated static site generator built with Bun featuring PostCSS integration and modern web development workflows",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
