@@ -998,3 +998,107 @@ tags: [test]
     await fs.promises.rm(testDir, { recursive: true });
   });
 });
+
+describe("Relative Markdown Link Conversion", () => {
+  test("should convert relative markdown links to absolute URLs", () => {
+    const markdown = `Check out [this post](../2025/my-post.md) for more info.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/my-post/"');
+    expect(html).not.toInclude(".md");
+  });
+
+  test("should convert links with multiple parent directories", () => {
+    const markdown = `See [older post](../../2015/old-post.md) here.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2015/old-post/"');
+    expect(html).not.toInclude(".md");
+  });
+
+  test("should handle multiple relative markdown links in same content", () => {
+    const markdown = `
+First [link](../2025/post-one.md).
+Second [link](../2024/post-two.md).
+Third [link](../../2023/post-three.md).
+    `;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/post-one/"');
+    expect(html).toInclude('href="/2024/post-two/"');
+    expect(html).toInclude('href="/2023/post-three/"');
+    expect(html).not.toInclude(".md");
+  });
+
+  test("should not convert absolute URLs", () => {
+    const markdown = `Visit [external site](https://example.com/2025/post.md).`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="https://example.com/2025/post.md"');
+  });
+
+  test("should not convert internal absolute paths", () => {
+    const markdown = `See [this page](/2025/my-post/).`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/my-post/"');
+  });
+
+  test("should preserve link text when converting", () => {
+    const markdown = `Read [my awesome article](../2025/awesome-post.md) now.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude(">my awesome article</a>");
+    expect(html).toInclude('href="/2025/awesome-post/"');
+  });
+
+  test("should handle relative links with hyphens in slug", () => {
+    const markdown = `Check [this](../2025/multi-word-post-slug.md).`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/multi-word-post-slug/"');
+  });
+
+  test("should handle relative links with underscores in slug", () => {
+    const markdown = `See [article](../2025/post_with_underscores.md).`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/post_with_underscores/"');
+  });
+
+  test("should not convert relative links without .md extension", () => {
+    const markdown = `Download [file](../2025/document.pdf).`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="../2025/document.pdf"');
+    expect(html).not.toInclude('href="/2025/document/"');
+  });
+
+  test("should not convert relative links that don't match year/slug pattern", () => {
+    const markdown = `See [image](../images/photo.md).`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="../images/photo.md"');
+  });
+
+  test("should preserve link formatting with bold/italic text", () => {
+    const markdown = `Read [**bold link**](../2025/post.md) here.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/post/"');
+    expect(html).toInclude("<strong>bold link</strong>");
+  });
+
+  test("should work in combination with internal and external links", () => {
+    const markdown = `
+Visit [external](https://example.com) site.
+Check [relative](../2025/post.md) post.
+See [absolute](/2024/other/) page.
+    `;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="https://example.com"');
+    expect(html).toInclude('href="/2025/post/"');
+    expect(html).toInclude('href="/2024/other/"');
+  });
+});

@@ -267,6 +267,8 @@ const mtime = stat?.mtime; // Date object
 **Markdown Processing:**
 
 - YAML frontmatter parsing (title, date, tags, excerpt)
+- Tag validation (must use hyphens, not spaces: `web-development` not `"web development"`)
+- Relative link conversion (`../2023/post.md` → `/2023/post/`) during build
 - HTML sanitization via DOMPurify
 - Syntax highlighting via highlight.js
 - XSS protection on external links

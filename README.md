@@ -124,6 +124,30 @@ web-development = "Web development and technology"
 new-york-city = "New York City travel guides"
 ```
 
+### Internal Links (Relative Markdown Links)
+
+Bunki automatically converts relative markdown links to absolute URLs during build time. This lets you write cross-references using familiar file paths:
+
+**In your markdown:**
+```markdown
+Check out [my earlier post](../2023/introduction.md) for context.
+
+See also [related article](../../2020/old-post.md).
+```
+
+**Generated HTML:**
+```html
+<a href="/2023/introduction/">my earlier post</a>
+<a href="/2020/old-post/">related article</a>
+```
+
+This feature works with:
+- `../YEAR/slug.md` - Single level up
+- `../../YEAR/slug.md` - Multiple levels up
+- Any number of `../` sequences
+
+The links are automatically converted to absolute URLs (`/YEAR/slug/`) that match your site's URL structure.
+
 ### Business Location Data
 
 Add structured business/location data with automatic validation:
@@ -801,6 +825,7 @@ dist/
 ## Features
 
 - **Markdown Processing**: Frontmatter extraction, code highlighting, HTML sanitization
+- **Relative Link Conversion**: Automatic conversion of relative markdown links (`../2023/post.md`) to absolute URLs (`/2023/post/`)
 - **Frontmatter Validation**: Automatic validation of business location data with clear error messages
 - **Security**: XSS protection, sanitized HTML, link hardening
 - **Performance**: Static files, optional gzip, optimized output
@@ -847,7 +872,17 @@ bunki/
 
 ## Changelog
 
-### v0.15.0 (Current)
+### v0.16.0 (Current)
+
+- **Relative Link Conversion**: Automatically convert relative markdown links to absolute URLs
+  - Supports `../2023/post.md` → `/2023/post/` conversion during build time
+  - Works with multiple parent directories (`../../`, `../../../`, etc.)
+  - Preserves link text and formatting
+  - Enables cleaner internal cross-references in markdown files
+- **Comprehensive Testing**: Added 13 new tests for relative link conversion
+- **Zero Configuration**: Works automatically without any setup required
+
+### v0.15.0
 
 - **Frontmatter Validation**: Automatic validation of business location data
   - Enforces `business:` field (rejects deprecated `location:`)

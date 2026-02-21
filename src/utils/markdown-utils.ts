@@ -108,6 +108,16 @@ function createMarked(cdnConfig?: CDNConfig) {
     walkTokens(token) {
       if (token.type === "link") {
         token.href = token.href || "";
+
+        // Convert relative markdown links to absolute URLs
+        // Matches: ../2015/slug.md or ../../2015/slug.md or ../../../2015/slug.md
+        // Converts to: /2015/slug/
+        const relativeMarkdownMatch = token.href.match(/^(\.\.\/)+(\d{4})\/([^/]+)\.md$/);
+        if (relativeMarkdownMatch) {
+          const [, , year, slug] = relativeMarkdownMatch;
+          token.href = `/${year}/${slug}/`;
+        }
+
         const isExternal =
           token.href &&
           (token.href.startsWith("http://") ||
