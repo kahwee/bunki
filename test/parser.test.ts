@@ -20,8 +20,8 @@ describe("Markdown Parser", () => {
     expect(result.post).toHaveProperty("date");
     expect(result.post).toHaveProperty("tags");
     expect(result.post?.tags).toContain("technology");
-    expect(result.post?.tags).toContain("web development");
-    expect(result.post?.tags).toContain("open source");
+    expect(result.post?.tags).toContain("web-development");
+    expect(result.post?.tags).toContain("open-source");
     expect(result.post).toHaveProperty("content");
     expect(result.post).toHaveProperty("html");
     expect(result.post).toHaveProperty("excerpt");

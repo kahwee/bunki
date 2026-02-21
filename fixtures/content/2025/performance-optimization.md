@@ -1,7 +1,7 @@
 ---
 title: "Performance Optimization in Bunki"
 date: 2025-02-10T10:30:00-07:00
-tags: [performance, web development, bun]
+tags: [performance, web-development, bun]
 excerpt: Exploring the performance optimization techniques used in Bunki to achieve lightning-fast static site generation. Learn how Bun's native APIs and efficient algorithms make Bunki one of the fastest static site generators available.
 ---
 

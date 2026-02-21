@@ -67,13 +67,31 @@ export default (): SiteConfig => ({
 
 ## Content & Frontmatter
 
-Create Markdown files in `content/YYYY/` (e.g., `content/2025/my-post.md`):
+Create Markdown files in `content/YYYY/` using either pattern:
+
+**Option 1: Single file** (traditional)
+```
+content/2025/my-post.md
+```
+
+**Option 2: Directory with README** (Obsidian-friendly)
+```
+content/2025/my-post/README.md
+content/2025/my-post/image.jpg
+```
+
+Both patterns generate the same output: `dist/2025/my-post/index.html`
+
+> [!WARNING]
+> You cannot have both patterns for the same slug. Bunki will throw a validation error if both `content/2025/my-post.md` AND `content/2025/my-post/README.md` exist.
+
+Example frontmatter:
 
 ```markdown
 ---
 title: "Post Title"
 date: 2025-01-15T09:00:00-07:00
-tags: [web, performance]
+tags: [web-development, performance-optimization]
 excerpt: "Optional summary for listings"
 ---
 
@@ -89,11 +107,21 @@ Your content here with **markdown** support.
 </video>
 ```
 
+### Tag Format
+
+> [!IMPORTANT]
+> Tags must use hyphens instead of spaces: `web-development` NOT `"web development"`
+
+Tags with spaces will fail validation. Use hyphenated slugs:
+- ✅ `tags: [new-york-city, travel, family-friendly]`
+- ❌ `tags: ["new york city", "travel", "family friendly"]`
+
 Optional: Define tag descriptions in `src/tags.toml`:
 
 ```toml
-performance = "Performance optimization and speed"
-web = "Web development and technology"
+performance-optimization = "Performance optimization and speed"
+web-development = "Web development and technology"
+new-york-city = "New York City travel guides"
 ```
 
 ### Business Location Data

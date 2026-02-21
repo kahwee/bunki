@@ -149,16 +149,26 @@ export async function writeFileBuffer(
 }
 
 /**
- * Get base filename without extension
+ * Get base filename without extension, handling both patterns:
+ * - content/2025/georgia-aquarium-atlanta.md → georgia-aquarium-atlanta
+ * - content/2025/georgia-aquarium-atlanta/README.md → georgia-aquarium-atlanta
  * @param filePath - Path to file
  * @param extension - Extension to remove (default: ".md")
- * @returns Base filename
+ * @returns Base filename (slug)
  */
 export function getBaseFilename(
   filePath: string,
   extension: string = ".md",
 ): string {
-  return path.basename(filePath, extension);
+  const basename = path.basename(filePath, extension);
+
+  // If filename is README (case-insensitive), use parent directory name
+  if (basename.toLowerCase() === "readme") {
+    const dir = path.dirname(filePath);
+    return path.basename(dir);
+  }
+
+  return basename;
 }
 
 /**

@@ -476,6 +476,22 @@ export async function parseMarkdownFile(
       }
     }
 
+    // Validate tags - must not contain spaces
+    if (data.tags && Array.isArray(data.tags)) {
+      const tagsWithSpaces = data.tags.filter((tag: string) => tag.includes(" "));
+      if (tagsWithSpaces.length > 0) {
+        return {
+          post: null,
+          error: {
+            file: filePath,
+            type: "validation",
+            message: `Tags must not contain spaces. Found: ${tagsWithSpaces.map((t: string) => `"${t}"`).join(", ")}`,
+            suggestion: `Use hyphens instead of spaces. Example: "new-york-city" instead of "new york city"`,
+          },
+        };
+      }
+    }
+
     let slug = getBaseFilename(filePath);
     const sanitizedHtml = convertMarkdownToHtml(content, cdnConfig);
     const pacificDate = toPacificTime(data.date);
