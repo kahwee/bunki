@@ -5,7 +5,7 @@ import { ensureDir, fileExists } from "./file-utils";
 import { createUploader } from "./s3-uploader";
 
 // Constants
-export const DEFAULT_IMAGES_DIR = path.join(process.cwd(), "images");
+export const DEFAULT_IMAGES_DIR = path.join(process.cwd(), "assets");
 
 // Upload images implementation function
 export async function uploadImages(

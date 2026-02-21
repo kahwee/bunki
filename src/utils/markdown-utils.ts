@@ -12,7 +12,7 @@ import { Marked } from "marked";
 import markedAlert from "marked-alert";
 import { markedHighlight } from "marked-highlight";
 import sanitizeHtml from "sanitize-html";
-import { Post } from "../types";
+import { Post, CDNConfig } from "../types";
 import { toPacificTime, getPacificYear } from "./date-utils";
 import { getBaseFilename, readFileAsText } from "./file-utils";
 
@@ -28,10 +28,32 @@ hljs.registerLanguage("swift", swift);
 let noFollowExceptions: Set<string> = new Set();
 
 /**
+ * Transform relative image path to CDN URL
+ * Converts ../../assets/2025/slug/image.jpg to https://cdn.example.com/2025/slug/image.jpg
+ * @param relativePath - Relative path from markdown (e.g., "../../assets/2025/slug/image.jpg")
+ * @param config - CDN configuration with baseUrl and pathPattern
+ * @returns Transformed CDN URL or null if path doesn't match pattern
+ */
+function transformImagePath(relativePath: string, config: CDNConfig): string | null {
+  // Match pattern: ../../assets/{year}/{slug}/{filename}
+  const match = relativePath.match(/^\.\.\/\.\.\/assets\/(\d{4})\/([^/]+)\/(.+)$/);
+  if (!match) return null;
+
+  const [, year, slug, filename] = match;
+  const path = config.pathPattern
+    .replace("{year}", year)
+    .replace("{slug}", slug)
+    .replace("{filename}", filename);
+
+  return `${config.baseUrl}/${path}`;
+}
+
+/**
  * Creates an isolated Marked instance with custom configuration.
  * V17 best practice: Use instance-scoped configuration to avoid global mutations.
+ * @param cdnConfig - Optional CDN configuration for image URL transformation
  */
-function createMarked() {
+function createMarked(cdnConfig?: CDNConfig) {
   // Create isolated Marked instance with syntax highlighting extension
   const marked = new Marked(
     markedHighlight({
@@ -103,6 +125,20 @@ function createMarked() {
           }
         }
       }
+
+      // Transform relative image paths to CDN URLs
+      if (token.type === "image" && cdnConfig?.enabled) {
+        const href = token.href || "";
+
+        // Only transform relative paths starting with ../../assets/
+        if (href.startsWith("../../assets/")) {
+          const transformed = transformImagePath(href, cdnConfig);
+          if (transformed) {
+            (token as any).href = transformed;
+          }
+        }
+        // CDN URLs (https://...) and other paths pass through unchanged
+      }
     },
     hooks: {
       preprocess(markdown) {
@@ -154,6 +190,8 @@ export function setNoFollowExceptions(exceptions: string[]) {
   noFollowExceptions = new Set(
     exceptions.map((domain) => domain.toLowerCase().replace(/^www\./, "")),
   );
+  // Note: module-level marked instance doesn't have CDN config
+  // CDN transformation only works when explicitly passing config to convertMarkdownToHtml
   marked = createMarked();
 }
 
@@ -176,9 +214,15 @@ export function extractExcerpt(content: string, maxLength = 200): string {
   return truncated.substring(0, lastSpace) + "...";
 }
 
-export function convertMarkdownToHtml(markdownContent: string): string {
+export function convertMarkdownToHtml(
+  markdownContent: string,
+  cdnConfig?: CDNConfig
+): string {
+  // Create marked instance with CDN config if provided
+  const markedInstance = cdnConfig ? createMarked(cdnConfig) : marked;
+
   // Use async: false for explicit type safety (we don't have async walkTokens)
-  const html = marked.parse(markdownContent, { async: false }) as string;
+  const html = markedInstance.parse(markdownContent, { async: false }) as string;
   let sanitized = sanitizeHtml(html, {
     allowedTags: sanitizeHtml.defaults.allowedTags.concat([
       "img",
@@ -373,6 +417,7 @@ export interface ParseMarkdownResult {
 
 export async function parseMarkdownFile(
   filePath: string,
+  cdnConfig?: CDNConfig,
 ): Promise<ParseMarkdownResult> {
   try {
     const fileContent = await readFileAsText(filePath);
@@ -432,7 +477,7 @@ export async function parseMarkdownFile(
     }
 
     let slug = getBaseFilename(filePath);
-    const sanitizedHtml = convertMarkdownToHtml(content);
+    const sanitizedHtml = convertMarkdownToHtml(content, cdnConfig);
     const pacificDate = toPacificTime(data.date);
     const postYear = getPacificYear(data.date);
 

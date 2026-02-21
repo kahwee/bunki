@@ -85,6 +85,18 @@ export interface CSSConfig {
 }
 
 /**
+ * Configuration for CDN URL transformation
+ */
+export interface CDNConfig {
+  /** Base URL for CDN (e.g., "https://img.beconfused.com") */
+  baseUrl: string;
+  /** Path pattern for CDN URLs (e.g., "{year}/{slug}/{filename}") */
+  pathPattern: string;
+  /** Whether CDN transformation is enabled */
+  enabled: boolean;
+}
+
+/**
  * Configuration for the site
  */
 export interface SiteConfig {
@@ -102,6 +114,8 @@ export interface SiteConfig {
   s3?: S3Config;
   /** CSS processing configuration */
   css?: CSSConfig;
+  /** CDN URL transformation configuration */
+  cdn?: CDNConfig;
   /** Optional number of tags to display on homepage (sorted by count). If not set, all tags are shown */
   maxTagsOnHomepage?: number;
   /** Optional list of domains to exclude from nofollow attribute. Links to these domains will have follow attribute. */

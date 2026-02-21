@@ -1,4 +1,4 @@
-import { Post } from "./types";
+import { Post, CDNConfig } from "./types";
 import { findFilesByPattern } from "./utils/file-utils";
 import { parseMarkdownFile, type ParseError } from "./utils/markdown-utils";
 
@@ -10,13 +10,14 @@ export interface ParseResult {
 export async function parseMarkdownDirectory(
   contentDir: string,
   strictMode: boolean = false,
+  cdnConfig?: CDNConfig,
 ): Promise<Post[]> {
   try {
     const markdownFiles = await findFilesByPattern("**/*.md", contentDir, true);
     console.log(`Found ${markdownFiles.length} markdown files`);
 
     const resultsPromises = markdownFiles.map((filePath) =>
-      parseMarkdownFile(filePath),
+      parseMarkdownFile(filePath, cdnConfig),
     );
     const results = await Promise.all(resultsPromises);
 

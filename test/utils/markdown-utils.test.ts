@@ -5,6 +5,7 @@ import {
   parseMarkdownFile,
   setNoFollowExceptions,
 } from "../../src/utils/markdown-utils";
+import { CDNConfig } from "../../src/types";
 import path from "path";
 import fs from "fs";
 
@@ -870,6 +871,129 @@ Content here`,
     expect(result.error?.message).toContain("Invalid business type");
     expect(result.error?.message).toContain("InvalidType");
     expect(result.error?.suggestion).toContain("Schema.org");
+
+    await fs.promises.rm(testDir, { recursive: true });
+  });
+});
+
+describe("CDN Image URL Transformation", () => {
+  const cdnConfig: CDNConfig = {
+    baseUrl: "https://img.example.com",
+    pathPattern: "{year}/{slug}/{filename}",
+    enabled: true,
+  };
+
+  test("should transform relative image path to CDN URL", () => {
+    const markdown = `![Alt text](../../assets/2025/test-post/image.jpg)`;
+    const html = convertMarkdownToHtml(markdown, cdnConfig);
+
+    expect(html).toInclude('src="https://img.example.com/2025/test-post/image.jpg"');
+    expect(html).not.toInclude("../../assets/");
+  });
+
+  test("should transform multiple relative images", () => {
+    const markdown = `
+![First](../../assets/2025/post/img1.jpg)
+![Second](../../assets/2025/post/img2.jpg)
+    `;
+    const html = convertMarkdownToHtml(markdown, cdnConfig);
+
+    expect(html).toInclude('src="https://img.example.com/2025/post/img1.jpg"');
+    expect(html).toInclude('src="https://img.example.com/2025/post/img2.jpg"');
+  });
+
+  test("should pass through CDN URLs unchanged", () => {
+    const markdown = `![Already CDN](https://img.example.com/2025/post/image.jpg)`;
+    const html = convertMarkdownToHtml(markdown, cdnConfig);
+
+    expect(html).toInclude('src="https://img.example.com/2025/post/image.jpg"');
+  });
+
+  test("should pass through external URLs unchanged", () => {
+    const markdown = `![External](https://other-site.com/photo.jpg)`;
+    const html = convertMarkdownToHtml(markdown, cdnConfig);
+
+    expect(html).toInclude('src="https://other-site.com/photo.jpg"');
+  });
+
+  test("should handle different CDN path patterns", () => {
+    const customConfig: CDNConfig = {
+      baseUrl: "https://assets.kahwee.com",
+      pathPattern: "images/{year}/{slug}/{filename}",
+      enabled: true,
+    };
+
+    const markdown = `![Image](../../assets/2025/tech-post/photo.webp)`;
+    const html = convertMarkdownToHtml(markdown, customConfig);
+
+    expect(html).toInclude('src="https://assets.kahwee.com/images/2025/tech-post/photo.webp"');
+  });
+
+  test("should not transform when CDN is disabled", () => {
+    const disabledConfig: CDNConfig = {
+      baseUrl: "https://img.example.com",
+      pathPattern: "{year}/{slug}/{filename}",
+      enabled: false,
+    };
+
+    const markdown = `![Image](../../assets/2025/post/image.jpg)`;
+    const html = convertMarkdownToHtml(markdown, disabledConfig);
+
+    expect(html).toInclude("../../assets/2025/post/image.jpg");
+    expect(html).not.toInclude("https://img.example.com");
+  });
+
+  test("should not transform when no CDN config provided", () => {
+    const markdown = `![Image](../../assets/2025/post/image.jpg)`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude("../../assets/2025/post/image.jpg");
+  });
+
+  test("should handle malformed relative paths", () => {
+    const markdown = `![Bad path](../images/2025/post/image.jpg)`;
+    const html = convertMarkdownToHtml(markdown, cdnConfig);
+
+    // Should not transform (doesn't match ../../assets/ pattern)
+    expect(html).toInclude("../images/2025/post/image.jpg");
+  });
+
+  test("should preserve alt text when transforming URLs", () => {
+    const markdown = `![Descriptive alt text](../../assets/2025/post/image.jpg)`;
+    const html = convertMarkdownToHtml(markdown, cdnConfig);
+
+    expect(html).toInclude('alt="Descriptive alt text"');
+    expect(html).toInclude('src="https://img.example.com/2025/post/image.jpg"');
+  });
+
+  test("should preserve lazy loading when transforming URLs", () => {
+    const markdown = `![Image](../../assets/2025/post/image.jpg)`;
+    const html = convertMarkdownToHtml(markdown, cdnConfig);
+
+    expect(html).toInclude('loading="lazy"');
+    expect(html).toInclude('src="https://img.example.com/2025/post/image.jpg"');
+  });
+
+  test("should work with parseMarkdownFile", async () => {
+    const testDir = path.join(import.meta.dir, "markdown-test-temp-cdn");
+    await fs.promises.mkdir(testDir, { recursive: true });
+
+    const testFile = path.join(testDir, "cdn-test.md");
+    await fs.promises.writeFile(
+      testFile,
+      `---
+title: Test CDN
+date: 2025-01-01T00:00:00Z
+tags: [test]
+---
+
+![Test image](../../assets/2025/cdn-test/photo.jpg)`,
+    );
+
+    const result = await parseMarkdownFile(testFile, cdnConfig);
+    expect(result.post).not.toBeNull();
+    expect(result.post?.html).toInclude('src="https://img.example.com/2025/cdn-test/photo.jpg"');
+    expect(result.post?.html).not.toInclude("../../assets/");
 
     await fs.promises.rm(testDir, { recursive: true });
   });

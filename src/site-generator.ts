@@ -145,6 +145,7 @@ export class SiteGenerator {
     const posts = await parseMarkdownDirectory(
       this.options.contentDir,
       strictMode,
+      this.options.config.cdn,
     );
 
     const tags: Record<string, TagData> = {};
