@@ -1101,4 +1101,55 @@ See [absolute](/2024/other/) page.
     expect(html).toInclude('href="/2025/post/"');
     expect(html).toInclude('href="/2024/other/"');
   });
+
+  // Directory-style relative links (with trailing slash, no .md extension)
+  test("should convert directory-style relative links to absolute URLs", () => {
+    const markdown = `Check out [this post](../2025/my-post/) for more info.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/my-post/"');
+    expect(html).not.toInclude("../");
+  });
+
+  test("should convert directory-style links with multiple parent directories", () => {
+    const markdown = `See [older post](../../2015/old-post/) here.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2015/old-post/"');
+    expect(html).not.toInclude("../");
+  });
+
+  test("should handle multiple directory-style links in same content", () => {
+    const markdown = `
+First [link](../2025/post-one/).
+Second [link](../2024/post-two/).
+Third [link](../../2023/post-three/).
+    `;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/post-one/"');
+    expect(html).toInclude('href="/2024/post-two/"');
+    expect(html).toInclude('href="/2023/post-three/"');
+    expect(html).not.toInclude("../");
+  });
+
+  test("should handle both .md and directory-style links together", () => {
+    const markdown = `
+See [markdown link](../2025/post.md) and [directory link](../2024/other/).
+    `;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/post/"');
+    expect(html).toInclude('href="/2024/other/"');
+    expect(html).not.toInclude("../");
+    expect(html).not.toInclude(".md");
+  });
+
+  test("should handle directory links without trailing slash", () => {
+    const markdown = `Check [this post](../2025/my-post) without trailing slash.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/my-post/"');
+    expect(html).not.toInclude("../");
+  });
 });

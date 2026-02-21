@@ -7,6 +7,16 @@ import { registerInitCommand } from "./cli/commands/init";
 import { registerNewCommand } from "./cli/commands/new-post";
 import { registerServeCommand } from "./cli/commands/serve";
 import { registerValidateCommand } from "./cli/commands/validate";
+import { readFileSync } from "fs";
+import { join, dirname } from "path";
+import { fileURLToPath } from "url";
+
+// Read version from package.json
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const packageJson = JSON.parse(
+  readFileSync(join(__dirname, "../package.json"), "utf-8"),
+);
+const VERSION = packageJson.version;
 
 const program = new Command();
 
@@ -22,7 +32,7 @@ registerValidateCommand(program);
 program
   .name("bunki")
   .description("An opinionated static site generator built with Bun")
-  .version("0.10.0");
+  .version(VERSION);
 
 // When called directly (not imported)
 // This ensures it works both as ESM import and when executed directly

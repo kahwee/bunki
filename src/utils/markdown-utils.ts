@@ -110,11 +110,12 @@ function createMarked(cdnConfig?: CDNConfig) {
         token.href = token.href || "";
 
         // Convert relative markdown links to absolute URLs
-        // Matches: ../2015/slug.md or ../../2015/slug.md or ../../../2015/slug.md
+        // Matches: ../2015/slug.md or ../2015/slug/ or ../2015/slug or ../../2015/slug.md
         // Converts to: /2015/slug/
-        const relativeMarkdownMatch = token.href.match(/^(\.\.\/)+(\d{4})\/([^/]+)\.md$/);
-        if (relativeMarkdownMatch) {
-          const [, , year, slug] = relativeMarkdownMatch;
+        // Does NOT match: ../2015/file.pdf (other file extensions)
+        let relativeMatch = token.href.match(/^(\.\.\/)+(\d{4})\/([a-zA-Z0-9_-]+?)(?:\.md)?(?:\/)?$/);
+        if (relativeMatch) {
+          const [, , year, slug] = relativeMatch;
           token.href = `/${year}/${slug}/`;
         }
 
