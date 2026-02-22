@@ -15,7 +15,7 @@ import {
   generateHomePageSchemas,
   generateCollectionPageSchema,
   generateBreadcrumbListSchema,
-  toScriptTag,
+  schemasToHtml,
 } from "../utils/json-ld";
 
 /**
@@ -72,7 +72,7 @@ export async function generateIndexPages(
     let jsonLd = "";
     if (page === 1) {
       const schemas = generateHomePageSchemas({ site: config });
-      jsonLd = schemas.map((schema) => toScriptTag(schema)).join("\n");
+      jsonLd = schemasToHtml(schemas);
     }
 
     const pageHtml = nunjucks.render("index.njk", {
@@ -192,7 +192,7 @@ export async function generateTagPages(
           }),
         );
 
-        jsonLd = schemas.map((schema) => toScriptTag(schema)).join("\n");
+        jsonLd = schemasToHtml(schemas);
       }
 
       const tagPageHtml = nunjucks.render("tag.njk", {
@@ -266,7 +266,7 @@ export async function generateYearArchives(
           }),
         );
 
-        jsonLd = schemas.map((schema) => toScriptTag(schema)).join("\n");
+        jsonLd = schemasToHtml(schemas);
       }
 
       const yearPageHtml = nunjucks.render("archive.njk", {

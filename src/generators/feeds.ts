@@ -3,7 +3,7 @@
  */
 
 import path from "path";
-import type { Post, Site, SiteConfig, TagData } from "../types";
+import type { Post, Site, SiteConfig } from "../types";
 import { toPacificTime } from "../utils/date-utils";
 import {
   escapeXml,

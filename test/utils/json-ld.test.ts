@@ -8,6 +8,7 @@ import {
   generatePostPageSchemas,
   generateHomePageSchemas,
   toScriptTag,
+  schemasToHtml,
   extractFirstImageUrl,
 } from "../../src/utils/json-ld.js";
 import type { Post, SiteConfig } from "../../src/types.js";
@@ -447,6 +448,39 @@ describe("JSON-LD Utilities", () => {
       expect(webSite.url).toBe("https://example.com/");
       expect(organization.name).toBe("My Awesome Blog");
       expect(organization.url).toBe("https://example.com/");
+    });
+  });
+
+  describe("schemasToHtml", () => {
+    test("should convert multiple schemas to HTML script tags", () => {
+      const schemas = generatePostPageSchemas({
+        post: mockPost,
+        site: mockSite,
+      });
+
+      const html = schemasToHtml(schemas);
+
+      expect(html).toInclude('<script type="application/ld+json">');
+      expect(html).toInclude('"@type": "BlogPosting"');
+      expect(html).toInclude('"@type": "BreadcrumbList"');
+      expect(html).toInclude('</script>');
+    });
+
+    test("should handle empty array", () => {
+      const html = schemasToHtml([]);
+      expect(html).toBe("");
+    });
+
+    test("should join schemas with newlines", () => {
+      const person = generatePersonSchema("John Doe");
+      const org = generateOrganizationSchema({
+        name: "Test Org",
+        url: "https://example.com",
+      });
+
+      const html = schemasToHtml([person, org]);
+      const scriptTags = html.split("\n</script>\n");
+      expect(scriptTags.length).toBe(2);
     });
   });
 });

@@ -6,6 +6,7 @@
 import { hash } from "bun";
 import path from "path";
 import type { Post } from "../types";
+import { getFileMtime as getFileMtimeFromUtils } from "./file-utils";
 
 export interface CacheEntry {
   /** Content hash of the file */
@@ -47,15 +48,12 @@ export async function hashFile(filePath: string): Promise<string> {
 }
 
 /**
- * Get file modification time
+ * Get file modification time (returns 0 if file doesn't exist)
+ * Wrapper around file-utils getFileMtime for backward compatibility
  */
 export async function getFileMtime(filePath: string): Promise<number> {
-  try {
-    const stat = await Bun.file(filePath).stat();
-    return stat?.mtime?.getTime() || 0;
-  } catch (error) {
-    return 0;
-  }
+  const mtime = await getFileMtimeFromUtils(filePath);
+  return mtime ?? 0;
 }
 
 /**

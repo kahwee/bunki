@@ -14,7 +14,7 @@ import { setNoFollowExceptions } from "./utils/markdown/parser";
 import {
   extractFirstImageUrl,
   generatePostPageSchemas,
-  toScriptTag,
+  schemasToHtml,
 } from "./utils/json-ld";
 import {
   loadCache,
@@ -175,7 +175,7 @@ export class SiteGenerator {
         site: this.options.config,
         imageUrl: post.image,
       });
-      post.jsonLd = schemas.map((schema) => toScriptTag(schema)).join("\n");
+      post.jsonLd = schemasToHtml(schemas);
 
       post.tags.forEach((tagName) => {
         const tagSlug = slugify(tagName, { lower: true, strict: true });

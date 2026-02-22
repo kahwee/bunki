@@ -380,6 +380,15 @@ export function toScriptTag(jsonLd: SchemaOrgThing): string {
 }
 
 /**
+ * Convert multiple JSON-LD schemas to HTML script tags
+ * @param schemas - Array of schema objects
+ * @returns HTML string with script tags joined by newlines
+ */
+export function schemasToHtml(schemas: SchemaOrgThing[]): string {
+  return schemas.map((schema) => toScriptTag(schema)).join("\n");
+}
+
+/**
  * Extracts the first image URL from HTML content
  *
  * Searches for the first <img> tag in HTML content and returns its src attribute.
