@@ -11,7 +11,11 @@ import type { GeneratorOptions, Post, Site, TagData } from "./types";
 import { toPacificTime, getPacificYear } from "./utils/date-utils";
 import { ensureDir, findFilesByPattern } from "./utils/file-utils";
 import { setNoFollowExceptions } from "./utils/markdown/parser";
-import { extractFirstImageUrl } from "./utils/json-ld";
+import {
+  extractFirstImageUrl,
+  generatePostPageSchemas,
+  toScriptTag,
+} from "./utils/json-ld";
 import {
   loadCache,
   saveCache,
@@ -159,6 +163,19 @@ export class SiteGenerator {
       if (imageUrl) {
         post.image = imageUrl;
       }
+
+      // Calculate word count for reading time and schema.org
+      if (post.content) {
+        post.wordCount = post.content.split(/\s+/).length;
+      }
+
+      // Generate and cache JSON-LD schemas
+      const schemas = generatePostPageSchemas({
+        post,
+        site: this.options.config,
+        imageUrl: post.image,
+      });
+      post.jsonLd = schemas.map((schema) => toScriptTag(schema)).join("\n");
 
       post.tags.forEach((tagName) => {
         const tagSlug = slugify(tagName, { lower: true, strict: true });

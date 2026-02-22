@@ -1097,7 +1097,20 @@ bunki/
 
 ## Changelog
 
-### v0.18.0 (Current)
+### v0.18.1 (Current)
+
+- **Page Generation Optimization**: Cache JSON-LD schemas and metadata during initialization
+  - Eliminates 910 redundant operations per build (455 posts × 2)
+  - `extractFirstImageUrl()` called once during initialization, cached in `post.image`
+  - Word count calculated once, cached in `post.wordCount`
+  - JSON-LD schemas pre-generated and cached in `post.jsonLd`
+  - Removed duplicate schema generation from page and feed generators
+- **Deployment Optimization**: All deploy commands now use incremental builds by default
+  - `deploy:all` now builds incrementally for faster deployments
+  - Individual site deployments also use incremental builds
+  - Full builds available via `build:full` when needed
+
+### v0.18.0
 
 - **Incremental Builds**: Smart caching for 3.2x faster development builds
   - File change detection using content hashing and modification times

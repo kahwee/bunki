@@ -14,17 +14,6 @@ import {
 import { getTotalPages } from "../utils/pagination";
 
 /**
- * Extract the first image URL from HTML content
- * @param html - HTML content
- * @returns First image URL or null
- */
-function extractFirstImageUrl(html: string): string | null {
-  const imgRegex = /<img[^>]+src=["']([^"']+)["']/;
-  const match = html.match(imgRegex);
-  return match ? match[1] : null;
-}
-
-/**
  * Make image URL absolute if it's relative
  * @param imageUrl - Image URL (may be relative)
  * @param baseUrl - Base URL to prepend
@@ -64,10 +53,9 @@ export function generateRSSFeed(site: Site, config: SiteConfig): string {
       const postUrl = `${config.baseUrl}${post.url}`;
       const pubDate = formatRSSDate(post.date);
 
-      // Extract featured image from HTML
-      const featuredImage = extractFirstImageUrl(post.html);
-      const absoluteImageUrl = featuredImage
-        ? makeAbsoluteUrl(featuredImage, config.baseUrl)
+      // Use cached featured image from post initialization
+      const absoluteImageUrl = post.image
+        ? makeAbsoluteUrl(post.image, config.baseUrl)
         : null;
 
       // Build author string

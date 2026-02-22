@@ -199,10 +199,9 @@ export function generateBlogPostingSchema(
     blogPosting.articleSection = post.tags[0];
   }
 
-  // Add word count (approximate from content length)
-  if (post.content) {
-    const wordCount = post.content.split(/\s+/).length;
-    blogPosting.wordCount = wordCount;
+  // Add word count (pre-calculated during initialization)
+  if (post.wordCount) {
+    blogPosting.wordCount = post.wordCount;
   }
 
   // Add in language (defaults to English)

@@ -39,6 +39,7 @@ describe("JSON-LD Utilities", () => {
     url: "/2025/getting-started-with-bun/",
     excerpt: "Learn how to get started with Bun, the fast JavaScript runtime.",
     html: "<p>Bun is a fast JavaScript runtime...</p>",
+    wordCount: 22,
   };
 
   describe("generatePersonSchema", () => {
@@ -168,14 +169,14 @@ describe("JSON-LD Utilities", () => {
       expect(schema.articleSection).toBe("bun");
     });
 
-    test("should calculate word count from content", () => {
+    test("should use cached word count from post", () => {
       const schema = generateBlogPostingSchema({
         post: mockPost,
         site: mockSite,
       });
 
-      // The mock content has approximately 22 words
-      expect(schema.wordCount).toBeGreaterThan(0);
+      // The mockPost has wordCount pre-calculated
+      expect(schema.wordCount).toBe(22);
     });
 
     test("should use custom dateModified if provided", () => {

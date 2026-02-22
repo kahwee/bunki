@@ -12,8 +12,6 @@ import {
   getTotalPages,
 } from "../utils/pagination";
 import {
-  extractFirstImageUrl,
-  generatePostPageSchemas,
   generateHomePageSchemas,
   generateCollectionPageSchema,
   generateBreadcrumbListSchema,
@@ -111,19 +109,10 @@ export async function generatePostPages(
       batch.map(async (post) => {
         const postPath = post.url.substring(1); // Remove leading /
 
-        // Generate JSON-LD structured data for the post
-        const imageUrl = extractFirstImageUrl(post.html, config.baseUrl);
-        const schemas = generatePostPageSchemas({
-          post,
-          site: config,
-          imageUrl,
-        });
-        const jsonLd = schemas.map((schema) => toScriptTag(schema)).join("\n");
-
         const postHtml = nunjucks.render("post.njk", {
           site: config,
           post,
-          jsonLd,
+          jsonLd: post.jsonLd || "",
         });
 
         await writeHtmlFile(outputDir, `${postPath}index.html`, postHtml);
