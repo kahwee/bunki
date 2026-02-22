@@ -19,7 +19,7 @@ jobs:
     name: Bun v${{ matrix.bun-version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Bun ${{ matrix.bun-version }}
         uses: oven-sh/setup-bun@v2

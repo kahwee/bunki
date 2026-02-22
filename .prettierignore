@@ -3,6 +3,9 @@ test/temp-cli-init/
 test/cli/commands/test/
 test/utils/css-test/
 test/css-test/
+test/server-test-output/
+test/utils/test-image-uploader/
+test/utils/test-upload-src/
 
 # Build and distribution
 dist/
