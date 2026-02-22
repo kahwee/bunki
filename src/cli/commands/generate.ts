@@ -30,6 +30,7 @@ export async function handleGenerateCommand(
     content: string;
     output: string;
     templates: string;
+    incremental?: boolean;
   },
   deps: GenerateDeps = defaultDeps,
 ): Promise<void> {
@@ -44,6 +45,9 @@ export async function handleGenerateCommand(
     deps.logger.log(`- Content directory: ${contentDir}`);
     deps.logger.log(`- Output directory: ${outputDir}`);
     deps.logger.log(`- Templates directory: ${templatesDir}`);
+    if (options.incremental) {
+      deps.logger.log(`- Incremental mode: enabled`);
+    }
 
     const config = await deps.loadConfig(configPath);
     const generator = deps.createGenerator({
@@ -52,6 +56,11 @@ export async function handleGenerateCommand(
       templatesDir,
       config,
     });
+
+    if (options.incremental) {
+      generator.enableIncrementalMode();
+    }
+
     await generator.initialize();
     await generator.generate();
 
@@ -73,6 +82,10 @@ export function registerGenerateCommand(program: Command): Command {
       "-t, --templates <dir>",
       "Templates directory",
       DEFAULT_TEMPLATES_DIR,
+    )
+    .option(
+      "-i, --incremental",
+      "Enable incremental builds (only rebuild changed files)",
     )
     .action(async (options) => {
       await handleGenerateCommand(options);

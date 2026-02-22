@@ -47,6 +47,32 @@ function detectFileConflicts(files: string[]): ParseError[] {
   return errors;
 }
 
+/**
+ * Parse specific markdown files (for incremental builds)
+ * Returns both posts and their file paths for cache updates
+ */
+export async function parseMarkdownFiles(
+  filePaths: string[],
+  cdnConfig?: CDNConfig,
+): Promise<Array<{ post: Post; filePath: string }>> {
+  const resultsPromises = filePaths.map((filePath) =>
+    parseMarkdownFile(filePath, cdnConfig).then((result) => ({
+      result,
+      filePath,
+    })),
+  );
+  const results = await Promise.all(resultsPromises);
+
+  const postsWithPaths: Array<{ post: Post; filePath: string }> = [];
+  for (const { result, filePath } of results) {
+    if (result.post) {
+      postsWithPaths.push({ post: result.post, filePath });
+    }
+  }
+
+  return postsWithPaths;
+}
+
 export async function parseMarkdownDirectory(
   contentDir: string,
   strictMode: boolean = false,

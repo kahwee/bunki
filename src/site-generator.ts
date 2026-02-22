@@ -6,12 +6,26 @@
 import nunjucks from "nunjucks";
 import path from "path";
 import slugify from "slugify";
-import { parseMarkdownDirectory } from "./parser";
+import { parseMarkdownDirectory, parseMarkdownFiles } from "./parser";
 import type { GeneratorOptions, Post, Site, TagData } from "./types";
 import { toPacificTime, getPacificYear } from "./utils/date-utils";
-import { ensureDir } from "./utils/file-utils";
+import { ensureDir, findFilesByPattern } from "./utils/file-utils";
 import { setNoFollowExceptions } from "./utils/markdown/parser";
 import { extractFirstImageUrl } from "./utils/json-ld";
+import {
+  loadCache,
+  saveCache,
+  updateCacheEntry,
+  hasConfigChanged,
+  loadCachedPosts,
+  hasFileChanged,
+  type BuildCache,
+} from "./utils/build-cache";
+import {
+  detectChanges,
+  getAffectedTags,
+  estimateTimeSaved,
+} from "./utils/change-detector";
 import {
   generateRSSFeed,
   generateSitemap,
@@ -38,6 +52,8 @@ export class SiteGenerator {
   private options: GeneratorOptions;
   private site: Site;
   private metrics: MetricsCollector;
+  private cache: BuildCache | null = null;
+  private incrementalMode: boolean = false;
 
   constructor(options: GeneratorOptions) {
     this.options = options;
@@ -91,6 +107,13 @@ export class SiteGenerator {
   }
 
   /**
+   * Enable incremental builds
+   */
+  enableIncrementalMode(): void {
+    this.incrementalMode = true;
+  }
+
+  /**
    * Initialize site data - parse markdown and prepare site structure
    */
   async initialize(): Promise<void> {
@@ -118,13 +141,15 @@ export class SiteGenerator {
       }
     }
 
-    // Parse markdown files
-    const strictMode = this.options.config.strictMode ?? false;
-    const posts = await parseMarkdownDirectory(
-      this.options.contentDir,
-      strictMode,
-      this.options.config.cdn,
-    );
+    // Load cache for incremental builds
+    if (this.incrementalMode) {
+      this.cache = await loadCache(process.cwd());
+    }
+
+    // Parse markdown files (full or incremental)
+    const posts = await this.parseContent();
+
+    // Build tags and process posts (continued below...)
 
     // Build tags and process posts
     const tags: Record<string, TagData> = {};
@@ -183,7 +208,31 @@ export class SiteGenerator {
 
     // Generate stylesheet first (CSS needed for all pages)
     this.metrics.startStage("cssProcessing");
-    await generateStylesheet(this.options.config, this.options.outputDir);
+
+    // Check if CSS needs rebuilding
+    let cssChanged = true;
+    if (this.cache && this.incrementalMode && this.options.config.css) {
+      const cssInputPath = path.resolve(
+        process.cwd(),
+        this.options.config.css.input,
+      );
+      const cssOutputPath = path.join(
+        this.options.outputDir,
+        this.options.config.css.output,
+      );
+
+      const cssOutputExists = await Bun.file(cssOutputPath).exists();
+      cssChanged = await hasFileChanged(cssInputPath, this.cache);
+
+      if (!cssChanged && cssOutputExists) {
+        console.log("⏭️  Skipping CSS (unchanged)");
+      } else {
+        await generateStylesheet(this.options.config, this.options.outputDir);
+        await updateCacheEntry(cssInputPath, this.cache);
+      }
+    } else {
+      await generateStylesheet(this.options.config, this.options.outputDir);
+    }
 
     // Parallelize independent page generation tasks for better performance
     this.metrics.startStage("pageGeneration");
@@ -216,6 +265,11 @@ export class SiteGenerator {
     const outputStats = await this.calculateOutputStats();
     const buildMetrics = this.metrics.getMetrics(outputStats);
     displayMetrics(buildMetrics);
+
+    // Save cache for incremental builds
+    if (this.cache) {
+      await saveCache(process.cwd(), this.cache);
+    }
   }
 
   /**
@@ -261,6 +315,115 @@ export class SiteGenerator {
       robotsTxtContent,
     );
     console.log("Generated robots.txt");
+  }
+
+  /**
+   * Parse content (full or incremental)
+   */
+  private async parseContent(): Promise<Post[]> {
+    const strictMode = this.options.config.strictMode ?? false;
+
+    // Full rebuild if not in incremental mode or no cache
+    if (!this.incrementalMode || !this.cache) {
+      const posts = await parseMarkdownDirectory(
+        this.options.contentDir,
+        strictMode,
+        this.options.config.cdn,
+      );
+
+      // Update cache for all files with post data
+      if (this.cache) {
+        const allFiles = await findFilesByPattern(
+          "**/*.md",
+          this.options.contentDir,
+          true,
+        );
+        // Create a map of file paths to posts for efficient lookup
+        const postsByPath = new Map(posts.map((p) => [p.url, p]));
+        for (let i = 0; i < allFiles.length; i++) {
+          const filePath = allFiles[i];
+          const post = posts[i];
+          await updateCacheEntry(filePath, this.cache, { post });
+        }
+      }
+
+      return posts;
+    }
+
+    // Incremental build - detect changes
+    const allFiles = await findFilesByPattern(
+      "**/*.md",
+      this.options.contentDir,
+      true,
+    );
+
+    const configPath = path.join(process.cwd(), "bunki.config.ts");
+    const configChanged = await hasConfigChanged(configPath, this.cache);
+
+    if (configChanged) {
+      console.log("Config changed, full rebuild required");
+      return this.parseContent(); // Force full rebuild
+    }
+
+    const changes = await detectChanges(allFiles, this.cache);
+
+    // Full rebuild if needed
+    if (changes.fullRebuild) {
+      console.log("Full rebuild required");
+      this.incrementalMode = false; // Disable incremental for this build
+      return this.parseContent();
+    }
+
+    // No changes detected
+    if (changes.changedPosts.length === 0) {
+      console.log("No content changes detected, using cached posts");
+      // Load all posts from cache
+      const cachedPosts = loadCachedPosts(this.cache, allFiles);
+      console.log(
+        `✨ Loaded ${cachedPosts.length} posts from cache (0ms parsing)`,
+      );
+      return cachedPosts;
+    }
+
+    // Incremental build - parse only changed files
+    const timeSaved = estimateTimeSaved(
+      allFiles.length,
+      changes.changedPosts.length,
+    );
+    console.log(
+      `📦 Incremental build: ${changes.changedPosts.length}/${allFiles.length} files changed (~${timeSaved}ms saved)`,
+    );
+
+    // Parse only changed files
+    const changedPostsWithPaths = await parseMarkdownFiles(
+      changes.changedPosts,
+      this.options.config.cdn,
+    );
+
+    // Load cached posts for unchanged files
+    const unchangedFiles = allFiles.filter(
+      (f) => !changes.changedPosts.includes(f),
+    );
+    const cachedPosts = loadCachedPosts(this.cache, unchangedFiles);
+
+    console.log(
+      `   Parsed: ${changedPostsWithPaths.length} new/changed, loaded: ${cachedPosts.length} from cache`,
+    );
+
+    // Extract posts from the changed posts
+    const changedPosts = changedPostsWithPaths.map((p) => p.post);
+
+    // Merge and sort all posts by date
+    const allPosts = [...changedPosts, ...cachedPosts].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+
+    // Update cache for changed files with post data
+    for (const { post, filePath } of changedPostsWithPaths) {
+      await updateCacheEntry(filePath, this.cache, { post });
+    }
+
+    return allPosts;
   }
 
   /**
