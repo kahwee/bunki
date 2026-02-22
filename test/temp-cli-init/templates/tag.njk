@@ -1,43 +1,43 @@
 {% extends "base.njk" %}
 
-{% block title %}{{ tag.name }} | {{ site.title }}{% endblock %}
-{% block description %}Posts tagged with {{ tag.name }} on {{ site.title }}{% endblock %}
+  {% block title %}{{ tag.name }} | {{ site.title }}{% endblock %}
+  {% block description %}Posts tagged with {{ tag.name }} on {{ site.title }}{% endblock %}
 
-{% block content %}
-  <h1>Posts tagged "{{ tag.name }}"</h1>
+  {% block content %}
+    <h1>Posts tagged "{{ tag.name }}"</h1>
 
-  {% if tag.description %}
-    <div class="tag-description">{{ tag.description }}</div>
-  {% endif %}
-
-  {% if tag.posts.length > 0 %}
-    <div class="posts">
-      {% for post in tag.posts %}
-        <article class="post-card">
-          <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
-          <div class="post-meta">
-            <time datetime="{{ post.date }}">{{ post.date | date("MMMM D, YYYY") }}</time>
-          </div>
-          <div class="post-excerpt">{{ post.excerpt }}</div>
-          <a href="{{ post.url }}" class="read-more">Read more \u2192</a>
-        </article>
-      {% endfor %}
-    </div>
-
-    {% if pagination.totalPages > 1 %}
-      <nav class="pagination">
-        {% if pagination.hasPrevPage %}
-          <a href="{{ pagination.pagePath }}{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="prev">\u2190 Previous</a>
-        {% endif %}
-
-        {% if pagination.hasNextPage %}
-          <a href="{{ pagination.pagePath }}page/{{ pagination.nextPage }}/" class="next">Next \u2192</a>
-        {% endif %}
-
-        <span class="page-info">Page {{ pagination.currentPage }} of {{ pagination.totalPages }}</span>
-      </nav>
+    {% if tag.description %}
+      <div class="tag-description">{{ tag.description }}</div>
     {% endif %}
-  {% else %}
-    <p>No posts with this tag yet!</p>
-  {% endif %}
-{% endblock %}
+
+    {% if tag.posts.length > 0 %}
+      <div class="posts">
+        {% for post in tag.posts %}
+          <article class="post-card">
+            <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
+            <div class="post-meta">
+              <time datetime="{{ post.date }}">{{ post.date | date("MMMM D, YYYY") }}</time>
+            </div>
+            <div class="post-excerpt">{{ post.excerpt }}</div>
+            <a href="{{ post.url }}" class="read-more">Read more \u2192</a>
+          </article>
+        {% endfor %}
+      </div>
+
+      {% if pagination.totalPages > 1 %}
+        <nav class="pagination">
+          {% if pagination.hasPrevPage %}
+            <a href="{{ pagination.pagePath }}{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="prev">\u2190 Previous</a>
+          {% endif %}
+
+          {% if pagination.hasNextPage %}
+            <a href="{{ pagination.pagePath }}page/{{ pagination.nextPage }}/" class="next">Next \u2192</a>
+          {% endif %}
+
+          <span class="page-info">Page {{ pagination.currentPage }} of {{ pagination.totalPages }}</span>
+        </nav>
+      {% endif %}
+    {% else %}
+      <p>No posts with this tag yet!</p>
+    {% endif %}
+  {% endblock %}

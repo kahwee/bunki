@@ -23,7 +23,6 @@ import {
 } from "./utils/build-cache";
 import {
   detectChanges,
-  getAffectedTags,
   estimateTimeSaved,
 } from "./utils/change-detector";
 import {
@@ -41,7 +40,6 @@ import {
   generateMapPage,
 } from "./generators/pages";
 import { generateStylesheet, copyStaticAssets } from "./generators/assets";
-import { getTotalPages } from "./utils/pagination";
 import {
   MetricsCollector,
   displayMetrics,
@@ -65,11 +63,10 @@ export class SiteGenerator {
     };
     this.metrics = new MetricsCollector();
 
-    // Configure Nunjucks with custom filters and template caching
+    // Configure Nunjucks with custom filters
     const env = nunjucks.configure(this.options.templatesDir, {
       autoescape: true,
       watch: false,
-      noCache: false, // Enable template caching for better performance
     });
 
     // Add date filter

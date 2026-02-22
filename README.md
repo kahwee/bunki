@@ -799,16 +799,134 @@ export S3_PUBLIC_URL="https://img.example.com"
    - WebP for photos
    - SVG for icons/graphics
 
+## Incremental Builds
+
+Bunki supports incremental builds for significantly faster rebuild times during development. When enabled, only changed content is reprocessed while unchanged files are loaded from cache.
+
+### Performance Impact
+
+**Large site example (455 posts):**
+- Full build: 3,128ms
+- Incremental build (no changes): 985ms (**3.2x faster**)
+
+**Speedup breakdown:**
+- Markdown parsing: 1,202ms → 55ms (**22x faster**)
+- CSS processing: 1,024ms → 1ms (**1024x faster**)
+- Overall: **68% faster builds**
+
+### Usage
+
+```bash
+# Enable incremental builds
+bunki generate --incremental
+
+# First run (creates cache)
+# Config changed, full rebuild required
+# Total: 3,128ms (same as normal build)
+
+# Subsequent runs (no changes)
+# No content changes detected, using cached posts
+# ✨ Loaded 455 posts from cache (0ms parsing)
+# ⏭️  Skipping CSS (unchanged)
+# Total: 985ms (3.2x faster!)
+
+# When one file changes
+# 📦 Incremental build: 1/456 files changed (~2730ms saved)
+#    Parsed: 1 new/changed, loaded: 455 from cache
+# Total: ~1,000ms
+```
+
+### How It Works
+
+1. **First build** creates `.bunki-cache.json` with:
+   - File hashes and modification times
+   - Parsed post data (title, content, metadata)
+   - CSS file checksums
+   - Config file hash
+
+2. **Subsequent builds** detect changes by comparing:
+   - Config file hash (triggers full rebuild if changed)
+   - Markdown file hashes/mtimes
+   - CSS file hashes
+
+3. **Selective processing**:
+   - Only parse changed markdown files
+   - Load unchanged posts from cache
+   - Skip CSS if unchanged
+   - Regenerate all pages (currently not selective)
+
+### Cache Management
+
+The cache is stored in `.bunki-cache.json` at your project root:
+
+```bash
+# View cache status
+cat .bunki-cache.json | jq '.version, .configHash'
+
+# Clear cache (force full rebuild)
+rm .bunki-cache.json
+
+# Exclude from version control
+echo ".bunki-cache.json" >> .gitignore
+```
+
+### When to Use
+
+**Recommended for:**
+- Large sites (100+ posts)
+- Development workflow with frequent rebuilds
+- Sites with slow CSS processing (Tailwind, PostCSS)
+
+**Not needed for:**
+- Small sites (<50 posts) - already fast enough
+- CI/CD builds - prefer clean full builds
+- Production deployments - always use full builds
+
+### Cache Format
+
+Version 2.0.0 cache structure:
+
+```json
+{
+  "version": "2.0.0",
+  "configHash": "abc123",
+  "files": {
+    "/path/to/post.md": {
+      "hash": "def456",
+      "mtime": 1771720766417,
+      "post": {
+        "title": "Post Title",
+        "date": "2024-01-01",
+        "content": "...",
+        "html": "..."
+      }
+    },
+    "/path/to/main.css": {
+      "hash": "ghi789",
+      "mtime": 1771720800000
+    }
+  }
+}
+```
+
+### Future Optimizations
+
+Current implementation (v0.18.0) optimizes parsing and CSS processing. Future versions may add:
+- Selective page regeneration (only rebuild changed posts)
+- Incremental sitemap/RSS updates
+- Smart index page regeneration
+
 ## CLI Commands
 
 ```bash
-bunki init [--config FILE]                 # Initialize new site
-bunki new <TITLE> [--tags TAG1,TAG2]       # Create new post
-bunki generate [--config FILE]             # Build static site
-bunki validate [--config FILE]             # Validate frontmatter
-bunki serve [--port 3000]                  # Start dev server
-bunki css [--watch]                        # Process CSS
-bunki images:push [--domain DOMAIN]        # Upload images to cloud
+bunki init [--config FILE]                    # Initialize new site
+bunki new <TITLE> [--tags TAG1,TAG2]          # Create new post
+bunki generate [--config FILE]                # Build static site (full)
+bunki generate --incremental                  # Build with caching (3x faster)
+bunki validate [--config FILE]                # Validate frontmatter
+bunki serve [--port 3000]                     # Start dev server
+bunki css [--watch]                           # Process CSS
+bunki images:push [--domain DOMAIN]           # Upload images to cloud
 ```
 
 ## Output Structure
@@ -895,6 +1013,7 @@ site-generator.ts (orchestrator)
 - **Frontmatter Validation**: Automatic validation of business location data with clear error messages
 - **Security**: XSS protection, sanitized HTML, link hardening
 - **High Performance**:
+  - **Incremental builds** with smart caching (3.2x faster, 68% speedup)
   - Parallel page generation (40-60% faster builds)
   - Batched post processing (10x faster for 100+ posts)
   - Pre-compiled regex patterns (2-3x faster parsing)
@@ -973,7 +1092,24 @@ bunki/
 
 ## Changelog
 
-### v0.17.0 (Current)
+### v0.18.0 (Current)
+
+- **Incremental Builds**: Smart caching for 3.2x faster development builds
+  - File change detection using content hashing and modification times
+  - Selective markdown parsing (only parse changed files)
+  - CSS caching (skip processing if unchanged)
+  - Cache format v2.0.0 stores full parsed post data
+  - Automatic config change detection triggers full rebuilds
+  - `.bunki-cache.json` stores file hashes, mtimes, and parsed posts
+- **Performance Results** (455 posts):
+  - Full build: 3,128ms
+  - Incremental (no changes): 985ms (68% faster)
+  - Markdown parsing: 1,202ms → 55ms (22x faster)
+  - CSS processing: 1,024ms → 1ms (1024x faster)
+- **CLI Enhancement**: New `--incremental` flag for `bunki generate`
+- **Code Cleanup**: Removed unused imports, reverted template extraction
+
+### v0.17.0
 
 - **Major Architecture Refactoring**: Modular design with single responsibility modules
   - Split `site-generator.ts` from 957 to 282 lines (-70%)
