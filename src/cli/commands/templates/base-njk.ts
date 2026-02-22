@@ -1,4 +1,7 @@
-<!DOCTYPE html>
+/**
+ * Base template for all pages
+ */
+export const baseNjk = String.raw`<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -31,4 +34,4 @@
     </div>
   </footer>
 </body>
-</html>
+</html>`;

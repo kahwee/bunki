@@ -1,4 +1,7 @@
-{% extends "base.njk" %}
+/**
+ * Individual post page template
+ */
+export const postNjk = String.raw`{% extends "base.njk" %}
 
 {% block title %}{{ post.title }} | {{ site.title }}{% endblock %}
 {% block description %}{{ post.excerpt }}{% endblock %}
@@ -23,4 +26,4 @@
       {{ post.html | safe }}
     </div>
   </article>
-{% endblock %}
+{% endblock %}`;

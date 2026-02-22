@@ -887,7 +887,9 @@ describe("CDN Image URL Transformation", () => {
     const markdown = `![Alt text](../../assets/2025/test-post/image.jpg)`;
     const html = convertMarkdownToHtml(markdown, cdnConfig);
 
-    expect(html).toInclude('src="https://img.example.com/2025/test-post/image.jpg"');
+    expect(html).toInclude(
+      'src="https://img.example.com/2025/test-post/image.jpg"',
+    );
     expect(html).not.toInclude("../../assets/");
   });
 
@@ -926,7 +928,9 @@ describe("CDN Image URL Transformation", () => {
     const markdown = `![Image](../../assets/2025/tech-post/photo.webp)`;
     const html = convertMarkdownToHtml(markdown, customConfig);
 
-    expect(html).toInclude('src="https://assets.kahwee.com/images/2025/tech-post/photo.webp"');
+    expect(html).toInclude(
+      'src="https://assets.kahwee.com/images/2025/tech-post/photo.webp"',
+    );
   });
 
   test("should not transform when CDN is disabled", () => {
@@ -992,7 +996,9 @@ tags: [test]
 
     const result = await parseMarkdownFile(testFile, cdnConfig);
     expect(result.post).not.toBeNull();
-    expect(result.post?.html).toInclude('src="https://img.example.com/2025/cdn-test/photo.jpg"');
+    expect(result.post?.html).toInclude(
+      'src="https://img.example.com/2025/cdn-test/photo.jpg"',
+    );
     expect(result.post?.html).not.toInclude("../../assets/");
 
     await fs.promises.rm(testDir, { recursive: true });
@@ -1151,5 +1157,54 @@ See [markdown link](../2025/post.md) and [directory link](../2024/other/).
 
     expect(html).toInclude('href="/2025/my-post/"');
     expect(html).not.toInclude("../");
+  });
+
+  // Anchor link tests
+  test("should convert relative links with anchors to absolute URLs", () => {
+    const markdown = `Check [this section](../2025/my-post/#section-title) for details.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/my-post/#section-title"');
+    expect(html).not.toInclude("../");
+  });
+
+  test("should convert .md links with anchors to absolute URLs", () => {
+    const markdown = `See [this part](../2025/guide.md#installation) here.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/guide/#installation"');
+    expect(html).not.toInclude("../");
+    expect(html).not.toInclude(".md");
+  });
+
+  test("should handle directory-style links with anchors", () => {
+    const markdown = `Visit [the FAQ](../2023/faq/#question-5) for answers.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2023/faq/#question-5"');
+    expect(html).not.toInclude("../");
+  });
+
+  test("should handle complex anchors with special characters", () => {
+    const markdown = `Read [about it](../2025/post/#day-trips-monte-albán-and-hierve-el-agua/) here.`;
+    const html = convertMarkdownToHtml(markdown);
+
+    // Anchors are URL-encoded by marked.js (á → %C3%A1)
+    expect(html).toInclude(
+      'href="/2025/post/#day-trips-monte-alb%C3%A1n-and-hierve-el-agua/"',
+    );
+    expect(html).not.toInclude("../");
+  });
+
+  test("should convert multiple relative links with anchors", () => {
+    const markdown = `
+See [section A](../2025/post/#section-a) and [section B](../../2024/other.md#section-b).
+    `;
+    const html = convertMarkdownToHtml(markdown);
+
+    expect(html).toInclude('href="/2025/post/#section-a"');
+    expect(html).toInclude('href="/2024/other/#section-b"');
+    expect(html).not.toInclude("../");
+    expect(html).not.toInclude(".md");
   });
 });

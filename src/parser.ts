@@ -38,7 +38,7 @@ function detectFileConflicts(files: string[]): ParseError[] {
       errors.push({
         file: paths[0], // Show first file in error
         type: "validation",
-        message: `Conflicting files for '${key}': ${paths.map(p => path.relative(process.cwd(), p)).join(" AND ")}`,
+        message: `Conflicting files for '${key}': ${paths.map((p) => path.relative(process.cwd(), p)).join(" AND ")}`,
         suggestion: `Remove one of the files. Keep either the .md file OR the /README.md file, not both.`,
       });
     }
@@ -69,7 +69,9 @@ export async function parseMarkdownDirectory(
       console.error("");
 
       if (strictMode) {
-        throw new Error(`File conflicts detected. Fix conflicts before building.`);
+        throw new Error(
+          `File conflicts detected. Fix conflicts before building.`,
+        );
       }
     }
 

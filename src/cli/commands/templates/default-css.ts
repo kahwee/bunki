@@ -1,4 +1,7 @@
-/* Reset & base styles */
+/**
+ * Default CSS stylesheet for new Bunki sites
+ */
+export const defaultCss = String.raw`/* Reset & base styles */
 * {
   margin: 0;
   padding: 0;
@@ -195,4 +198,4 @@ footer {
   padding: 2rem 0;
   color: #6c757d;
   font-size: 0.9rem;
-}
+}`;

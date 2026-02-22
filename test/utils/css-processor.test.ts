@@ -117,14 +117,16 @@ body {
 
     // PostCSS will try to use default config, which should work
     // Only fail if PostCSS actually fails (not just missing config)
-    await expect(
-      processCSS({
-        css: cssConfig,
-        projectRoot: TEST_DIR,
-        outputDir: OUTPUT_DIR,
-        verbose: false,
-      }),
-    ).resolves.toBeUndefined();
+    const result = await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+    });
+
+    // Should return result with outputPath
+    expect(result).toHaveProperty("outputPath");
+    expect(result.outputPath).toInclude("style.css");
   });
 
   test("should create output directory if it doesn't exist", async () => {
@@ -810,5 +812,176 @@ describe("CSS Processor - Error Handling & Validation", () => {
     const outputPath = path.join(OUTPUT_DIR, "output.css");
     const content = await fs.promises.readFile(outputPath, "utf-8");
     expect(content).toInclude("body");
+  });
+
+  test("should support content-based hashing for cache busting", async () => {
+    const cssConfig = {
+      input: "input.css",
+      output: "style.css",
+      postcssConfig: "postcss.config.js",
+      enabled: true,
+      watch: false,
+    };
+
+    const result = await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+      enableHashing: true,
+    });
+
+    // Should return result with hash
+    expect(result).toHaveProperty("outputPath");
+    expect(result).toHaveProperty("hash");
+    expect(result.hash).toBeString();
+    expect(result.hash).toHaveLength(8); // 8-char base36 hash
+
+    // Hashed file should exist (e.g., style.abc123de.css)
+    const hashedFileExists = await fs.promises
+      .access(result.outputPath)
+      .then(() => true)
+      .catch(() => false);
+    expect(hashedFileExists).toBe(true);
+
+    // Filename should include hash
+    expect(result.outputPath).toInclude(result.hash);
+    expect(result.outputPath).toInclude("style.");
+    expect(result.outputPath).toInclude(".css");
+
+    // Content should be correct
+    const content = await fs.promises.readFile(result.outputPath, "utf-8");
+    expect(content).toInclude("body");
+    expect(content).toInclude("margin: 0");
+  });
+
+  test("should generate same hash for identical CSS content", async () => {
+    const cssConfig = {
+      input: "input.css",
+      output: "style.css",
+      postcssConfig: "postcss.config.js",
+      enabled: true,
+      watch: false,
+    };
+
+    // First build
+    const result1 = await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+      enableHashing: true,
+    });
+
+    // Clean output
+    await fs.promises.rm(OUTPUT_DIR, { recursive: true });
+    await fs.promises.mkdir(OUTPUT_DIR, { recursive: true });
+
+    // Second build (same content)
+    const result2 = await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+      enableHashing: true,
+    });
+
+    // Hashes should match for identical content
+    expect(result1.hash).toBe(result2.hash);
+    expect(path.basename(result1.outputPath)).toBe(
+      path.basename(result2.outputPath),
+    );
+  });
+
+  test("should generate different hash when CSS content changes", async () => {
+    const cssConfig = {
+      input: "input.css",
+      output: "style.css",
+      postcssConfig: "postcss.config.js",
+      enabled: true,
+      watch: false,
+    };
+
+    // First build
+    const result1 = await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+      enableHashing: true,
+    });
+
+    // Modify CSS content
+    await fs.promises.writeFile(
+      path.join(TEST_DIR, "input.css"),
+      `/* Modified CSS */
+body {
+  margin: 10px;
+  padding: 20px;
+}
+
+.test {
+  color: blue;
+}`,
+    );
+
+    // Clean output
+    await fs.promises.rm(OUTPUT_DIR, { recursive: true });
+    await fs.promises.mkdir(OUTPUT_DIR, { recursive: true });
+
+    // Second build (different content)
+    const result2 = await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+      enableHashing: true,
+    });
+
+    // Hashes should differ for different content
+    expect(result1.hash).not.toBe(result2.hash);
+    expect(path.basename(result1.outputPath)).not.toBe(
+      path.basename(result2.outputPath),
+    );
+
+    // Restore original CSS for other tests
+    await fs.promises.writeFile(
+      path.join(TEST_DIR, "input.css"),
+      `/* Test CSS */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.test {
+  color: red;
+}`,
+    );
+  });
+
+  test("should work without hashing when enableHashing is false", async () => {
+    const cssConfig = {
+      input: "input.css",
+      output: "style.css",
+      postcssConfig: "postcss.config.js",
+      enabled: true,
+      watch: false,
+    };
+
+    const result = await processCSS({
+      css: cssConfig,
+      projectRoot: TEST_DIR,
+      outputDir: OUTPUT_DIR,
+      verbose: false,
+      enableHashing: false,
+    });
+
+    // Should return result without hash
+    expect(result).toHaveProperty("outputPath");
+    expect(result.hash).toBeUndefined();
+
+    // Output path should be unhashed
+    expect(result.outputPath).toInclude("style.css");
+    expect(result.outputPath).not.toMatch(/style\.[a-z0-9]{8}\.css/);
   });
 });

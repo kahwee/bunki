@@ -1,36 +1,35 @@
-/**
- * Validate markdown files for parsing errors
- */
-
 import { Command } from "commander";
-import { parseMarkdownDirectory } from "../../parser";
 import { loadConfig } from "../../config";
+import { parseMarkdownDirectory } from "../../parser";
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
 
 export function registerValidateCommand(program: Command) {
   program
     .command("validate")
     .description("Validate markdown files for parsing errors")
     .option("-c, --config <path>", "Path to config file", "bunki.config.ts")
-    .action(async (options: { config: string }) => {
+    .option("-d, --dir <path>", "Override content directory")
+    .action(async (options: { config: string; dir?: string }) => {
+      let config;
       try {
-        const config = await loadConfig(options.config);
+        config = await loadConfig(options.config);
+      } catch (error) {
+        console.error(`Failed to load config: ${getErrorMessage(error)}`);
+        process.exit(1);
+      }
 
-        console.log("🔍 Validating markdown files...\n");
+      const contentDir = options.dir ?? config.contentDir ?? "./content";
 
-        const contentDir = "./content";
+      console.log(`🔍 Validating markdown files in "${contentDir}"...\n`);
 
-        // Run validation in strict mode to get all errors
-        try {
-          await parseMarkdownDirectory(contentDir, true);
-          console.log("\n✅ All markdown files are valid!");
-          process.exit(0);
-        } catch (error: any) {
-          // Errors are already logged by parseMarkdownDirectory
-          console.error("\n❌ Validation failed\n");
-          process.exit(1);
-        }
-      } catch (error: any) {
-        console.error("Error during validation:", error.message);
+      try {
+        await parseMarkdownDirectory(contentDir, true);
+        console.log("✅ All markdown files are valid!");
+      } catch (error) {
+        console.error(`\n❌ Validation failed: ${getErrorMessage(error)}\n`);
         process.exit(1);
       }
     });

@@ -1,7 +1,9 @@
 import { spawn } from "child_process";
+import { hash } from "bun";
 import fs from "fs";
 import path from "path";
 import { CSSConfig } from "../types";
+import { ensureDir } from "./file-utils";
 
 export interface CSSProcessorOptions {
   /** CSS configuration */
@@ -12,53 +14,101 @@ export interface CSSProcessorOptions {
   outputDir: string;
   /** Whether to run in verbose mode */
   verbose?: boolean;
+  /** Enable content-based cache busting with hash */
+  enableHashing?: boolean;
+}
+
+export interface CSSProcessResult {
+  /** Output file path (may include hash if hashing enabled) */
+  outputPath: string;
+  /** Content hash (8-char base36) if hashing enabled */
+  hash?: string;
 }
 
 /**
  * Process CSS using PostCSS directly
  * Throws on error - no fallback
+ * Returns output path (with hash if hashing enabled)
  */
-export async function processCSS(options: CSSProcessorOptions): Promise<void> {
-  const { css, projectRoot, outputDir, verbose = false } = options;
+export async function processCSS(
+  options: CSSProcessorOptions,
+): Promise<CSSProcessResult> {
+  const {
+    css,
+    projectRoot,
+    outputDir,
+    verbose = false,
+    enableHashing = false,
+  } = options;
 
   if (!css.enabled) {
     if (verbose) {
       console.log("CSS processing is disabled");
     }
-    return;
+    return { outputPath: "" };
   }
 
   const inputPath = path.resolve(projectRoot, css.input);
-  const outputPath = path.resolve(outputDir, css.output);
+  const tempOutputPath = path.resolve(outputDir, css.output);
   const postcssConfigPath = css.postcssConfig
     ? path.resolve(projectRoot, css.postcssConfig)
     : path.resolve(projectRoot, "postcss.config.js");
 
   // Validate input file exists
-  try {
-    await fs.promises.access(inputPath);
-  } catch (error) {
+  const inputFile = Bun.file(inputPath);
+  if (!(await inputFile.exists())) {
     throw new Error(`CSS input file not found: ${inputPath}`);
   }
 
   // Ensure output directory exists
-  const outputDirPath = path.dirname(outputPath);
-  await fs.promises.mkdir(outputDirPath, { recursive: true });
+  const outputDirPath = path.dirname(tempOutputPath);
+  await ensureDir(outputDirPath);
 
   if (verbose) {
     console.log("🎨 Building CSS with PostCSS...");
     console.log(`Input: ${inputPath}`);
-    console.log(`Output: ${outputPath}`);
+    console.log(`Output: ${tempOutputPath}`);
     console.log(`Config: ${postcssConfigPath}`);
   }
 
+  // Process CSS with PostCSS
   await runPostCSS(
     inputPath,
-    outputPath,
+    tempOutputPath,
     postcssConfigPath,
     projectRoot,
     verbose,
   );
+
+  // Apply content hashing if enabled
+  if (enableHashing) {
+    const cssFile = Bun.file(tempOutputPath);
+    const cssContent = await cssFile.arrayBuffer();
+
+    // Generate hash using Bun's native hash function
+    const contentHash = hash(cssContent).toString(36).slice(0, 8);
+
+    // Create hashed filename: style.css -> style.abc123de.css
+    const ext = path.extname(tempOutputPath);
+    const basename = path.basename(tempOutputPath, ext);
+    const dir = path.dirname(tempOutputPath);
+    const hashedFilename = `${basename}.${contentHash}${ext}`;
+    const hashedOutputPath = path.join(dir, hashedFilename);
+
+    // Copy to hashed filename
+    await Bun.write(hashedOutputPath, cssFile);
+
+    if (verbose) {
+      console.log(`✅ CSS hashed: ${hashedFilename}`);
+    }
+
+    return {
+      outputPath: hashedOutputPath,
+      hash: contentHash,
+    };
+  }
+
+  return { outputPath: tempOutputPath };
 }
 
 /**

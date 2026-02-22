@@ -1,4 +1,7 @@
-{% extends "base.njk" %}
+/**
+ * All tags listing page template
+ */
+export const tagsNjk = String.raw`{% extends "base.njk" %}
 
 {% block title %}Tags | {{ site.title }}{% endblock %}
 {% block description %}Browse all tags on {{ site.title }}{% endblock %}
@@ -21,4 +24,4 @@
   {% else %}
     <p>No tags found!</p>
   {% endif %}
-{% endblock %}
+{% endblock %}`;
