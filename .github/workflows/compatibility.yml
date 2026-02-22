@@ -27,7 +27,7 @@ jobs:
           bun-version: ${{ matrix.bun-version }}
 
       - name: Cache Bun dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             ~/.bun/install/cache
