@@ -806,10 +806,12 @@ Bunki supports incremental builds for significantly faster rebuild times during 
 ### Performance Impact
 
 **Large site example (455 posts):**
+
 - Full build: 3,128ms
 - Incremental build (no changes): 985ms (**3.2x faster**)
 
 **Speedup breakdown:**
+
 - Markdown parsing: 1,202ms → 55ms (**22x faster**)
 - CSS processing: 1,024ms → 1ms (**1024x faster**)
 - Overall: **68% faster builds**
@@ -873,11 +875,13 @@ echo ".bunki-cache.json" >> .gitignore
 ### When to Use
 
 **Recommended for:**
+
 - Large sites (100+ posts)
 - Development workflow with frequent rebuilds
 - Sites with slow CSS processing (Tailwind, PostCSS)
 
 **Not needed for:**
+
 - Small sites (<50 posts) - already fast enough
 - CI/CD builds - prefer clean full builds
 - Production deployments - always use full builds
@@ -912,6 +916,7 @@ Version 2.0.0 cache structure:
 ### Future Optimizations
 
 Current implementation (v0.18.0) optimizes parsing and CSS processing. Future versions may add:
+
 - Selective page regeneration (only rebuild changed posts)
 - Incremental sitemap/RSS updates
 - Smart index page regeneration

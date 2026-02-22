@@ -21,10 +21,7 @@ import {
   hasFileChanged,
   type BuildCache,
 } from "./utils/build-cache";
-import {
-  detectChanges,
-  estimateTimeSaved,
-} from "./utils/change-detector";
+import { detectChanges, estimateTimeSaved } from "./utils/change-detector";
 import {
   generateRSSFeed,
   generateSitemap,

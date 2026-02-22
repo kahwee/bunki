@@ -90,10 +90,7 @@ export async function loadCache(cwd: string): Promise<BuildCache> {
 /**
  * Save build cache to disk
  */
-export async function saveCache(
-  cwd: string,
-  cache: BuildCache,
-): Promise<void> {
+export async function saveCache(cwd: string, cache: BuildCache): Promise<void> {
   const cachePath = path.join(cwd, CACHE_FILENAME);
 
   try {
