@@ -12,6 +12,7 @@ import {
   buildRSSItem,
 } from "../utils/xml-builder";
 import { getTotalPages } from "../utils/pagination";
+import { PAGINATION, CACHE } from "../constants";
 
 /**
  * Make image URL absolute if it's relative
@@ -40,7 +41,7 @@ function formatRSSDate(date: string | Date): string {
  * @returns RSS feed XML content
  */
 export function generateRSSFeed(site: Site, config: SiteConfig): string {
-  const posts = site.posts.slice(0, 15); // Latest 15 posts
+  const posts = site.posts.slice(0, PAGINATION.RSS_FEED_LIMIT);
   const now = toPacificTime(new Date());
 
   // Determine the latest post date for lastBuildDate
@@ -163,8 +164,7 @@ export function generateSitemap(
     const postDate = new Date(post.date).toISOString();
     const priority = calculateFreshnessPriority(post.date, 0.7, now);
     const age = now - new Date(post.date).getTime();
-    const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
-    const changefreq = age < ONE_MONTH ? "weekly" : "monthly";
+    const changefreq = age < CACHE.ONE_MONTH_MS ? "weekly" : "monthly";
 
     sitemapContent += buildSitemapUrl(postUrl, postDate, changefreq, priority);
   }

@@ -11,12 +11,9 @@ import {
   getPaginatedItems,
   getTotalPages,
 } from "../utils/pagination";
-import {
-  generateHomePageSchemas,
-  generateCollectionPageSchema,
-  generateBreadcrumbListSchema,
-  schemasToHtml,
-} from "../utils/json-ld";
+import { generateHomePageSchemas, schemasToHtml } from "../utils/json-ld";
+import { generateCollectionSchemas } from "../utils/schema-factory";
+import { PAGINATION, SEO } from "../constants";
 
 /**
  * Get sorted tags (by post count)
@@ -60,7 +57,7 @@ export async function generateIndexPages(
   site: Site,
   config: SiteConfig,
   outputDir: string,
-  pageSize: number = 10,
+  pageSize: number = PAGINATION.DEFAULT_PAGE_SIZE,
 ): Promise<void> {
   const totalPages = getTotalPages(site.posts.length, pageSize);
 
@@ -81,7 +78,7 @@ export async function generateIndexPages(
       tags: getSortedTags(site.tags, config.maxTagsOnHomepage),
       pagination,
       jsonLd,
-      noindex: page > 2, // Add noindex for pages beyond page 2
+      noindex: page > SEO.NOINDEX_AFTER_PAGE,
     });
 
     const outputPath = page === 1 ? "index.html" : `page/${page}/index.html`;
@@ -101,9 +98,8 @@ export async function generatePostPages(
   outputDir: string,
 ): Promise<void> {
   // Process posts in batches for better performance
-  const batchSize = 10;
-  for (let i = 0; i < site.posts.length; i += batchSize) {
-    const batch = site.posts.slice(i, i + batchSize);
+  for (let i = 0; i < site.posts.length; i += PAGINATION.BATCH_SIZE) {
+    const batch = site.posts.slice(i, i + PAGINATION.BATCH_SIZE);
 
     await Promise.all(
       batch.map(async (post) => {
@@ -132,7 +128,7 @@ export async function generateTagPages(
   site: Site,
   config: SiteConfig,
   outputDir: string,
-  pageSize: number = 10,
+  pageSize: number = PAGINATION.DEFAULT_PAGE_SIZE,
 ): Promise<void> {
   // Generate tags index page
   const tagIndexHtml = nunjucks.render("tags.njk", {
@@ -161,46 +157,30 @@ export async function generateTagPages(
       );
 
       // Generate CollectionPage and BreadcrumbList schemas for first page only
-      let jsonLd = "";
-      if (page === 1) {
-        const schemas: any[] = [];
-        const description =
-          tagData.description || `Articles tagged with ${tagName}`;
-
-        // Add CollectionPage schema
-        schemas.push(
-          generateCollectionPageSchema({
-            title: `${tagName}`,
-            description: description,
-            url: `${config.baseUrl}/tags/${tagData.slug}/`,
-            posts: tagData.posts,
-            site: config,
-          }),
-        );
-
-        // Add BreadcrumbList schema
-        schemas.push(
-          generateBreadcrumbListSchema({
-            site: config,
-            items: [
-              { name: "Home", url: `${config.baseUrl}/` },
-              {
-                name: tagName,
-                url: `${config.baseUrl}/tags/${tagData.slug}/`,
-              },
-            ],
-          }),
-        );
-
-        jsonLd = schemasToHtml(schemas);
-      }
+      const jsonLd =
+        page === 1
+          ? generateCollectionSchemas(config, {
+              title: tagName,
+              description:
+                tagData.description || `Articles tagged with ${tagName}`,
+              url: `${config.baseUrl}/tags/${tagData.slug}/`,
+              posts: tagData.posts,
+              breadcrumbs: [
+                { name: "Home", url: `${config.baseUrl}/` },
+                {
+                  name: tagName,
+                  url: `${config.baseUrl}/tags/${tagData.slug}/`,
+                },
+              ],
+            })
+          : "";
 
       const tagPageHtml = nunjucks.render("tag.njk", {
         site: config,
         tag: paginatedTagData,
         tags: Object.values(site.tags),
         pagination,
-        noindex: page > 2, // Add noindex for pages beyond page 2
+        noindex: page > SEO.NOINDEX_AFTER_PAGE,
         jsonLd,
       });
 
@@ -225,7 +205,7 @@ export async function generateYearArchives(
   site: Site,
   config: SiteConfig,
   outputDir: string,
-  pageSize: number = 10,
+  pageSize: number = PAGINATION.DEFAULT_PAGE_SIZE,
 ): Promise<void> {
   for (const [year, yearPosts] of Object.entries(site.postsByYear)) {
     const totalPages = getTotalPages(yearPosts.length, pageSize);
@@ -240,34 +220,19 @@ export async function generateYearArchives(
       );
 
       // Generate CollectionPage and BreadcrumbList schemas for first page only
-      let jsonLd = "";
-      if (page === 1) {
-        const schemas: any[] = [];
-
-        // Add CollectionPage schema
-        schemas.push(
-          generateCollectionPageSchema({
-            title: `Posts from ${year}`,
-            description: `Articles published in ${year}`,
-            url: `${config.baseUrl}/${year}/`,
-            posts: yearPosts,
-            site: config,
-          }),
-        );
-
-        // Add BreadcrumbList schema
-        schemas.push(
-          generateBreadcrumbListSchema({
-            site: config,
-            items: [
-              { name: "Home", url: `${config.baseUrl}/` },
-              { name: year, url: `${config.baseUrl}/${year}/` },
-            ],
-          }),
-        );
-
-        jsonLd = schemasToHtml(schemas);
-      }
+      const jsonLd =
+        page === 1
+          ? generateCollectionSchemas(config, {
+              title: `Posts from ${year}`,
+              description: `Articles published in ${year}`,
+              url: `${config.baseUrl}/${year}/`,
+              posts: yearPosts,
+              breadcrumbs: [
+                { name: "Home", url: `${config.baseUrl}/` },
+                { name: year, url: `${config.baseUrl}/${year}/` },
+              ],
+            })
+          : "";
 
       const yearPageHtml = nunjucks.render("archive.njk", {
         site: config,
@@ -275,7 +240,7 @@ export async function generateYearArchives(
         tags: getSortedTags(site.tags, config.maxTagsOnHomepage),
         year: year,
         pagination,
-        noindex: page > 2, // Add noindex for pages beyond page 2
+        noindex: page > SEO.NOINDEX_AFTER_PAGE,
         jsonLd,
       });
 

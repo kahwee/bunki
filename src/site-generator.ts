@@ -3,12 +3,11 @@
  * Coordinates all generation tasks using modular generators
  */
 
-import nunjucks from "nunjucks";
 import path from "path";
 import slugify from "slugify";
 import { parseMarkdownDirectory, parseMarkdownFiles } from "./parser";
 import type { GeneratorOptions, Post, Site, TagData } from "./types";
-import { toPacificTime, getPacificYear } from "./utils/date-utils";
+import { getPacificYear } from "./utils/date-utils";
 import { ensureDir, findFilesByPattern } from "./utils/file-utils";
 import { setNoFollowExceptions } from "./utils/markdown/parser";
 import {
@@ -46,6 +45,8 @@ import {
   displayMetrics,
   type BuildMetrics,
 } from "./utils/build-metrics";
+import { createTemplateEngine } from "./utils/template-engine";
+import { PAGINATION, FILES } from "./constants";
 
 export class SiteGenerator {
   private options: GeneratorOptions;
@@ -64,44 +65,8 @@ export class SiteGenerator {
     };
     this.metrics = new MetricsCollector();
 
-    // Configure Nunjucks with custom filters
-    const env = nunjucks.configure(this.options.templatesDir, {
-      autoescape: true,
-      watch: false,
-    });
-
-    // Add date filter
-    env.addFilter("date", (date, format) => {
-      const d = toPacificTime(date);
-      const months = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-      ];
-
-      if (format === "YYYY") {
-        return d.getFullYear();
-      } else if (format === "MMMM D, YYYY") {
-        return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-      } else if (format === "MMMM D, YYYY h:mm A") {
-        const hours = d.getHours() % 12 || 12;
-        const ampm = d.getHours() >= 12 ? "PM" : "AM";
-        return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} @ ${hours} ${ampm}`;
-      } else {
-        return d.toLocaleDateString("en-US", {
-          timeZone: "America/Los_Angeles",
-        });
-      }
-    });
+    // Configure template engine with custom filters
+    createTemplateEngine(this.options.templatesDir);
   }
 
   /**
@@ -287,8 +252,6 @@ export class SiteGenerator {
    * Generate all feed files (RSS, sitemap, robots.txt)
    */
   private async generateFeeds(): Promise<void> {
-    const pageSize = 10;
-
     // Generate RSS feed
     const rssContent = generateRSSFeed(this.site, this.options.config);
     await Bun.write(path.join(this.options.outputDir, "feed.xml"), rssContent);
@@ -297,7 +260,7 @@ export class SiteGenerator {
     const sitemapContent = generateSitemap(
       this.site,
       this.options.config,
-      pageSize,
+      PAGINATION.DEFAULT_PAGE_SIZE,
     );
     await Bun.write(
       path.join(this.options.outputDir, "sitemap.xml"),
@@ -305,12 +268,15 @@ export class SiteGenerator {
     );
     console.log("Generated sitemap.xml");
 
-    // Generate sitemap index if content is large (> 40KB or > 1000 URLs)
+    // Generate sitemap index if content is large
     const urlCount =
       this.site.posts.length + Object.keys(this.site.tags).length + 10; // rough estimate
     const sitemapSize = sitemapContent.length;
 
-    if (urlCount > 1000 || sitemapSize > 40000) {
+    if (
+      urlCount > FILES.MAX_SITEMAP_URLS ||
+      sitemapSize > FILES.MAX_SITEMAP_SIZE
+    ) {
       const sitemapIndexContent = generateSitemapIndex(this.options.config);
       await Bun.write(
         path.join(this.options.outputDir, "sitemap_index.xml"),

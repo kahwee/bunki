@@ -463,7 +463,7 @@ describe("JSON-LD Utilities", () => {
       expect(html).toInclude('<script type="application/ld+json">');
       expect(html).toInclude('"@type": "BlogPosting"');
       expect(html).toInclude('"@type": "BreadcrumbList"');
-      expect(html).toInclude('</script>');
+      expect(html).toInclude("</script>");
     });
 
     test("should handle empty array", () => {

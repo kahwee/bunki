@@ -1,6 +1,9 @@
 // Export types
 export * from "./types";
 
+// Export constants
+export { PAGINATION, FILES, SEO, CACHE, DATE } from "./constants";
+
 // Export core functionality
 export { parseMarkdownDirectory } from "./parser";
 export { startServer } from "./server";
@@ -32,6 +35,11 @@ export {
   extractExcerpt,
   parseMarkdownFile,
 } from "./utils/markdown-utils";
+export { createTemplateEngine } from "./utils/template-engine";
+export {
+  generateCollectionSchemas,
+  generateHomeBreadcrumbs,
+} from "./utils/schema-factory";
 
 // Export image uploader functions
 export { DEFAULT_IMAGES_DIR, uploadImages } from "./utils/image-uploader";

@@ -1,6 +1,7 @@
 import { Glob } from "bun";
 import path from "path";
 import { mkdir } from "node:fs/promises";
+import { FILES } from "../constants";
 
 /**
  * Find files matching a glob pattern in a directory
@@ -324,7 +325,7 @@ export async function listDir(
  */
 export function createFileWriter(
   filePath: string,
-  highWaterMark: number = 1024 * 1024, // 1MB default
+  highWaterMark: number = FILES.WRITE_BUFFER_SIZE,
 ) {
   const file = Bun.file(filePath);
   return file.writer({ highWaterMark });
