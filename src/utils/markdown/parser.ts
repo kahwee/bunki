@@ -20,6 +20,7 @@ import {
   ALERT_ICONS,
   EXTERNAL_LINK_REGEX,
   IMAGE_PATH_REGEX,
+  IMAGE_PATH_ASSETS_DIR,
   RELATIVE_LINK_REGEX,
   YOUTUBE_EMBED_REGEX,
 } from "./constants";
@@ -49,8 +50,10 @@ export function setNoFollowExceptions(exceptions: string[]) {
 
 /**
  * Transform relative image path to CDN URL
- * Converts ../../assets/2025/slug/image.jpg to https://cdn.example.com/2025/slug/image.jpg
- * @param relativePath - Relative path from markdown (e.g., "../../assets/2025/slug/image.jpg")
+ * Supports two patterns:
+ * 1. ../../assets/2025/slug/image.jpg → https://cdn.example.com/2025/slug/image.jpg
+ * 2. ../_assets/image.jpg → https://cdn.example.com/2025/image.jpg (requires config.postYear)
+ * @param relativePath - Relative path from markdown
  * @param config - CDN configuration with baseUrl and pathPattern
  * @returns Transformed CDN URL or null if path doesn't match pattern
  */
@@ -58,16 +61,31 @@ function transformImagePath(
   relativePath: string,
   config: CDNConfig,
 ): string | null {
-  const match = relativePath.match(IMAGE_PATH_REGEX);
-  if (!match) return null;
+  // Try legacy pattern first: ../../assets/{year}/{slug}/{filename}
+  const legacyMatch = relativePath.match(IMAGE_PATH_REGEX);
+  if (legacyMatch) {
+    const [, year, slug, filename] = legacyMatch;
+    const path = config.pathPattern
+      .replace("{year}", year)
+      .replace("{slug}", slug)
+      .replace("{filename}", filename);
+    return `${config.baseUrl}/${path}`;
+  }
 
-  const [, year, slug, filename] = match;
-  const path = config.pathPattern
-    .replace("{year}", year)
-    .replace("{slug}", slug)
-    .replace("{filename}", filename);
+  // Try new pattern: ../_assets/{filename}
+  const assetsDirMatch = relativePath.match(IMAGE_PATH_ASSETS_DIR);
+  if (assetsDirMatch && config.postYear) {
+    const [, filename] = assetsDirMatch;
+    const path = config.pathPattern
+      .replace("{year}", config.postYear)
+      .replace("{slug}", "") // No slug in new pattern
+      .replace("{filename}", filename)
+      .replace(/\/+/g, "/") // Remove double slashes
+      .replace(/^\//, ""); // Remove leading slash
+    return `${config.baseUrl}/${path}`;
+  }
 
-  return `${config.baseUrl}/${path}`;
+  return null;
 }
 
 /**

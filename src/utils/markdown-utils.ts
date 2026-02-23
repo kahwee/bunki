@@ -103,9 +103,15 @@ export async function parseMarkdownFile(
     }
 
     const slug = getBaseFilename(filePath);
-    const sanitizedHtml = convertMarkdownToHtml(content, cdnConfig);
     const pacificDate = toPacificTime(data.date);
     const postYear = getPacificYear(data.date);
+
+    // Add postYear to CDN config for year-based asset paths
+    const cdnConfigWithYear = cdnConfig
+      ? { ...cdnConfig, postYear: String(postYear) }
+      : undefined;
+
+    const sanitizedHtml = convertMarkdownToHtml(content, cdnConfigWithYear);
 
     const post: Post = {
       title: data.title,

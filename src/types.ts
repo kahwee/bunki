@@ -98,6 +98,8 @@ export interface CDNConfig {
   pathPattern: string;
   /** Whether CDN transformation is enabled */
   enabled: boolean;
+  /** Optional post year for year-based asset paths (e.g., "2025") */
+  postYear?: string;
 }
 
 /**
