@@ -165,8 +165,8 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
       if (token.type === "image" && cdnConfig?.enabled) {
         const href = token.href || "";
 
-        // Only transform relative paths starting with ../../assets/
-        if (href.startsWith("../../assets/")) {
+        // Transform both legacy and new relative path patterns
+        if (href.startsWith("../../assets/") || href.startsWith("../_assets/")) {
           const transformed = transformImagePath(href, cdnConfig);
           if (transformed) {
             (token as any).href = transformed;
