@@ -7,6 +7,7 @@ import { registerInitCommand } from "./cli/commands/init";
 import { registerNewCommand } from "./cli/commands/new-post";
 import { registerServeCommand } from "./cli/commands/serve";
 import { registerValidateCommand } from "./cli/commands/validate";
+import { registerValidateMediaCommand } from "./cli/commands/validate-media";
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -28,6 +29,7 @@ registerServeCommand(program);
 registerCssCommand(program);
 registerImagesPushCommand(program);
 registerValidateCommand(program);
+registerValidateMediaCommand(program);
 
 program
   .name("bunki")
