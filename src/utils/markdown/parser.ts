@@ -21,6 +21,7 @@ import {
   EXTERNAL_LINK_REGEX,
   IMAGE_PATH_REGEX,
   IMAGE_PATH_ASSETS_DIR,
+  IMAGE_PATH_ASSETS_SAME_DIR,
   RELATIVE_LINK_REGEX,
   YOUTUBE_EMBED_REGEX,
 } from "./constants";
@@ -72,10 +73,23 @@ function transformImagePath(
     return `${config.baseUrl}/${path}`;
   }
 
-  // Try new pattern: ../_assets/{filename}
+  // Try new pattern (parent dir): ../_assets/{filename}
   const assetsDirMatch = relativePath.match(IMAGE_PATH_ASSETS_DIR);
   if (assetsDirMatch && config.postYear) {
     const [, filename] = assetsDirMatch;
+    const path = config.pathPattern
+      .replace("{year}", config.postYear)
+      .replace("{slug}", "") // No slug in new pattern
+      .replace("{filename}", filename)
+      .replace(/\/+/g, "/") // Remove double slashes
+      .replace(/^\//, ""); // Remove leading slash
+    return `${config.baseUrl}/${path}`;
+  }
+
+  // Try new pattern (same dir): ./_assets/{filename}
+  const assetsSameDirMatch = relativePath.match(IMAGE_PATH_ASSETS_SAME_DIR);
+  if (assetsSameDirMatch && config.postYear) {
+    const [, filename] = assetsSameDirMatch;
     const path = config.pathPattern
       .replace("{year}", config.postYear)
       .replace("{slug}", "") // No slug in new pattern
@@ -166,7 +180,11 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
         const href = token.href || "";
 
         // Transform both legacy and new relative path patterns
-        if (href.startsWith("../../assets/") || href.startsWith("../_assets/")) {
+        if (
+          href.startsWith("../../assets/") ||
+          href.startsWith("../_assets/") ||
+          href.startsWith("./_assets/")
+        ) {
           const transformed = transformImagePath(href, cdnConfig);
           if (transformed) {
             (token as any).href = transformed;

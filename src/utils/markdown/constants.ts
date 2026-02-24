@@ -8,6 +8,7 @@ export const RELATIVE_LINK_REGEX =
   /^(\.\.\/)+(\d{4})\/([a-zA-Z0-9_-]+?)(?:\.md)?(?:\/)?(#[^#]*)?$/;
 export const IMAGE_PATH_REGEX = /^\.\.\/\.\.\/assets\/(\d{4})\/([^/]+)\/(.+)$/;
 export const IMAGE_PATH_ASSETS_DIR = /^\.\.\/\_assets\/(.+)$/;
+export const IMAGE_PATH_ASSETS_SAME_DIR = /^\.\/\_assets\/(.+)$/;
 export const YOUTUBE_EMBED_REGEX =
   /<a href="(https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)[^"]*)"[^>]*>(.*?)<\/a>/g;
 export const EXTERNAL_LINK_REGEX = /<a href="(https?:\/\/|\/\/)([^"]+)"/g;
