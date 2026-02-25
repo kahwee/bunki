@@ -133,6 +133,7 @@ export class S3Uploader implements Uploader, ImageUploader {
   async uploadImages(
     imagesDir: string,
     minYear?: number,
+    keyTransform?: (relativePath: string) => string,
   ): Promise<Record<string, string>> {
     console.log(
       `[S3] Uploading all images from ${imagesDir} to bucket ${this.s3Config.bucket}...`,
@@ -146,7 +147,7 @@ export class S3Uploader implements Uploader, ImageUploader {
 
     try {
       // Get all files in the images directory using Bun.glob (recursively)
-      const glob = new Bun.Glob("**/*.{jpg,jpeg,png,gif,webp,svg}");
+      const glob = new Bun.Glob("**/*.{jpg,jpeg,png,gif,webp,svg,mp4}");
       const files: string[] = [];
 
       console.log(`[S3] Scanning directory ${imagesDir} for image files...`);
@@ -191,39 +192,33 @@ export class S3Uploader implements Uploader, ImageUploader {
       let uploadedCount = 0;
       let failedCount = 0;
 
-      // Create upload tasks for each image
       const uploadTasks = imageFiles.map((imageFile) => async () => {
         try {
           const imagePath = path.join(imagesDir, imageFile);
-          const filename = path.basename(imagePath);
 
-          // Read the file content using Bun.file
+          // Apply key transform if provided (e.g. strip _assets/ for content-assets mode)
+          const s3Key = keyTransform ? keyTransform(imageFile) : imageFile;
+
           const file = Bun.file(imagePath);
 
-          // Determine content type based on file extension
-          const contentType = file.type;
-
-          // Check if we're in dry run mode
           if (process.env.BUNKI_DRY_RUN === "true") {
             // Dry run: just simulate
           } else {
-            const s3File = this.client.file(imageFile);
+            const s3File = this.client.file(s3Key);
             await s3File.write(file);
           }
 
-          // Get the public URL
-          const imageUrl = this.getPublicUrl(imageFile);
-          imageUrls[imageFile] = imageUrl;
+          const imageUrl = this.getPublicUrl(s3Key);
+          imageUrls[s3Key] = imageUrl;
           uploadedCount++;
 
-          // Progress update every 10 images
           if (uploadedCount % 10 === 0) {
             console.log(
               `[S3] Progress: ${uploadedCount}/${imageFiles.length} images uploaded`,
             );
           }
 
-          return { success: true, file: imageFile };
+          return { success: true, file: s3Key };
         } catch (error) {
           failedCount++;
           console.error(`[S3] Error uploading ${imageFile}:`, error);

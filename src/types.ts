@@ -138,6 +138,11 @@ export interface SiteConfig {
   copyright?: string;
   /** Strict mode: fail build on parsing errors (default: false) */
   strictMode?: boolean;
+  /**
+   * Configuration for content assets stored alongside markdown in content/{year}/{assetsDir}/.
+   * When set, `bunki images:push --content-assets` uses this config for uploads.
+   */
+  contentAssets?: ContentAssetsConfig;
   /** Additional custom configuration options */
   [key: string]: any;
 }
@@ -225,11 +230,13 @@ export interface ImageUploader {
    * Upload all images from a directory
    * @param imagesDir Directory containing images to upload
    * @param minYear Optional minimum year to filter (e.g., 2023 uploads 2023, 2024, etc.)
-   * @returns Record of image filenames to their public URLs
+   * @param keyTransform Optional function to transform relative file path into S3 key
+   * @returns Record of S3 keys to their public URLs
    */
   uploadImages(
     imagesDir: string,
     minYear?: number,
+    keyTransform?: (relativePath: string) => string,
   ): Promise<Record<string, string>>;
 }
 
@@ -249,6 +256,25 @@ export interface S3Config {
 }
 
 /**
+ * Configuration for content assets stored alongside markdown files.
+ * Assets live in content/{year}/{assetsDir}/ and are uploaded to R2/S3
+ * with the key {year}/{filename} (the assetsDir is stripped from the path).
+ */
+export interface ContentAssetsConfig {
+  /**
+   * Directory name within content/{year}/ that contains co-located assets.
+   * Defaults to "_assets". Can be set to "_images" or any other name.
+   */
+  assetsDir?: string;
+  /**
+   * Override S3/R2 config for content assets uploads.
+   * When set, uses this config instead of the site's top-level s3 config.
+   * Useful if you store blog images in a separate bucket from site assets.
+   */
+  s3?: S3Config;
+}
+
+/**
  * Options for image upload
  */
 export interface ImageUploadOptions {
@@ -256,4 +282,11 @@ export interface ImageUploadOptions {
   images?: string;
   outputJson?: string;
   minYear?: number;
+  /** Scan content/{year}/{assetsDir}/ and upload as {year}/{filename} */
+  contentAssets?: boolean;
+  /**
+   * Override the assets directory name used in content-assets mode.
+   * Defaults to "_assets" (or contentAssets.assetsDir from config).
+   */
+  contentAssetsDir?: string;
 }

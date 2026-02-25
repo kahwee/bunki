@@ -541,6 +541,54 @@ This is useful for:
 - Testing uploads for specific years
 - Managing large image collections across multiple uploads
 
+#### `--content-assets`
+
+Upload images that are co-located with markdown files instead of the top-level `assets/` directory.
+
+When content is organized with images living alongside the markdown:
+
+```
+content/
+├── 2024/
+│   └── _assets/
+│       ├── paris-cafe.webp
+│       └── eiffel-tower.webp
+└── 2025/
+    └── _assets/
+        └── tokyo-ramen.webp
+```
+
+Run:
+
+```bash
+bunki images:push --content-assets
+```
+
+This uploads each file with the S3 key `{year}/{filename}` — the `_assets/` segment is stripped. For example, `content/2024/_assets/paris-cafe.webp` becomes key `2024/paris-cafe.webp`, accessible at `https://cdn.example.com/2024/paris-cafe.webp`.
+
+> [!IMPORTANT]
+> Always use CDN URLs in your markdown, not relative `_assets/` paths. Relative paths cause the image files to be bundled into your Cloudflare Workers deployment instead of served from R2.
+
+```markdown
+<!-- ❌ Causes image to be bundled into Workers -->
+![Paris](../2024/_assets/paris-cafe.webp)
+
+<!-- ✅ Served from R2 CDN -->
+![Paris](https://cdn.example.com/2024/paris-cafe.webp)
+```
+
+#### `--content-assets-dir <dir>`
+
+Override the assets subdirectory name. Defaults to `_assets` (or `contentAssets.assetsDir` in `bunki.config.ts`).
+
+```bash
+# Use _images instead of _assets
+bunki images:push --content-assets --content-assets-dir _images
+
+# Use any custom name
+bunki images:push --content-assets --content-assets-dir media
+```
+
 ### Complete Examples
 
 #### Cloudflare R2 Setup
@@ -745,6 +793,56 @@ Ensure all required environment variables are set. Check `bunki.config.ts` and y
 - Bucket names must be 3-63 characters long
 
 ### Advanced Configuration
+
+#### Content Assets Configuration
+
+Configure co-located content assets in `bunki.config.ts`:
+
+```typescript
+import { SiteConfig } from "bunki";
+
+export default (): SiteConfig => ({
+  title: "My Blog",
+  baseUrl: "https://example.com",
+  domain: "example.com",
+
+  // Default S3 config (used by bunki images:push)
+  s3: {
+    accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
+    bucket: "my-site-assets",
+    endpoint: process.env.S3_ENDPOINT,
+    region: "auto",
+    publicUrl: "https://assets.example.com",
+  },
+
+  // Content assets: images stored alongside markdown in content/{year}/_images/
+  contentAssets: {
+    // Directory name within content/{year}/ (default: "_assets")
+    assetsDir: "_images",
+
+    // Optional: use a separate R2 bucket for content assets
+    s3: {
+      accessKeyId: process.env.IMG_ACCESS_KEY_ID || "",
+      secretAccessKey: process.env.IMG_SECRET_ACCESS_KEY || "",
+      bucket: "my-blog-images",
+      endpoint: process.env.S3_ENDPOINT,
+      region: "auto",
+      publicUrl: "https://img.example.com",
+    },
+  },
+});
+```
+
+Then upload content assets:
+
+```bash
+# Uses contentAssets.assetsDir and contentAssets.s3 from config
+bunki images:push --content-assets
+
+# Override the directory name at the CLI level
+bunki images:push --content-assets --content-assets-dir _media
+```
 
 #### Custom Domain per Bucket
 

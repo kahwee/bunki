@@ -1,5 +1,5 @@
 import { Command } from "commander";
-import { DEFAULT_IMAGES_DIR, uploadImages } from "../../utils/image-uploader";
+import { uploadImages } from "../../utils/image-uploader";
 
 interface ImagesPushDeps {
   uploadImages: typeof uploadImages;
@@ -16,9 +16,11 @@ const defaultDeps: ImagesPushDeps = {
 export async function handleImagesPushCommand(
   options: {
     domain?: string;
-    images: string;
+    images?: string;
     outputJson?: string;
     minYear?: string;
+    contentAssets?: boolean;
+    contentAssetsDir?: string;
   },
   deps: ImagesPushDeps = defaultDeps,
 ): Promise<void> {
@@ -28,6 +30,8 @@ export async function handleImagesPushCommand(
       images: options.images,
       outputJson: options.outputJson,
       minYear: options.minYear ? parseInt(options.minYear, 10) : undefined,
+      contentAssets: options.contentAssets,
+      contentAssetsDir: options.contentAssetsDir,
     });
   } catch (error) {
     deps.logger.error("Error uploading images:", error);
@@ -43,11 +47,19 @@ export function registerImagesPushCommand(program: Command): Command {
       "-d, --domain <domain>",
       "Domain name for bucket identification (defaults to domain in bunki.config.ts)",
     )
-    .option("-i, --images <dir>", "Images directory path", DEFAULT_IMAGES_DIR)
+    .option("-i, --images <dir>", "Images directory path")
     .option("--output-json <file>", "Output URL mapping to JSON file")
     .option(
       "--min-year <year>",
       "Only upload images from the specified year onwards (e.g., 2023 uploads 2023, 2024, etc.)",
+    )
+    .option(
+      "--content-assets",
+      "Upload from content/{year}/{assetsDir}/ with S3 key {year}/{filename}",
+    )
+    .option(
+      "--content-assets-dir <dir>",
+      "Assets subdirectory name within content/{year}/ (default: _assets, overrides contentAssets.assetsDir in config)",
     )
     .action(async (options) => {
       await handleImagesPushCommand(options);
