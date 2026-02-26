@@ -315,11 +315,14 @@ export class SiteGenerator {
           this.options.contentDir,
           true,
         );
-        // Create a map of file paths to posts for efficient lookup
-        const postsByPath = new Map(posts.map((p) => [p.url, p]));
-        for (let i = 0; i < allFiles.length; i++) {
-          const filePath = allFiles[i];
-          const post = posts[i];
+        // Use parseMarkdownFiles to get correct filePath→post pairs.
+        // posts[] is date-sorted; allFiles[] is alphabetical — index pairing
+        // would map the wrong post to each file.
+        const postsWithPaths = await parseMarkdownFiles(
+          allFiles,
+          this.options.config.cdn,
+        );
+        for (const { post, filePath } of postsWithPaths) {
           await updateCacheEntry(filePath, this.cache, { post });
         }
       }
