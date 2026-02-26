@@ -22,7 +22,7 @@
     "prepublishOnly": "bun run clean && bun run build && bun run test && bun run typecheck"
   },
   "bin": {
-    "bunki": "./dist/cli.js"
+    "bunki": "dist/cli.js"
   },
   "keywords": [
     "static-site-generator",
