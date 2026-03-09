@@ -11,7 +11,6 @@ import {
   calculateFreshnessPriority,
   buildRSSItem,
 } from "../utils/xml-builder";
-import { getTotalPages } from "../utils/pagination";
 import { PAGINATION, CACHE } from "../constants";
 
 /**
@@ -147,17 +146,6 @@ export function generateSitemap(
     1.0,
   );
 
-  // Homepage pagination
-  const totalHomePages = getTotalPages(site.posts.length, pageSize);
-  for (let page = 2; page <= totalHomePages; page++) {
-    sitemapContent += buildSitemapUrl(
-      `${config.baseUrl}/page/${page}/`,
-      currentDate,
-      "daily",
-      0.8,
-    );
-  }
-
   // Individual posts
   for (const post of site.posts) {
     const postUrl = `${config.baseUrl}${post.url}`;
@@ -201,17 +189,6 @@ export function generateSitemap(
       "weekly",
       tagPriority,
     );
-
-    // Tag pagination
-    const totalTagPages = getTotalPages(tagData.posts.length, pageSize);
-    for (let page = 2; page <= totalTagPages; page++) {
-      sitemapContent += buildSitemapUrl(
-        `${config.baseUrl}/tags/${tagData.slug}/page/${page}/`,
-        currentDate,
-        "weekly",
-        Math.max(0.3, tagPriority - 0.1),
-      );
-    }
   }
 
   // Year archives with pagination
@@ -226,17 +203,6 @@ export function generateSitemap(
       isCurrentYear ? "weekly" : "monthly",
       yearPriority,
     );
-
-    // Year pagination
-    const totalYearPages = getTotalPages(yearPosts.length, pageSize);
-    for (let page = 2; page <= totalYearPages; page++) {
-      sitemapContent += buildSitemapUrl(
-        `${config.baseUrl}/${year}/page/${page}/`,
-        currentDate,
-        isCurrentYear ? "weekly" : "monthly",
-        yearPriority - 0.1,
-      );
-    }
   }
 
   sitemapContent += `</urlset>`;

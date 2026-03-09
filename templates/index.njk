@@ -1,5 +1,20 @@
 {% extends "base.njk" %}
 
+{% block canonical %}{{ site.baseUrl }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
+
+{% block pagination_links %}
+{% if pagination and pagination.totalPages > 1 %}
+  {% if pagination.hasPrevPage %}
+  <link rel="prev" href="{{ site.baseUrl }}/{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}">
+  {% endif %}
+  {% if pagination.hasNextPage %}
+  <link rel="next" href="{{ site.baseUrl }}/page/{{ pagination.nextPage }}/">
+  {% endif %}
+{% endif %}
+{% endblock %}
+
+{% block og_url %}{{ site.baseUrl }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
+
   {% block content %}
     <h1>Latest Posts</h1>
 
