@@ -106,9 +106,13 @@ export async function parseMarkdownFile(
     const pacificDate = toPacificTime(data.date);
     const postYear = getPacificYear(data.date);
 
+    // Fall back to year extracted from file path (e.g. content/2025/post.md → 2025)
+    const yearFromPath = filePath.match(/\/(\d{4})\//)?.[1];
+    const resolvedYear = String(postYear) !== "NaN" ? String(postYear) : yearFromPath;
+
     // Add postYear to CDN config for year-based asset paths
-    const cdnConfigWithYear = cdnConfig
-      ? { ...cdnConfig, postYear: String(postYear) }
+    const cdnConfigWithYear = cdnConfig && resolvedYear
+      ? { ...cdnConfig, postYear: resolvedYear }
       : undefined;
 
     const sanitizedHtml = convertMarkdownToHtml(content, cdnConfigWithYear);

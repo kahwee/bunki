@@ -83,6 +83,23 @@ export class SiteGenerator {
     this.metrics.startStage("initialization");
     console.log("Initializing site generator...");
 
+    // Fail immediately if images are placed in content/_assets/ directly.
+    // Images must live in content/{year}/_assets/ — never at the content root.
+    const flatAssetsDir = path.join(process.cwd(), "content", "_assets");
+    try {
+      const stat = await import("fs/promises").then((m) => m.stat(flatAssetsDir));
+      if (stat.isDirectory()) {
+        throw new Error(
+          `Build error: content/_assets/ must not exist.\n` +
+          `Images must be placed in content/{year}/_assets/ (e.g. content/2025/_assets/).\n` +
+          `Move any files from content/_assets/ into the correct year folder and retry.`
+        );
+      }
+    } catch (err: any) {
+      if (err.code !== "ENOENT") throw err;
+      // ENOENT = directory doesn't exist, which is correct — continue
+    }
+
     await ensureDir(this.options.outputDir);
 
     // Set up nofollow exceptions if configured

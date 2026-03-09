@@ -198,6 +198,27 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
         return markdown;
       },
       postprocess(html) {
+        // Rewrite ./_assets/ paths that survived inside raw HTML blocks
+        // (e.g. images inside <p style="..."> or <video src="...">)
+        if (cdnConfig?.enabled && cdnConfig.postYear) {
+          const year = cdnConfig.postYear;
+          const base = cdnConfig.baseUrl;
+
+          // Replace src="./_assets/filename" (video, img in raw HTML)
+          html = html.replace(
+            /src=(["'])\.\/\_assets\/([^\s"']+)\1/g,
+            (_m, q, filename) => `src=${q}${base}/${year}/${filename}${q}`,
+          );
+
+          // Replace raw markdown image syntax ![alt](./_assets/filename) left
+          // as text inside HTML blocks — convert to <img> tags
+          html = html.replace(
+            /!\[([^\]]*)\]\(\.\/\_assets\/([^\s)]+)\)/g,
+            (_m, alt, filename) =>
+              `<img src="${base}/${year}/${filename}" alt="${alt}" loading="lazy">`,
+          );
+        }
+
         // Convert YouTube links to embeds
         html = html.replace(
           YOUTUBE_EMBED_REGEX,
