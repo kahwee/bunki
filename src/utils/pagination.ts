@@ -22,8 +22,8 @@ export interface PaginationData {
  * @param pagePath - Base path for pagination (e.g., "/", "/tags/tech/")
  * @returns Pagination data object
  */
-export function createPagination<T>(
-  items: T[],
+export function createPagination(
+  items: readonly unknown[],
   currentPage: number,
   pageSize: number,
   pagePath: string,

@@ -47,6 +47,30 @@ async function writeHtmlFile(
 }
 
 /**
+ * Generate an optional page from a template that may not exist.
+ * Skips silently if the template is missing; warns on other errors.
+ */
+async function generateOptionalPage(
+  templateName: string,
+  context: Record<string, unknown>,
+  outputDir: string,
+  outputPath: string,
+  label: string,
+): Promise<void> {
+  try {
+    const html = nunjucks.render(templateName, context);
+    await writeHtmlFile(outputDir, outputPath, html);
+    console.log(`Generated ${label}`);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes(templateName)) {
+      console.log(`No ${templateName} template found, skipping ${label}`);
+    } else {
+      console.warn(`Error generating ${label}:`, error);
+    }
+  }
+}
+
+/**
  * Generate homepage with pagination
  * @param site - Site data
  * @param config - Site configuration
@@ -261,21 +285,13 @@ export async function generate404Page(
   config: SiteConfig,
   outputDir: string,
 ): Promise<void> {
-  try {
-    const notFoundHtml = nunjucks.render("404.njk", {
-      site: config,
-    });
-
-    await writeHtmlFile(outputDir, "404.html", notFoundHtml);
-    console.log("Generated 404.html");
-  } catch (error) {
-    // If 404.njk template doesn't exist, skip generation silently
-    if (error instanceof Error && error.message.includes("404.njk")) {
-      console.log("No 404.njk template found, skipping 404 page generation");
-    } else {
-      console.warn("Error generating 404 page:", error);
-    }
-  }
+  await generateOptionalPage(
+    "404.njk",
+    { site: config },
+    outputDir,
+    "404.html",
+    "404.html",
+  );
 }
 
 /**
@@ -289,20 +305,11 @@ export async function generateMapPage(
   config: SiteConfig,
   outputDir: string,
 ): Promise<void> {
-  try {
-    const mapHtml = nunjucks.render("map.njk", {
-      site: config,
-      posts: site.posts,
-    });
-
-    await writeHtmlFile(outputDir, "map/index.html", mapHtml);
-    console.log("Generated map page");
-  } catch (error) {
-    // If map.njk template doesn't exist, skip generation silently
-    if (error instanceof Error && error.message.includes("map.njk")) {
-      console.log("No map.njk template found, skipping map page generation");
-    } else {
-      console.warn("Error generating map page:", error);
-    }
-  }
+  await generateOptionalPage(
+    "map.njk",
+    { site: config, posts: site.posts },
+    outputDir,
+    "map/index.html",
+    "map page",
+  );
 }

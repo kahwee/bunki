@@ -1,20 +1,12 @@
-import fs from "fs";
 import path from "path";
 import { DEFAULT_OUTPUT_DIR } from "./config";
+import { isDirectory } from "./utils/file-utils";
 
 export async function startServer(
   outputDir: string = DEFAULT_OUTPUT_DIR,
   port: number = 3000,
 ) {
-  try {
-    const stats = await fs.promises.stat(outputDir);
-    if (!stats.isDirectory()) {
-      const msg = `Error: Output directory ${outputDir} does not exist or is not accessible.`;
-      console.error(msg);
-      console.log('Try running "bunki generate" first to build your site.');
-      throw new Error(msg);
-    }
-  } catch (error) {
+  if (!(await isDirectory(outputDir))) {
     const msg = `Error: Output directory ${outputDir} does not exist or is not accessible.`;
     console.error(msg);
     console.log('Try running "bunki generate" first to build your site.');

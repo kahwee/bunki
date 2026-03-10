@@ -19,7 +19,7 @@ export interface ValidationError {
  * @returns ValidationError if invalid, null if valid
  */
 export function validateBusinessLocation(
-  business: any,
+  business: unknown,
   filePath: string,
 ): ValidationError | null {
   if (!business) return null;
@@ -28,7 +28,7 @@ export function validateBusinessLocation(
   const locations = Array.isArray(business) ? business : [business];
 
   for (let i = 0; i < locations.length; i++) {
-    const loc = locations[i];
+    const loc = locations[i] as Record<string, unknown>;
     const locIndex = locations.length > 1 ? ` (location ${i + 1})` : "";
 
     // Check required field: type
@@ -43,12 +43,13 @@ export function validateBusinessLocation(
     }
 
     // Validate type against Schema.org Place types (O(1) Set lookup)
-    if (!SCHEMA_ORG_PLACE_TYPES.has(loc.type)) {
+    const locType = String(loc.type);
+    if (!SCHEMA_ORG_PLACE_TYPES.has(locType)) {
       const exampleTypes = Array.from(SCHEMA_ORG_PLACE_TYPES).slice(0, 10);
       return {
         file: filePath,
         type: "validation",
-        message: `Invalid business type '${loc.type}' in business${locIndex}`,
+        message: `Invalid business type '${locType}' in business${locIndex}`,
         suggestion: `Use a valid Schema.org Place type: ${exampleTypes.join(", ")}, etc.`,
       };
     }
@@ -123,7 +124,7 @@ export function validateTags(
  * @returns ValidationError if found, null otherwise
  */
 export function checkDeprecatedLocationField(
-  data: any,
+  data: Record<string, unknown>,
   filePath: string,
 ): ValidationError | null {
   if (data && data.location) {

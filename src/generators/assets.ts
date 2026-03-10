@@ -4,7 +4,7 @@
 
 import { Glob } from "bun";
 import path from "path";
-import type { SiteConfig } from "../types";
+import type { CSSConfig, SiteConfig } from "../types";
 import { getDefaultCSSConfig, processCSS } from "../utils/css-processor";
 import { copyFile, ensureDir, isDirectory } from "../utils/file-utils";
 
@@ -47,7 +47,7 @@ export async function generateStylesheet(
  * @param outputDir - Output directory
  */
 async function fallbackCSSGeneration(
-  cssConfig: any,
+  cssConfig: CSSConfig,
   outputDir: string,
 ): Promise<void> {
   const cssFilePath = path.resolve(process.cwd(), cssConfig.input);

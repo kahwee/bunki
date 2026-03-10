@@ -3,6 +3,26 @@ import { Post, CDNConfig } from "./types";
 import { findFilesByPattern, getBaseFilename } from "./utils/file-utils";
 import { parseMarkdownFile, type ParseError } from "./utils/markdown-utils";
 
+function logErrorGroup(
+  label: string,
+  errors: ParseError[],
+  opts: { icon: string; showMessage: boolean; showSuggestion: boolean; limit: number },
+): void {
+  if (errors.length === 0) return;
+  console.error(`  ${label} (${errors.length}):`);
+  errors.slice(0, opts.limit).forEach((e) => {
+    const msg = opts.showMessage ? `: ${e.message}` : "";
+    console.error(`    ${opts.icon} ${e.file}${msg}`);
+    if (opts.showSuggestion && e.suggestion) {
+      console.error(`       💡 ${e.suggestion}`);
+    }
+  });
+  if (errors.length > opts.limit) {
+    console.error(`    ... and ${errors.length - opts.limit} more`);
+  }
+  console.error("");
+}
+
 export interface ParseResult {
   posts: Post[];
   errors: ParseError[];
@@ -135,57 +155,30 @@ export async function parseMarkdownDirectory(
           e.type !== "validation",
       );
 
-      if (yamlErrors.length > 0) {
-        console.error(`  YAML Parsing Errors (${yamlErrors.length}):`);
-        yamlErrors.slice(0, 5).forEach((e) => {
-          console.error(`    ❌ ${e.file}`);
-          if (e.suggestion) {
-            console.error(`       💡 ${e.suggestion}`);
-          }
-        });
-        if (yamlErrors.length > 5) {
-          console.error(`    ... and ${yamlErrors.length - 5} more`);
-        }
-        console.error("");
-      }
-
-      if (missingFieldErrors.length > 0) {
-        console.error(
-          `  Missing Required Fields (${missingFieldErrors.length}):`,
-        );
-        missingFieldErrors.slice(0, 5).forEach((e) => {
-          console.error(`    ⚠️  ${e.file}: ${e.message}`);
-        });
-        if (missingFieldErrors.length > 5) {
-          console.error(`    ... and ${missingFieldErrors.length - 5} more`);
-        }
-        console.error("");
-      }
-
-      if (validationErrors.length > 0) {
-        console.error(`  Validation Errors (${validationErrors.length}):`);
-        validationErrors.slice(0, 5).forEach((e) => {
-          console.error(`    ⚠️  ${e.file}: ${e.message}`);
-          if (e.suggestion) {
-            console.error(`       💡 ${e.suggestion}`);
-          }
-        });
-        if (validationErrors.length > 5) {
-          console.error(`    ... and ${validationErrors.length - 5} more`);
-        }
-        console.error("");
-      }
-
-      if (otherErrors.length > 0) {
-        console.error(`  Other Errors (${otherErrors.length}):`);
-        otherErrors.slice(0, 3).forEach((e) => {
-          console.error(`    ❌ ${e.file}: ${e.message}`);
-        });
-        if (otherErrors.length > 3) {
-          console.error(`    ... and ${otherErrors.length - 3} more`);
-        }
-        console.error("");
-      }
+      logErrorGroup("YAML Parsing Errors", yamlErrors, {
+        icon: "❌",
+        showMessage: false,
+        showSuggestion: true,
+        limit: 5,
+      });
+      logErrorGroup("Missing Required Fields", missingFieldErrors, {
+        icon: "⚠️ ",
+        showMessage: true,
+        showSuggestion: false,
+        limit: 5,
+      });
+      logErrorGroup("Validation Errors", validationErrors, {
+        icon: "⚠️ ",
+        showMessage: true,
+        showSuggestion: true,
+        limit: 5,
+      });
+      logErrorGroup("Other Errors", otherErrors, {
+        icon: "❌",
+        showMessage: true,
+        showSuggestion: false,
+        limit: 3,
+      });
 
       console.error(
         `📝 Tip: Fix YAML errors by quoting titles/descriptions with colons`,

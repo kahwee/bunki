@@ -157,22 +157,21 @@ export async function parseMarkdownFile(
     };
 
     return { post, error: null };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Check if it's a YAML parsing error
+    const msg = error instanceof Error ? error.message : String(error);
+    const name = error instanceof Error ? error.name : "";
     const isYamlError =
-      error?.name === "YAMLException" ||
-      error?.message?.includes("YAML") ||
-      error?.message?.includes("mapping pair");
+      name === "YAMLException" ||
+      msg.includes("YAML") ||
+      msg.includes("mapping pair");
 
     let suggestion: string | undefined;
     if (isYamlError) {
-      if (
-        error?.message?.includes("mapping pair") ||
-        error?.message?.includes("colon")
-      ) {
+      if (msg.includes("mapping pair") || msg.includes("colon")) {
         suggestion =
           'Quote titles/descriptions containing colons (e.g., title: "My Post: A Guide")';
-      } else if (error?.message?.includes("multiline key")) {
+      } else if (msg.includes("multiline key")) {
         suggestion =
           "Remove nested quotes or use single quotes inside double quotes";
       }
@@ -183,7 +182,7 @@ export async function parseMarkdownFile(
       error: {
         file: filePath,
         type: isYamlError ? "yaml" : "unknown",
-        message: error?.message || String(error),
+        message: msg,
         suggestion,
       },
     };
