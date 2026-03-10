@@ -1,24 +1,33 @@
 {% extends "base.njk" %}
 
-  {% block title %}Tags | {{ site.title }}{% endblock %}
-  {% block description %}Browse all tags on {{ site.title }}{% endblock %}
+{% block title %}Tags | {{ site.title }}{% endblock %}
+{% block description %}Browse all tags on {{ site.title }}{% endblock %}
 
-  {% block content %}
-    <h1>All Tags</h1>
+{% block canonical %}{{ site.baseUrl }}/tags/{% endblock %}
 
-    {% if tags.length > 0 %}
-      <ul class="tags-list">
-        {% for tag in tags %}
-          <li>
-            <a href="/tags/{{ tag.slug }}/">{{ tag.name }}</a>
-            <span class="count">({{ tag.count }})</span>
-            {% if tag.description %}
-              <p class="description">{{ tag.description }}</p>
-            {% endif %}
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>No tags found!</p>
-    {% endif %}
-  {% endblock %}
+{% block og_title %}Tags | {{ site.title }}{% endblock %}
+{% block og_description %}Browse all tags on {{ site.title }}{% endblock %}
+{% block og_url %}{{ site.baseUrl }}/tags/{% endblock %}
+
+{% block twitter_title %}Tags | {{ site.title }}{% endblock %}
+{% block twitter_description %}Browse all tags on {{ site.title }}{% endblock %}
+
+{% block content %}
+  <h1>All Tags</h1>
+
+  {% if tags.length > 0 %}
+    <ul class="tags-list">
+      {% for tag in tags %}
+        <li>
+          <a href="/tags/{{ tag.slug }}/">{{ tag.name }}</a>
+          <span class="count">({{ tag.count }})</span>
+          {% if tag.description %}
+            <p class="description">{{ tag.description }}</p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No tags yet.</p>
+  {% endif %}
+{% endblock %}

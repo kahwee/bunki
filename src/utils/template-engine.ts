@@ -4,8 +4,19 @@
  */
 
 import nunjucks from "nunjucks";
+import path from "path";
+import { existsSync } from "fs";
 import { toPacificTime } from "./date-utils";
 import { DATE } from "../constants";
+
+// In the built bundle (dist/cli.js), import.meta.dir is the dist/ directory and
+// fragments live at dist/fragments/. When running tests directly from source,
+// import.meta.dir is src/utils/ so we fall back to src/fragments/.
+const _distFragments = path.join(import.meta.dir, "fragments");
+const _srcFragments = path.join(import.meta.dir, "../fragments");
+const BUNKI_FRAGMENTS_DIR = existsSync(_distFragments)
+  ? _distFragments
+  : _srcFragments;
 
 /**
  * Create and configure Nunjucks template engine with custom filters
@@ -24,7 +35,7 @@ export function createTemplateEngine(
   templatesDir: string,
   watch: boolean = false,
 ): nunjucks.Environment {
-  const env = nunjucks.configure(templatesDir, {
+  const env = nunjucks.configure([templatesDir, BUNKI_FRAGMENTS_DIR], {
     autoescape: true,
     watch,
   });

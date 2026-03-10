@@ -1,5 +1,8 @@
 {% extends "base.njk" %}
 
+{% from "og-image.njk" import og_image, twitter_image %}
+{% from "json-ld.njk" import blog_posting_schema %}
+
 {% block title %}{{ post.title }} | {{ site.title }}{% endblock %}
 {% block description %}{{ post.excerpt }}{% endblock %}
 
@@ -9,10 +12,16 @@
 {% block og_title %}{{ post.title }}{% endblock %}
 {% block og_description %}{{ post.excerpt }}{% endblock %}
 {% block og_url %}{{ site.baseUrl }}{{ post.url }}{% endblock %}
+{% block og_image %}{{ og_image(post, site) }}{% endblock %}
 
 {% block twitter_card %}summary_large_image{% endblock %}
 {% block twitter_title %}{{ post.title }}{% endblock %}
 {% block twitter_description %}{{ post.excerpt }}{% endblock %}
+{% block twitter_image %}{{ twitter_image(post, site) }}{% endblock %}
+
+{% block head %}
+  {{ blog_posting_schema(post, site) }}
+{% endblock %}
 
 {% block content %}
   <article class="post">
@@ -29,7 +38,7 @@
         {% endif %}
       </div>
     </header>
-    
+
     <div class="post-content">
       {{ post.html | safe }}
     </div>

@@ -1,0 +1,59 @@
+{% macro blog_posting_schema(post, site) %}
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "{{ post.title }}",
+    "description": "{{ post.excerpt }}",
+    "author": {
+      "@type": "Person",
+      "name": "{{ site.author | default('Author') }}",
+      "url": "{{ site.baseUrl }}"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "{{ site.title }}",
+      "url": "{{ site.baseUrl }}",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "{{ site.baseUrl }}/favicon/favicon.svg"
+      }
+    },
+    "datePublished": "{{ post.date | date('YYYY-MM-DDTHH:mm:ssZ') }}",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "{{ site.baseUrl }}{{ post.url }}"
+    }{% if post.tags %},
+      "keywords": "{{ post.tags | join(', ') }}"{% endif %}
+  }
+</script>
+{% endmacro %}
+
+{% macro local_business_schema(post, site) %}
+{% if post.business %}
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "{{ post.business.type | default('LocalBusiness') }}",
+    "name": "{{ post.business.name }}",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "{{ post.business.address }}"
+    },
+    {% if post.business.lat and post.business.lng %}
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": {{ post.business.lat }},
+      "longitude": {{ post.business.lng }}
+    },
+    {% endif %}
+    {% if post.business.cuisine %}"servesCuisine": "{{ post.business.cuisine }}",{% endif %}
+    {% if post.business.priceRange %}"priceRange": "{{ post.business.priceRange }}",{% endif %}
+    {% if post.business.telephone %}"telephone": "{{ post.business.telephone }}",{% endif %}
+    {% if post.business.url %}"url": "{{ post.business.url }}",{% endif %}
+    {% if post.business.openingHours %}"openingHours": "{{ post.business.openingHours }}",{% endif %}
+    "url": "{{ site.baseUrl }}{{ post.url }}"
+  }
+</script>
+{% endif %}
+{% endmacro %}

@@ -33,6 +33,10 @@ async function buildProject() {
     // Make CLI executable
     await runCommand("chmod", ["+x", "./dist/cli.js"]);
 
+    // Copy fragments to dist/ (remove first to avoid nested dir on repeat builds)
+    await runCommand("rm", ["-rf", "./dist/fragments"]);
+    await runCommand("cp", ["-r", "./src/fragments", "./dist/fragments"]);
+
     // Generate TypeScript declarations
     await runCommand("bun", [
       "tsc",

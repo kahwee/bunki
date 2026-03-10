@@ -84,221 +84,302 @@ export function registerInitCommand(
 function getDefaultTemplates(): Record<string, string> {
   return {
     "base.njk": String.raw`<!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ site.title }}{% endblock %}</title>
-    <meta name="description" content="{% block description %}{{ site.description }}{% endblock %}">
-    <link rel="stylesheet" href="/css/style.css">
-    {% block head %}{% endblock %}
-  </head>
-  <body>
-    <header>
-      <div class="container">
-        <h1><a href="/">{{ site.title }}</a></h1>
-        <nav>
-          <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/tags/">Tags</a></li>
-          </ul>
-        </nav>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ site.title }}{% endblock %}</title>
+  <meta name="description" content="{% block description %}{{ site.description }}{% endblock %}">
+
+  {# Canonical URL #}
+  <link rel="canonical" href="{% block canonical %}{{ site.baseUrl }}/{% endblock %}">
+
+  {# Open Graph meta tags #}
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+  <meta property="og:title" content="{% block og_title %}{{ site.title }}{% endblock %}">
+  <meta property="og:description" content="{% block og_description %}{{ site.description }}{% endblock %}">
+  <meta property="og:url" content="{% block og_url %}{{ site.baseUrl }}/{% endblock %}">
+  <meta property="og:site_name" content="{{ site.title }}">
+  {% block og_image %}{% endblock %}
+
+  {# Twitter Card meta tags #}
+  <meta name="twitter:card" content="{% block twitter_card %}summary{% endblock %}">
+  <meta name="twitter:title" content="{% block twitter_title %}{{ site.title }}{% endblock %}">
+  <meta name="twitter:description" content="{% block twitter_description %}{{ site.description }}{% endblock %}">
+  {% block twitter_image %}{% endblock %}
+
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="alternate" type="application/rss+xml" title="{{ site.title }} RSS Feed" href="{{ site.baseUrl }}/feed.xml">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><a href="/">{{ site.title }}</a></h1>
+      <nav>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/tags/">Tags</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>&copy; {{ "now" | date("YYYY") }} {{ site.title }} - Powered by <a href="https://github.com/kahwee/bunki">Bunki</a></p>
+    </div>
+  </footer>
+</body>
+</html>`,
+    "index.njk": String.raw`{% extends "base.njk" %}
+
+{% block canonical %}{{ site.baseUrl }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
+{% block og_url %}{{ site.baseUrl }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
+
+{% block content %}
+  <h1>Latest Posts</h1>
+
+  {% if posts.length > 0 %}
+    <div class="posts">
+      {% for post in posts %}
+        <article class="post-card">
+          <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
+          <div class="post-meta">
+            <time datetime="{{ post.date }}">{{ post.date | date("MMMM D, YYYY") }}</time>
+            {% if post.tags.length > 0 %}
+              <span class="tags">
+                {% for tag in post.tags %}
+                  <a href="/tags/{{ post.tagSlugs[tag] }}/">{{ tag }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+              </span>
+            {% endif %}
+          </div>
+          <div class="post-excerpt">{{ post.excerpt }}</div>
+          <a href="{{ post.url }}" class="read-more">Read more →</a>
+        </article>
+      {% endfor %}
+    </div>
+
+    {% if pagination.totalPages > 1 %}
+      <nav class="pagination">
+        {% if pagination.hasPrevPage %}
+          <a href="{{ pagination.pagePath }}{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="prev">← Previous</a>
+        {% endif %}
+        {% if pagination.hasNextPage %}
+          <a href="{{ pagination.pagePath }}page/{{ pagination.nextPage }}/" class="next">Next →</a>
+        {% endif %}
+        <span class="page-info">Page {{ pagination.currentPage }} of {{ pagination.totalPages }}</span>
+      </nav>
+    {% endif %}
+  {% else %}
+    <p>No posts yet.</p>
+  {% endif %}
+{% endblock %}`,
+    "post.njk": String.raw`{% extends "base.njk" %}
+
+{% from "og-image.njk" import og_image, twitter_image %}
+{% from "json-ld.njk" import blog_posting_schema %}
+
+{% block title %}{{ post.title }} | {{ site.title }}{% endblock %}
+{% block description %}{{ post.excerpt }}{% endblock %}
+
+{% block canonical %}{{ site.baseUrl }}{{ post.url }}{% endblock %}
+
+{% block og_type %}article{% endblock %}
+{% block og_title %}{{ post.title }}{% endblock %}
+{% block og_description %}{{ post.excerpt }}{% endblock %}
+{% block og_url %}{{ site.baseUrl }}{{ post.url }}{% endblock %}
+{% block og_image %}{{ og_image(post, site) }}{% endblock %}
+
+{% block twitter_card %}summary_large_image{% endblock %}
+{% block twitter_title %}{{ post.title }}{% endblock %}
+{% block twitter_description %}{{ post.excerpt }}{% endblock %}
+{% block twitter_image %}{{ twitter_image(post, site) }}{% endblock %}
+
+{% block head %}
+  {{ blog_posting_schema(post, site) }}
+{% endblock %}
+
+{% block content %}
+  <article class="post">
+    <header class="post-header">
+      <h1>{{ post.title }}</h1>
+      <div class="post-meta">
+        <time datetime="{{ post.date }}">{{ post.date | date("MMMM D, YYYY") }}</time>
+        {% if post.tags.length > 0 %}
+          <span class="tags">
+            {% for tag in post.tags %}
+              <a href="/tags/{{ post.tagSlugs[tag] }}/">{{ tag }}</a>{% if not loop.last %}, {% endif %}
+            {% endfor %}
+          </span>
+        {% endif %}
       </div>
     </header>
 
-    <main class="container">
-      {% block content %}{% endblock %}
-    </main>
+    <div class="post-content">
+      {{ post.html | safe }}
+    </div>
 
-    <footer>
-      <div class="container">
-        <p>&copy; {{ "now" | date("YYYY") }} {{ site.title }}</p>
+    <footer class="post-footer">
+      <div class="share-buttons">
+        <span class="share-label">Share:</span>
+        <a href="https://twitter.com/intent/tweet?text={{ post.title | urlencode }}&url={{ site.baseUrl }}{{ post.url }}" target="_blank" rel="noopener noreferrer" class="share-button x" aria-label="Share on X">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ site.baseUrl }}{{ post.url }}" target="_blank" rel="noopener noreferrer" class="share-button facebook" aria-label="Share on Facebook">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 3.667h-3.533v7.98H9.101z"/></svg>
+        </a>
+        <a href="https://www.linkedin.com/sharing/share-offsite/?url={{ site.baseUrl }}{{ post.url }}" target="_blank" rel="noopener noreferrer" class="share-button linkedin" aria-label="Share on LinkedIn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6.5 21.5h-5v-13h5v13zM4 6.5C2.5 6.5 1.5 5.3 1.5 4s1-2.4 2.5-2.4c1.6 0 2.5 1 2.6 2.5 0 1.4-1 2.5-2.6 2.5zm11.5 6c-1 0-2 1-2 2v7h-5v-13h5V10s1.6-1.5 4-1.5c3 0 5 2.2 5 6.3v6.7h-5v-7c0-1-1-2-2-2z"/></svg>
+        </a>
+        <a href="mailto:?subject={{ post.title | urlencode }}&body=Check%20out%20this%20article%3A%20{{ site.baseUrl }}{{ post.url }}" class="share-button email" aria-label="Share via Email">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        </a>
       </div>
     </footer>
-  </body>
-  </html>`,
-    "index.njk": String.raw`{% extends "base.njk" %}
-
-  {% block content %}
-    <h1>Latest Posts</h1>
-
-    {% if posts.length > 0 %}
-      <div class="posts">
-        {% for post in posts %}
-          <article class="post-card">
-            <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
-            <div class="post-meta">
-              <time datetime="{{ post.date }}">{{ post.date | date("MMMM D, YYYY") }}</time>
-              {% if post.tags.length > 0 %}
-                <span class="tags">
-                  {% for tag in post.tags %}
-                    <a href="/tags/{{ post.tagSlugs[tag] }}/">{{ tag }}</a>{% if not loop.last %}, {% endif %}
-                  {% endfor %}
-                </span>
-              {% endif %}
-            </div>
-            <div class="post-excerpt">{{ post.excerpt }}</div>
-            <a href="{{ post.url }}" class="read-more">Read more →</a>
-          </article>
-        {% endfor %}
-      </div>
-
-      {% if pagination.totalPages > 1 %}
-        <nav class="pagination">
-          {% if pagination.hasPrevPage %}
-            <a href="{{ pagination.pagePath }}{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="prev">← Previous</a>
-          {% endif %}
-
-          {% if pagination.hasNextPage %}
-            <a href="{{ pagination.pagePath }}page/{{ pagination.nextPage }}/" class="next">Next →</a>
-          {% endif %}
-
-          <span class="page-info">Page {{ pagination.currentPage }} of {{ pagination.totalPages }}</span>
-        </nav>
-      {% endif %}
-    {% else %}
-      <p>No posts yet!</p>
-    {% endif %}
-  {% endblock %}`,
-    "post.njk": String.raw`{% extends "base.njk" %}
-
-  {% block title %}{{ post.title }} | {{ site.title }}{% endblock %}
-  {% block description %}{{ post.excerpt }}{% endblock %}
-
-  {% block content %}
-    <article class="post">
-      <header class="post-header">
-        <h1>{{ post.title }}</h1>
-        <div class="post-meta">
-          <time datetime="{{ post.date }}">{{ post.date | date("MMMM D, YYYY") }}</time>
-          {% if post.tags.length > 0 %}
-            <span class="tags">
-              {% for tag in post.tags %}
-                <a href="/tags/{{ post.tagSlugs[tag] }}/">{{ tag }}</a>{% if not loop.last %}, {% endif %}
-              {% endfor %}
-            </span>
-          {% endif %}
-        </div>
-      </header>
-
-      <div class="post-content">
-        {{ post.html | safe }}
-      </div>
-    </article>
-  {% endblock %}`,
+  </article>
+{% endblock %}`,
     "tag.njk": String.raw`{% extends "base.njk" %}
 
-  {% block title %}{{ tag.name }} | {{ site.title }}{% endblock %}
-  {% block description %}Posts tagged with {{ tag.name }} on {{ site.title }}{% endblock %}
+{% block title %}{{ tag.name }} | {{ site.title }}{% endblock %}
+{% block description %}Posts tagged with {{ tag.name }} on {{ site.title }}{% endblock %}
 
-  {% block content %}
-    <h1>Posts tagged "{{ tag.name }}"</h1>
+{% block canonical %}{{ site.baseUrl }}/tags/{{ tag.slug }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
 
-    {% if tag.description %}
-      <div class="tag-description">{{ tag.description }}</div>
+{% block og_title %}{{ tag.name }} | {{ site.title }}{% endblock %}
+{% block og_description %}Posts tagged with {{ tag.name }} on {{ site.title }}{% endblock %}
+{% block og_url %}{{ site.baseUrl }}/tags/{{ tag.slug }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
+
+{% block twitter_title %}{{ tag.name }} | {{ site.title }}{% endblock %}
+{% block twitter_description %}Posts tagged with {{ tag.name }} on {{ site.title }}{% endblock %}
+
+{% block content %}
+  <h1>Posts tagged "{{ tag.name }}"</h1>
+
+  {% if tag.description %}
+    <div class="tag-description">{{ tag.description }}</div>
+  {% endif %}
+
+  {% if tag.posts.length > 0 %}
+    <div class="posts">
+      {% for post in tag.posts %}
+        <article class="post-card">
+          <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
+          <div class="post-meta">
+            <time datetime="{{ post.date }}">{{ post.date | date("MMMM D, YYYY") }}</time>
+          </div>
+          <div class="post-excerpt">{{ post.excerpt }}</div>
+          <a href="{{ post.url }}" class="read-more">Read more →</a>
+        </article>
+      {% endfor %}
+    </div>
+
+    {% if pagination.totalPages > 1 %}
+      <nav class="pagination">
+        {% if pagination.hasPrevPage %}
+          <a href="{{ pagination.pagePath }}{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="prev">← Previous</a>
+        {% endif %}
+        {% if pagination.hasNextPage %}
+          <a href="{{ pagination.pagePath }}page/{{ pagination.nextPage }}/" class="next">Next →</a>
+        {% endif %}
+        <span class="page-info">Page {{ pagination.currentPage }} of {{ pagination.totalPages }}</span>
+      </nav>
     {% endif %}
-
-    {% if tag.posts.length > 0 %}
-      <div class="posts">
-        {% for post in tag.posts %}
-          <article class="post-card">
-            <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
-            <div class="post-meta">
-              <time datetime="{{ post.date }}">{{ post.date | date("MMMM D, YYYY") }}</time>
-            </div>
-            <div class="post-excerpt">{{ post.excerpt }}</div>
-            <a href="{{ post.url }}" class="read-more">Read more →</a>
-          </article>
-        {% endfor %}
-      </div>
-
-      {% if pagination.totalPages > 1 %}
-        <nav class="pagination">
-          {% if pagination.hasPrevPage %}
-            <a href="{{ pagination.pagePath }}{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="prev">← Previous</a>
-          {% endif %}
-
-          {% if pagination.hasNextPage %}
-            <a href="{{ pagination.pagePath }}page/{{ pagination.nextPage }}/" class="next">Next →</a>
-          {% endif %}
-
-          <span class="page-info">Page {{ pagination.currentPage }} of {{ pagination.totalPages }}</span>
-        </nav>
-      {% endif %}
-    {% else %}
-      <p>No posts with this tag yet!</p>
-    {% endif %}
-  {% endblock %}`,
+  {% else %}
+    <p>No posts with this tag yet.</p>
+  {% endif %}
+{% endblock %}`,
     "tags.njk": String.raw`{% extends "base.njk" %}
 
-  {% block title %}Tags | {{ site.title }}{% endblock %}
-  {% block description %}Browse all tags on {{ site.title }}{% endblock %}
+{% block title %}Tags | {{ site.title }}{% endblock %}
+{% block description %}Browse all tags on {{ site.title }}{% endblock %}
 
-  {% block content %}
-    <h1>All Tags</h1>
+{% block canonical %}{{ site.baseUrl }}/tags/{% endblock %}
 
-    {% if tags.length > 0 %}
-      <ul class="tags-list">
-        {% for tag in tags %}
-          <li>
-            <a href="/tags/{{ tag.slug }}/">{{ tag.name }}</a>
-            <span class="count">({{ tag.count }})</span>
-            {% if tag.description %}
-              <p class="description">{{ tag.description }}</p>
-            {% endif %}
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>No tags found!</p>
-    {% endif %}
-  {% endblock %}`,
+{% block og_title %}Tags | {{ site.title }}{% endblock %}
+{% block og_description %}Browse all tags on {{ site.title }}{% endblock %}
+{% block og_url %}{{ site.baseUrl }}/tags/{% endblock %}
+
+{% block twitter_title %}Tags | {{ site.title }}{% endblock %}
+{% block twitter_description %}Browse all tags on {{ site.title }}{% endblock %}
+
+{% block content %}
+  <h1>All Tags</h1>
+
+  {% if tags.length > 0 %}
+    <ul class="tags-list">
+      {% for tag in tags %}
+        <li>
+          <a href="/tags/{{ tag.slug }}/">{{ tag.name }}</a>
+          <span class="count">({{ tag.count }})</span>
+          {% if tag.description %}
+            <p class="description">{{ tag.description }}</p>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No tags yet.</p>
+  {% endif %}
+{% endblock %}`,
     "archive.njk": String.raw`{% extends "base.njk" %}
 
-  {% block title %}Archive {{ year }} | {{ site.title }}{% endblock %}
-  {% block description %}Posts from {{ year }} on {{ site.title }}{% endblock %}
+{% block title %}Archive {{ year }} | {{ site.title }}{% endblock %}
+{% block description %}Posts from {{ year }} on {{ site.title }}{% endblock %}
 
-  {% block content %}
-    <h1>Posts from {{ year }}</h1>
+{% block canonical %}{{ site.baseUrl }}/{{ year }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
 
-    {% if posts.length > 0 %}
-      <div class="posts">
-        {% for post in posts %}
-          <article class="post-card">
-            <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
-            <div class="post-meta">
-              <time datetime="{{ post.date }}">{{ post.date | date("MMMM D, YYYY") }}</time>
-              {% if post.tags.length > 0 %}
-                <span class="tags">
-                  {% for tag in post.tags %}
-                    <a href="/tags/{{ post.tagSlugs[tag] }}/">{{ tag }}</a>{% if not loop.last %}, {% endif %}
-                  {% endfor %}
-                </span>
-              {% endif %}
-            </div>
-            <div class="post-excerpt">{{ post.excerpt }}</div>
-            <a href="{{ post.url }}" class="read-more">Read more →</a>
-          </article>
-        {% endfor %}
-      </div>
+{% block og_title %}Archive {{ year }} | {{ site.title }}{% endblock %}
+{% block og_description %}Posts from {{ year }} on {{ site.title }}{% endblock %}
+{% block og_url %}{{ site.baseUrl }}/{{ year }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
 
-      {% if pagination.totalPages > 1 %}
-        <nav class="pagination">
-          {% if pagination.hasPrevPage %}
-            <a href="/{{ year }}/{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="prev">← Previous</a>
-          {% endif %}
+{% block twitter_title %}Archive {{ year }} | {{ site.title }}{% endblock %}
+{% block twitter_description %}Posts from {{ year }} on {{ site.title }}{% endblock %}
 
-          {% if pagination.hasNextPage %}
-            <a href="/{{ year }}/page/{{ pagination.nextPage }}/" class="next">Next →</a>
-          {% endif %}
+{% block content %}
+  <h1>Posts from {{ year }}</h1>
 
-          <span class="page-info">Page {{ pagination.currentPage }} of {{ pagination.totalPages }}</span>
-        </nav>
-      {% endif %}
-    {% else %}
-      <p>No posts from {{ year }}!</p>
+  {% if posts.length > 0 %}
+    <div class="posts">
+      {% for post in posts %}
+        <article class="post-card">
+          <h2><a href="{{ post.url }}">{{ post.title }}</a></h2>
+          <div class="post-meta">
+            <time datetime="{{ post.date }}">{{ post.date | date("MMMM D, YYYY") }}</time>
+            {% if post.tags.length > 0 %}
+              <span class="tags">
+                {% for tag in post.tags %}
+                  <a href="/tags/{{ post.tagSlugs[tag] }}/">{{ tag }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+              </span>
+            {% endif %}
+          </div>
+          <div class="post-excerpt">{{ post.excerpt }}</div>
+          <a href="{{ post.url }}" class="read-more">Read more →</a>
+        </article>
+      {% endfor %}
+    </div>
+
+    {% if pagination.totalPages > 1 %}
+      <nav class="pagination">
+        {% if pagination.hasPrevPage %}
+          <a href="/{{ year }}/{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="prev">← Previous</a>
+        {% endif %}
+        {% if pagination.hasNextPage %}
+          <a href="/{{ year }}/page/{{ pagination.nextPage }}/" class="next">Next →</a>
+        {% endif %}
+        <span class="page-info">Page {{ pagination.currentPage }} of {{ pagination.totalPages }}</span>
+      </nav>
     {% endif %}
-  {% endblock %}`,
+  {% else %}
+    <p>No posts from {{ year }} yet.</p>
+  {% endif %}
+{% endblock %}`,
   };
 }
 
@@ -493,6 +574,43 @@ function getDefaultCss(): string {
     color: #6c757d;
     font-size: 0.9rem;
   }
+
+  /* Share buttons */
+  .post-footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #eee;
+  }
+
+  .share-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .share-label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #6c757d;
+  }
+
+  .share-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    color: #555;
+    transition: background-color 0.2s, color 0.2s;
+  }
+
+  .share-button:hover { text-decoration: none; }
+  .share-button.x:hover { background-color: #000; color: #fff; }
+  .share-button.facebook:hover { background-color: #1877f2; color: #fff; }
+  .share-button.linkedin:hover { background-color: #0077b5; color: #fff; }
+  .share-button.email:hover { background-color: #6c757d; color: #fff; }
 
   /* Footer */
   footer {

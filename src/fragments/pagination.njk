@@ -1,0 +1,12 @@
+{% macro pagination_nav(pagination) %}
+{% if pagination and pagination.totalPages > 1 %}
+<nav class="mt-12 flex items-center gap-4 text-sm text-zinc-600 dark:text-zinc-400" aria-label="Pagination">
+  {% if pagination.hasPrevPage %}
+  <a href="{{ pagination.pagePath }}{% if pagination.prevPage > 1 %}page/{{ pagination.prevPage }}/{% endif %}" class="rounded-full bg-gray-50 px-3 py-1.5 font-medium text-gray-600 hover:bg-gray-100 dark:bg-zinc-800/50 dark:text-zinc-300 dark:hover:bg-zinc-800" rel="prev">← Previous</a>
+  {% endif %}
+  {% if pagination.hasNextPage %}
+  <a href="{{ pagination.pagePath }}page/{{ pagination.nextPage }}/" class="rounded-full bg-gray-50 px-3 py-1.5 font-medium text-gray-600 hover:bg-gray-100 dark:bg-zinc-800/50 dark:text-zinc-300 dark:hover:bg-zinc-800" rel="next">Next →</a>
+  {% endif %}
+</nav>
+{% endif %}
+{% endmacro %}
