@@ -256,4 +256,55 @@ console.log(x);
       expect(marked).toBeDefined();
     });
   });
+
+  describe("same-directory link resolution", () => {
+    test("should resolve ./slug.md to absolute URL using postYear", () => {
+      const cdnConfig: CDNConfig = {
+        enabled: false,
+        baseUrl: "",
+        pathPattern: "{year}/{filename}",
+        postYear: "2026",
+      };
+      const html = convertMarkdownToHtml(
+        "[a rough first night](./singapore-night-one.md)",
+        cdnConfig,
+      );
+      expect(html).toInclude('href="/2026/singapore-night-one/"');
+    });
+
+    test("should resolve ./slug (no extension) using postYear", () => {
+      const cdnConfig: CDNConfig = {
+        enabled: false,
+        baseUrl: "",
+        pathPattern: "{year}/{filename}",
+        postYear: "2026",
+      };
+      const html = convertMarkdownToHtml(
+        "[next post](./my-post)",
+        cdnConfig,
+      );
+      expect(html).toInclude('href="/2026/my-post/"');
+    });
+
+    test("should preserve anchor in same-directory link", () => {
+      const cdnConfig: CDNConfig = {
+        enabled: false,
+        baseUrl: "",
+        pathPattern: "{year}/{filename}",
+        postYear: "2026",
+      };
+      const html = convertMarkdownToHtml(
+        "[section](./my-post.md#section)",
+        cdnConfig,
+      );
+      expect(html).toInclude('href="/2026/my-post/#section"');
+    });
+
+    test("should not resolve ./slug.md without postYear", () => {
+      const html = convertMarkdownToHtml(
+        "[link](./singapore-night-one.md)",
+      );
+      expect(html).not.toInclude('href="/2026/');
+    });
+  });
 });

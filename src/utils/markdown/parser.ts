@@ -23,6 +23,7 @@ import {
   IMAGE_PATH_ASSETS_DIR,
   IMAGE_PATH_ASSETS_SAME_DIR,
   RELATIVE_LINK_REGEX,
+  SAME_DIR_LINK_REGEX,
   YOUTUBE_EMBED_REGEX,
 } from "./constants";
 
@@ -155,6 +156,15 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
         if (relativeMatch) {
           const [, , year, slug, anchor = ""] = relativeMatch;
           token.href = `/${year}/${slug}/${anchor}`;
+        }
+
+        // Convert same-directory markdown links to absolute URLs
+        // Matches: ./slug.md, ./slug, ./slug/, ./slug.md#anchor
+        // Requires cdnConfig.postYear to resolve the year
+        const sameDirMatch = token.href.match(SAME_DIR_LINK_REGEX);
+        if (sameDirMatch && cdnConfig?.postYear) {
+          const [, slug, anchor = ""] = sameDirMatch;
+          token.href = `/${cdnConfig.postYear}/${slug}/${anchor}`;
         }
 
         const isExternal =

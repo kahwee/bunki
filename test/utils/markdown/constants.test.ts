@@ -1,6 +1,7 @@
 import { expect, test, describe } from "bun:test";
 import {
   RELATIVE_LINK_REGEX,
+  SAME_DIR_LINK_REGEX,
   IMAGE_PATH_REGEX,
   YOUTUBE_EMBED_REGEX,
   EXTERNAL_LINK_REGEX,
@@ -43,6 +44,47 @@ describe("Markdown Constants", () => {
       expect(match).not.toBeNull();
       expect(match![2]).toBe("2025"); // year
       expect(match![3]).toBe("my-awesome-post"); // slug
+    });
+  });
+
+  describe("SAME_DIR_LINK_REGEX", () => {
+    test("should match same-directory markdown links", () => {
+      const validPatterns = [
+        "./singapore-night-one.md",
+        "./my-post",
+        "./my-post/",
+        "./my-post.md#section",
+        "./my-post/#anchor",
+      ];
+
+      validPatterns.forEach((pattern) => {
+        expect(SAME_DIR_LINK_REGEX.test(pattern)).toBe(true);
+      });
+    });
+
+    test("should not match non-markdown files or other patterns", () => {
+      const invalidPatterns = [
+        "./_assets/image.webp",
+        "../2025/other-post.md",
+        "/absolute/path.md",
+        "http://example.com/post.md",
+        "./post.pdf",
+      ];
+
+      invalidPatterns.forEach((pattern) => {
+        expect(SAME_DIR_LINK_REGEX.test(pattern)).toBe(false);
+      });
+    });
+
+    test("should extract slug and optional anchor correctly", () => {
+      const match = "./singapore-night-one.md".match(SAME_DIR_LINK_REGEX);
+      expect(match).not.toBeNull();
+      expect(match![1]).toBe("singapore-night-one"); // slug
+
+      const matchWithAnchor = "./my-post.md#section".match(SAME_DIR_LINK_REGEX);
+      expect(matchWithAnchor).not.toBeNull();
+      expect(matchWithAnchor![1]).toBe("my-post"); // slug
+      expect(matchWithAnchor![2]).toBe("#section"); // anchor
     });
   });
 
