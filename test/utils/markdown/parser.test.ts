@@ -195,6 +195,38 @@ console.log(x);
       expect(html).toInclude("../../assets/2025/my-post/photo.jpg");
       expect(html).not.toInclude("cdn.example.com");
     });
+
+    test("should transform cross-year ../2023/_assets/image.webp using year from path", () => {
+      const cdnConfig: CDNConfig = {
+        enabled: true,
+        baseUrl: "https://img.beconfused.com",
+        pathPattern: "{year}/{filename}",
+        postYear: "2025",
+      };
+      const markdown = `![Mexico panorama](../2023/_assets/panoramic-view-of-mexico.webp)`;
+      const html = convertMarkdownToHtml(markdown, cdnConfig);
+
+      expect(html).toInclude(
+        "https://img.beconfused.com/2023/panoramic-view-of-mexico.webp",
+      );
+      expect(html).not.toInclude("../2023/_assets/");
+    });
+
+    test("should not use postYear for cross-year references", () => {
+      const cdnConfig: CDNConfig = {
+        enabled: true,
+        baseUrl: "https://img.beconfused.com",
+        pathPattern: "{year}/{filename}",
+        postYear: "2025",
+      };
+      const markdown = `![Old photo](../2021/_assets/salt-point-campfire.webp)`;
+      const html = convertMarkdownToHtml(markdown, cdnConfig);
+
+      expect(html).toInclude(
+        "https://img.beconfused.com/2021/salt-point-campfire.webp",
+      );
+      expect(html).not.toInclude("/2025/");
+    });
   });
 
   describe("setNoFollowExceptions", () => {

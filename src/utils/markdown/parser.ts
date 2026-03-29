@@ -22,6 +22,7 @@ import {
   IMAGE_PATH_REGEX,
   IMAGE_PATH_ASSETS_DIR,
   IMAGE_PATH_ASSETS_SAME_DIR,
+  IMAGE_PATH_CROSS_YEAR_ASSETS,
   RELATIVE_LINK_REGEX,
   SAME_DIR_LINK_REGEX,
   YOUTUBE_EMBED_REGEX,
@@ -94,6 +95,20 @@ function transformImagePath(
     const path = config.pathPattern
       .replace("{year}", config.postYear)
       .replace("{slug}", "") // No slug in new pattern
+      .replace("{filename}", filename)
+      .replace(/\/+/g, "/") // Remove double slashes
+      .replace(/^\//, ""); // Remove leading slash
+    return `${config.baseUrl}/${path}`;
+  }
+
+  // Try cross-year pattern: ../2023/_assets/{filename}
+  // Year is taken from the path, not from postYear
+  const crossYearMatch = relativePath.match(IMAGE_PATH_CROSS_YEAR_ASSETS);
+  if (crossYearMatch) {
+    const [, year, filename] = crossYearMatch;
+    const path = config.pathPattern
+      .replace("{year}", year)
+      .replace("{slug}", "") // No slug in this pattern
       .replace("{filename}", filename)
       .replace(/\/+/g, "/") // Remove double slashes
       .replace(/^\//, ""); // Remove leading slash
@@ -193,7 +208,8 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
         if (
           href.startsWith("../../assets/") ||
           href.startsWith("../_assets/") ||
-          href.startsWith("./_assets/")
+          href.startsWith("./_assets/") ||
+          IMAGE_PATH_CROSS_YEAR_ASSETS.test(href)
         ) {
           const transformed = transformImagePath(href, cdnConfig);
           if (transformed) {
