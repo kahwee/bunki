@@ -19,6 +19,7 @@ export async function handleImagesPushCommand(
     images?: string;
     outputJson?: string;
     minYear?: string;
+    maxYear?: string;
     contentAssets?: boolean;
     contentAssetsDir?: string;
   },
@@ -30,6 +31,7 @@ export async function handleImagesPushCommand(
       images: options.images,
       outputJson: options.outputJson,
       minYear: options.minYear ? parseInt(options.minYear, 10) : undefined,
+      maxYear: options.maxYear ? parseInt(options.maxYear, 10) : undefined,
       contentAssets: options.contentAssets,
       contentAssetsDir: options.contentAssetsDir,
     });
@@ -52,6 +54,10 @@ export function registerImagesPushCommand(program: Command): Command {
     .option(
       "--min-year <year>",
       "Only upload images from the specified year onwards (e.g., 2023 uploads 2023, 2024, etc.)",
+    )
+    .option(
+      "--max-year <year>",
+      "Only upload images up to and including the specified year (e.g., 2023 uploads only up to 2023)",
     )
     .option(
       "--content-assets",

@@ -84,8 +84,12 @@ export async function uploadImages(
       );
     }
 
-    if (options.minYear) {
+    if (options.minYear && options.maxYear) {
+      console.log(`Filtering images from year ${options.minYear} to ${options.maxYear}`);
+    } else if (options.minYear) {
       console.log(`Filtering images from year ${options.minYear} onwards`);
+    } else if (options.maxYear) {
+      console.log(`Filtering images up to year ${options.maxYear}`);
     }
 
     // In content-assets mode, strip /{assetsDir}/ from the relative path to form the S3 key.
@@ -96,7 +100,7 @@ export async function uploadImages(
       : undefined;
 
     const uploader = createUploader(s3Config);
-    const imageUrlMap = await uploader.uploadImages(imagesDir, options.minYear, keyTransform);
+    const imageUrlMap = await uploader.uploadImages(imagesDir, options.minYear, keyTransform, options.maxYear);
 
     // Output URL mapping to JSON if requested
     if (options.outputJson) {

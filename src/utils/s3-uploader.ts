@@ -134,13 +134,18 @@ export class S3Uploader implements Uploader, ImageUploader {
     imagesDir: string,
     minYear?: number,
     keyTransform?: (relativePath: string) => string,
+    maxYear?: number,
   ): Promise<Record<string, string>> {
     console.log(
       `[S3] Uploading all images from ${imagesDir} to bucket ${this.s3Config.bucket}...`,
     );
 
-    if (minYear) {
+    if (minYear && maxYear) {
+      console.log(`[S3] Filtering images from year ${minYear} to ${maxYear}`);
+    } else if (minYear) {
       console.log(`[S3] Filtering images from year ${minYear} onwards`);
+    } else if (maxYear) {
+      console.log(`[S3] Filtering images up to year ${maxYear}`);
     }
 
     const imageUrls: Record<string, string> = {};
@@ -157,12 +162,12 @@ export class S3Uploader implements Uploader, ImageUploader {
           cwd: imagesDir,
           absolute: false,
         })) {
-          // If minYear is specified, filter by year directory
-          if (minYear) {
+          // If minYear or maxYear is specified, filter by year directory
+          if (minYear || maxYear) {
             const yearMatch = file.match(/^(\d{4})\//);
             if (yearMatch) {
               const fileYear = parseInt(yearMatch[1], 10);
-              if (fileYear >= minYear) {
+              if ((!minYear || fileYear >= minYear) && (!maxYear || fileYear <= maxYear)) {
                 files.push(file);
               }
             }

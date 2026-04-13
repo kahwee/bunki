@@ -237,6 +237,7 @@ export interface ImageUploader {
     imagesDir: string,
     minYear?: number,
     keyTransform?: (relativePath: string) => string,
+    maxYear?: number,
   ): Promise<Record<string, string>>;
 }
 
@@ -282,6 +283,8 @@ export interface ImageUploadOptions {
   images?: string;
   outputJson?: string;
   minYear?: number;
+  /** Only upload images up to and including this year */
+  maxYear?: number;
   /** Scan content/{year}/{assetsDir}/ and upload as {year}/{filename} */
   contentAssets?: boolean;
   /**
