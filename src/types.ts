@@ -138,6 +138,8 @@ export interface SiteConfig {
   copyright?: string;
   /** Strict mode: fail build on parsing errors (default: false) */
   strictMode?: boolean;
+  /** Google Analytics measurement ID (e.g., "G-XXXXXXXXXX"). If set, gtag.js is injected on every page. */
+  googleAnalyticsId?: string;
   /**
    * Configuration for content assets stored alongside markdown in content/{year}/{assetsDir}/.
    * When set, `bunki images:push --content-assets` uses this config for uploads.
