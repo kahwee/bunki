@@ -38,6 +38,7 @@ import {
   generateYearArchives,
   generate404Page,
   generateMapPage,
+  generatePrivacyPage,
 } from "./generators/pages";
 import { generateStylesheet, copyStaticAssets } from "./generators/assets";
 import {
@@ -244,6 +245,7 @@ export class SiteGenerator {
       ),
       generateMapPage(this.site, this.options.config, this.options.outputDir),
       generate404Page(this.options.config, this.options.outputDir),
+      generatePrivacyPage(this.options.config, this.options.outputDir),
     ]);
 
     // Copy static assets

@@ -313,3 +313,21 @@ export async function generateMapPage(
     "map page",
   );
 }
+
+/**
+ * Generate privacy policy page (optional)
+ * @param config - Site configuration
+ * @param outputDir - Output directory
+ */
+export async function generatePrivacyPage(
+  config: SiteConfig,
+  outputDir: string,
+): Promise<void> {
+  await generateOptionalPage(
+    "privacy.njk",
+    { site: config },
+    outputDir,
+    "privacy/index.html",
+    "privacy page",
+  );
+}
