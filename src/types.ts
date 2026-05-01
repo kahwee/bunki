@@ -66,6 +66,8 @@ export interface Post {
   business?: Business;
   /** Optional image URL (first image from post content, used for thumbnails and social sharing) */
   image?: string;
+  /** Optional short title for SEO title tag (50–65 chars). Falls back to title if not set. */
+  seoTitle?: string;
   /** Word count calculated from content (used for reading time and schema.org) */
   wordCount?: number;
   /** Cached JSON-LD structured data (pre-generated during initialization) */

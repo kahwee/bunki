@@ -127,6 +127,7 @@ export async function parseMarkdownFile(
       url: `/${postYear}/${slug}/`,
       excerpt: data.excerpt || extractExcerpt(content),
       html: sanitizedHtml,
+      ...(data.seoTitle && { seoTitle: data.seoTitle }),
       ...(data.category && { category: data.category }),
       ...(data.business && {
         business: (() => {

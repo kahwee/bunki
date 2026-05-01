@@ -43,7 +43,31 @@ export function createTemplateEngine(
   // Add date filter for Pacific timezone formatting
   env.addFilter("date", formatDate);
 
+  // Add titlecase filter with tech acronym awareness
+  env.addFilter("titlecase", titleCase);
+
   return env;
+}
+
+/**
+ * Title case filter with tech acronym awareness
+ * Converts hyphenated slugs to display titles, uppercasing known acronyms
+ */
+const TECH_ACRONYMS = new Set([
+  "ai", "llm", "api", "ui", "ux", "ios", "url", "seo", "css", "html",
+  "js", "ts", "sql", "cdn", "aws", "rss", "sdk", "cli", "gpu", "cpu",
+]);
+
+function titleCase(str: string): string {
+  return str
+    .replace(/-/g, " ")
+    .split(" ")
+    .map((word) => {
+      const lower = word.toLowerCase();
+      if (TECH_ACRONYMS.has(lower)) return lower === "ios" ? "iOS" : lower.toUpperCase();
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
 }
 
 /**
