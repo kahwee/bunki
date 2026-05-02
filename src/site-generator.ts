@@ -115,8 +115,23 @@ export class SiteGenerator {
     const tagsTomlFile = Bun.file(tagsTomlPath);
     if (await tagsTomlFile.exists()) {
       try {
-        tagDescriptions = require(tagsTomlPath);
-        console.log("Loaded tag descriptions from tags.toml");
+        const raw = require(tagsTomlPath);
+        // Support both flat { tag: "desc" } and nested { tags: { tag: "desc" } } structures
+        if (
+          raw.tags &&
+          typeof raw.tags === "object" &&
+          Object.keys(raw).length === 1
+        ) {
+          console.warn(
+            "tags.toml uses a [tags] section header — descriptions loaded, but consider removing the [tags] header for cleaner structure.",
+          );
+          tagDescriptions = raw.tags as Record<string, string>;
+        } else {
+          tagDescriptions = raw;
+        }
+        console.log(
+          `Loaded ${Object.keys(tagDescriptions).length} tag descriptions from tags.toml`,
+        );
       } catch (error) {
         console.warn("Error loading tag descriptions:", error);
       }
