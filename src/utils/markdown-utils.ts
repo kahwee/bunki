@@ -88,14 +88,12 @@ export async function parseMarkdownFile(
     }
 
     // Validate tags - must not contain spaces
-    if (data.tags && Array.isArray(data.tags)) {
-      const tagsError = validateTags(data.tags, filePath);
-      if (tagsError) {
-        return {
-          post: null,
-          error: tagsError,
-        };
-      }
+    const tagsError = validateTags(data.tags, filePath);
+    if (tagsError) {
+      return {
+        post: null,
+        error: tagsError,
+      };
     }
 
     const slug = getBaseFilename(filePath);

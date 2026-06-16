@@ -5,7 +5,7 @@
 import path from "node:path";
 import nunjucks from "nunjucks";
 import { PAGINATION, SEO } from "../constants";
-import type { Site, SiteConfig, TagData } from "../types";
+import type { Site, SiteConfig, TagData, TemplateObject } from "../types";
 import { ensureDir } from "../utils/file-utils";
 import { generateHomePageSchemas, schemasToHtml } from "../utils/json-ld";
 import { createPagination, getPaginatedItems, getTotalPages } from "../utils/pagination";
@@ -45,7 +45,7 @@ async function writeHtmlFile(
  */
 async function generateOptionalPage(
   templateName: string,
-  context: Record<string, unknown>,
+  context: TemplateObject,
   outputDir: string,
   outputPath: string,
   label: string,

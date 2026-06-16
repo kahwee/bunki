@@ -2,12 +2,20 @@ import path from "node:path";
 import { S3Client } from "bun";
 import type { ImageUploader, S3Config, SiteConfig, Uploader } from "../types";
 
+interface S3FileLike {
+  write(file: Bun.BunFile): Promise<number>;
+}
+
+interface S3ClientLike {
+  file(key: string): S3FileLike;
+}
+
 /**
  * Bun-native S3 uploader implementation
  */
 export class S3Uploader implements Uploader, ImageUploader {
   private s3Config: S3Config;
-  private client: S3Client;
+  private client: S3ClientLike;
 
   constructor(s3Config: S3Config) {
     this.s3Config = s3Config;
@@ -18,21 +26,22 @@ export class S3Uploader implements Uploader, ImageUploader {
       // Create a mock client for testing
       this.client = {
         file: () => ({
-          write: async () => Promise.resolve(),
+          write: async () => 0,
         }),
-      } as unknown as S3Client;
+      };
     } else {
       // Create a new S3Client with the provided configuration
-      this.client = new S3Client({
+      const client = new S3Client({
         region: s3Config.region || "auto",
         endpoint: s3Config.endpoint,
         accessKeyId: s3Config.accessKeyId,
         secretAccessKey: s3Config.secretAccessKey,
         bucket: s3Config.bucket,
       });
+      this.client = client;
 
       // Set the client as the default for Bun.s3
-      Bun.s3 = this.client;
+      Bun.s3 = client;
     }
   }
 
@@ -101,7 +110,7 @@ export class S3Uploader implements Uploader, ImageUploader {
     concurrency: number,
   ): Promise<T[]> {
     const results: T[] = [];
-    const executing: Promise<unknown>[] = [];
+    const executing: Promise<void>[] = [];
 
     for (const task of tasks) {
       const promise = task()

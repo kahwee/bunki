@@ -1,9 +1,10 @@
 import path from "node:path";
 import type { SiteConfig } from "./types";
 
-type ConfigLike = Partial<SiteConfig> & {
-  [key: string]: unknown;
-  default?: unknown;
+type ConfigLike = Partial<SiteConfig>;
+
+type ConfigModule = {
+  default?: ConfigLike | (() => ConfigLike | Promise<ConfigLike>);
 };
 
 const PROJECT_ROOT = process.cwd();
@@ -46,7 +47,7 @@ export async function loadConfig(configPath: string = DEFAULT_CONFIG_FILE): Prom
   }
 
   try {
-    const imported = await import(resolved);
+    const imported: ConfigModule = await import(resolved);
     let cfg: ConfigLike | (() => ConfigLike | Promise<ConfigLike>) | undefined = imported.default;
     if (typeof cfg === "function") {
       cfg = await cfg();
@@ -54,16 +55,20 @@ export async function loadConfig(configPath: string = DEFAULT_CONFIG_FILE): Prom
     if (!cfg || typeof cfg !== "object") {
       return getDefaultConfig();
     }
-    // ensure site mirror for tests while preserving current shape usage
-    if (!cfg.site) {
-      cfg.site = {
+
+    return {
+      ...cfg,
+      title: cfg.title ?? "My Blog",
+      description: cfg.description ?? "A blog built with Bunki",
+      baseUrl: cfg.baseUrl ?? "https://example.com",
+      domain: cfg.domain ?? "blog",
+      site: cfg.site ?? {
         title: cfg.title ?? "My Blog",
         description: cfg.description ?? "A blog built with Bunki",
         url: cfg.baseUrl ?? "https://example.com",
         author: typeof cfg.author === "string" ? cfg.author : "",
-      };
-    }
-    return cfg as SiteConfig;
+      },
+    };
   } catch (error) {
     console.error(`Error loading config file ${resolved}:`, error);
     return getDefaultConfig();

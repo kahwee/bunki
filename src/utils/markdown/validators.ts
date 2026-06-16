@@ -2,7 +2,18 @@
  * Frontmatter and business location validators
  */
 
+import type { JsonValue } from "../../types";
 import { SCHEMA_ORG_PLACE_TYPES } from "./constants";
+
+interface BusinessLocationEntry {
+  type?: JsonValue;
+  name?: JsonValue;
+  address?: JsonValue;
+  latitude?: JsonValue;
+  longitude?: JsonValue;
+  lat?: JsonValue;
+  lng?: JsonValue;
+}
 
 export interface ValidationError {
   file: string;
@@ -19,7 +30,7 @@ export interface ValidationError {
  * @returns ValidationError if invalid, null if valid
  */
 export function validateBusinessLocation(
-  business: unknown,
+  business: BusinessLocationEntry | BusinessLocationEntry[] | null | undefined,
   filePath: string,
 ): ValidationError | null {
   if (!business) return null;
@@ -28,7 +39,7 @@ export function validateBusinessLocation(
   const locations = Array.isArray(business) ? business : [business];
 
   for (let i = 0; i < locations.length; i++) {
-    const loc = locations[i] as Record<string, unknown>;
+    const loc = locations[i];
     const locIndex = locations.length > 1 ? ` (location ${i + 1})` : "";
 
     // Check required field: type
@@ -97,7 +108,10 @@ export function validateBusinessLocation(
  * @param filePath - File path for error reporting
  * @returns ValidationError if invalid, null if valid
  */
-export function validateTags(tags: string[], filePath: string): ValidationError | null {
+export function validateTags(
+  tags: string[] | readonly string[] | null | undefined,
+  filePath: string,
+): ValidationError | null {
   if (!tags || !Array.isArray(tags)) return null;
 
   const tagsWithSpaces = tags.filter((tag: string) => tag.includes(" "));
@@ -120,7 +134,7 @@ export function validateTags(tags: string[], filePath: string): ValidationError 
  * @returns ValidationError if found, null otherwise
  */
 export function checkDeprecatedLocationField(
-  data: Record<string, unknown>,
+  data: { location?: JsonValue | undefined } | null | undefined,
   filePath: string,
 ): ValidationError | null {
   if (data?.location) {

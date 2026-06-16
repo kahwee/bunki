@@ -1,6 +1,20 @@
 /**
  * Post object representing a single markdown file
  */
+export type JsonPrimitive = string | number | boolean | null;
+
+export type JsonValue = JsonPrimitive | JsonObject | JsonValue[];
+
+export interface JsonObject {
+  [key: string]: JsonValue;
+}
+
+export type TemplateValue = JsonValue | object | undefined;
+
+export interface TemplateObject {
+  [key: string]: TemplateValue;
+}
+
 export interface Location {
   /** Name of the location */
   name: string;

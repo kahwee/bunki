@@ -16,28 +16,27 @@
  * @see https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data
  */
 
-import type { Post, SiteConfig } from "../types.js";
+import type { JsonObject, Post, SiteConfig } from "../types.js";
 
 /**
  * Base Schema.org Thing type
  */
-interface SchemaOrgThing {
+type SchemaOrgThing = JsonObject & {
   "@context": "https://schema.org";
   "@type": string;
-  [key: string]: unknown;
-}
+};
 
-interface ListItemThing {
+type ListItemThing = JsonObject & {
   "@type": "ListItem";
   position: number;
   name: string;
   item: string;
-}
+};
 
-interface BreadcrumbListThing extends SchemaOrgThing {
+type BreadcrumbListThing = SchemaOrgThing & {
   "@type": "BreadcrumbList";
   itemListElement: ListItemThing[];
-}
+};
 
 /**
  * Options for generating BlogPosting JSON-LD
