@@ -40,20 +40,24 @@ export async function handleGenerateCommand(
     const outputDir = path.resolve(options.output);
     const templatesDir = path.resolve(options.templates);
 
+    const config = await deps.loadConfig(configPath);
+    // config.templatesDir (set in bunki.config.ts) takes precedence over the CLI default
+    const resolvedTemplatesDir = config.templatesDir
+      ? path.resolve(config.templatesDir)
+      : templatesDir;
+
     deps.logger.log("Generating site with:");
     deps.logger.log(`- Config file: ${configPath}`);
     deps.logger.log(`- Content directory: ${contentDir}`);
     deps.logger.log(`- Output directory: ${outputDir}`);
-    deps.logger.log(`- Templates directory: ${templatesDir}`);
+    deps.logger.log(`- Templates directory: ${resolvedTemplatesDir}`);
     if (options.incremental) {
       deps.logger.log(`- Incremental mode: enabled`);
     }
-
-    const config = await deps.loadConfig(configPath);
     const generator = deps.createGenerator({
       contentDir,
       outputDir,
-      templatesDir,
+      templatesDir: resolvedTemplatesDir,
       config,
     });
 
