@@ -147,8 +147,15 @@ export interface SiteConfig {
    * When set, `bunki images:push --content-assets` uses this config for uploads.
    */
   contentAssets?: ContentAssetsConfig;
+  /** Resolved site metadata used by loaders and generators */
+  site?: {
+    title: string;
+    description: string;
+    url: string;
+    author: string;
+  };
   /** Additional custom configuration options */
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

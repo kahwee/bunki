@@ -1,4 +1,3 @@
-
 /* Complex selectors */
 html[data-theme="dark"] body.has-sidebar > main.content {
   background: #222;

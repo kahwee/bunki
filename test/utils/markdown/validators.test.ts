@@ -1,8 +1,8 @@
-import { expect, test, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
+  checkDeprecatedLocationField,
   validateBusinessLocation,
   validateTags,
-  checkDeprecatedLocationField,
 } from "../../../src/utils/markdown/validators";
 
 describe("Frontmatter Validators", () => {
@@ -161,17 +161,17 @@ describe("Frontmatter Validators", () => {
     });
 
     test("should return null when tags is null", () => {
-      const error = validateTags(null as any, "test.md");
+      const error = validateTags(null as unknown as string[], "test.md");
       expect(error).toBeNull();
     });
 
     test("should return null when tags is undefined", () => {
-      const error = validateTags(undefined as any, "test.md");
+      const error = validateTags(undefined as unknown as string[], "test.md");
       expect(error).toBeNull();
     });
 
     test("should return null for non-array input", () => {
-      const error = validateTags("not-an-array" as any, "test.md");
+      const error = validateTags("not-an-array" as unknown as string[], "test.md");
       expect(error).toBeNull();
     });
   });

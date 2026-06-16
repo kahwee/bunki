@@ -1,1 +1,4 @@
-@import "./variables.css"; body { color: var(--main-color); }
+@import "./variables.css";
+body {
+  color: var(--main-color);
+}

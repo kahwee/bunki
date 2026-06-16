@@ -1,15 +1,8 @@
-import {
-  expect,
-  test,
-  describe,
-  beforeAll,
-  afterAll,
-  beforeEach,
-} from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import fs from "node:fs";
+import path from "node:path";
 import { loadConfig } from "../../src/config";
 import { convertMarkdownToHtml } from "../../src/utils/markdown-utils";
-import path from "path";
-import fs from "fs";
 
 const TEST_DIR = path.join(import.meta.dir, "security-test");
 
@@ -39,10 +32,7 @@ describe("Config Loading Security Tests", () => {
       export default { site: { title: "Hacked" } };
     `;
 
-    await fs.promises.writeFile(
-      path.join(TEST_DIR, "malicious.config.ts"),
-      maliciousConfig,
-    );
+    await fs.promises.writeFile(path.join(TEST_DIR, "malicious.config.ts"), maliciousConfig);
   });
 
   afterAll(async () => {
@@ -81,12 +71,7 @@ describe("Config Loading Security Tests", () => {
 
   test("should validate config file extensions", async () => {
     // Test with non-config file extensions
-    const invalidExtensions = [
-      "config.exe",
-      "config.sh",
-      "config.bat",
-      "config.php",
-    ];
+    const invalidExtensions = ["config.exe", "config.sh", "config.bat", "config.php"];
 
     for (const ext of invalidExtensions) {
       const invalidPath = path.join(TEST_DIR, `test.${ext}`);
@@ -114,9 +99,7 @@ describe("Config Loading Security Tests", () => {
     );
 
     try {
-      await expect(loadConfig(outsideProjectPath)).rejects.toThrow(
-        /within project directory/,
-      );
+      await expect(loadConfig(outsideProjectPath)).rejects.toThrow(/within project directory/);
     } finally {
       try {
         await fs.promises.unlink(outsideProjectPath);
@@ -279,15 +262,11 @@ describe("Input Validation Tests", () => {
       { title: "   ", date: "2025-01-01", tags: ["test"] }, // Whitespace only title
     ];
 
-    const validateFrontmatter = (data: any): boolean => {
-      if (
-        !data.title ||
-        typeof data.title !== "string" ||
-        data.title.trim() === ""
-      ) {
+    const validateFrontmatter = (data: Record<string, unknown>): boolean => {
+      if (typeof data.title !== "string" || data.title.trim() === "") {
         return false;
       }
-      if (!data.date || isNaN(Date.parse(data.date))) {
+      if (typeof data.date !== "string" || Number.isNaN(Date.parse(data.date))) {
         return false;
       }
       if (data.tags && !Array.isArray(data.tags)) {
@@ -306,29 +285,10 @@ describe("Input Validation Tests", () => {
   });
 
   test("should validate file extensions", () => {
-    const allowedExtensions = [
-      ".md",
-      ".markdown",
-      ".html",
-      ".njk",
-      ".css",
-      ".js",
-      ".json",
-    ];
-    const dangerousExtensions = [
-      ".exe",
-      ".bat",
-      ".sh",
-      ".php",
-      ".py",
-      ".rb",
-      ".pl",
-    ];
+    const allowedExtensions = [".md", ".markdown", ".html", ".njk", ".css", ".js", ".json"];
+    const dangerousExtensions = [".exe", ".bat", ".sh", ".php", ".py", ".rb", ".pl"];
 
-    const isExtensionSafe = (
-      filename: string,
-      allowedExts: string[],
-    ): boolean => {
+    const isExtensionSafe = (filename: string, allowedExts: string[]): boolean => {
       const ext = path.extname(filename).toLowerCase();
       return allowedExts.includes(ext);
     };
@@ -363,11 +323,7 @@ describe("Input Validation Tests", () => {
     const isUrlSafe = (url: string): boolean => {
       const safeSchemes = ["http:", "https:", "mailto:", ""];
       try {
-        if (
-          url.startsWith("/") ||
-          url.startsWith("#") ||
-          url.startsWith("../")
-        ) {
+        if (url.startsWith("/") || url.startsWith("#") || url.startsWith("../")) {
           return true; // Relative URLs are safe
         }
         const parsed = new URL(url);
@@ -415,13 +371,10 @@ describe("Resource Limits Tests", () => {
 
   test("should validate filename length", () => {
     const maxFilenameLength = 255;
-    const longFilename = "x".repeat(maxFilenameLength + 1) + ".md";
+    const longFilename = `${"x".repeat(maxFilenameLength + 1)}.md`;
     const normalFilename = "normal-post.md";
 
-    const isFilenameLengthValid = (
-      filename: string,
-      maxLength: number,
-    ): boolean => {
+    const isFilenameLengthValid = (filename: string, maxLength: number): boolean => {
       return path.basename(filename).length <= maxLength;
     };
 

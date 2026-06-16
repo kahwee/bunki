@@ -1,9 +1,9 @@
-import { expect, test, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
-  escapeXml,
+  buildRSSItem,
   buildSitemapUrl,
   calculateFreshnessPriority,
-  buildRSSItem,
+  escapeXml,
 } from "../../src/utils/xml-builder";
 
 describe("XML Builder Utilities", () => {
@@ -44,12 +44,7 @@ describe("XML Builder Utilities", () => {
     });
 
     test("should format priority to one decimal place", () => {
-      const xml = buildSitemapUrl(
-        "https://example.com/",
-        "2025-01-15T10:00:00Z",
-        "daily",
-        0.75432,
-      );
+      const xml = buildSitemapUrl("https://example.com/", "2025-01-15T10:00:00Z", "daily", 0.75432);
 
       expect(xml).toInclude("<priority>0.8</priority>");
     });
@@ -66,9 +61,7 @@ describe("XML Builder Utilities", () => {
 
     test("should moderately boost recent content (< 1 month)", () => {
       const now = Date.now();
-      const twoWeeksAgo = new Date(
-        now - 14 * 24 * 60 * 60 * 1000,
-      ).toISOString();
+      const twoWeeksAgo = new Date(now - 14 * 24 * 60 * 60 * 1000).toISOString();
 
       const priority = calculateFreshnessPriority(twoWeeksAgo, 0.5, now);
       expect(priority).toBe(0.6); // 0.5 + 0.1
@@ -76,9 +69,7 @@ describe("XML Builder Utilities", () => {
 
     test("should not boost old content", () => {
       const now = Date.now();
-      const twoMonthsAgo = new Date(
-        now - 60 * 24 * 60 * 60 * 1000,
-      ).toISOString();
+      const twoMonthsAgo = new Date(now - 60 * 24 * 60 * 60 * 1000).toISOString();
 
       const priority = calculateFreshnessPriority(twoMonthsAgo, 0.5, now);
       expect(priority).toBe(0.5); // No boost
@@ -105,16 +96,10 @@ describe("XML Builder Utilities", () => {
 
       expect(xml).toInclude("<title><![CDATA[Test Post]]></title>");
       expect(xml).toInclude("<link>https://example.com/test</link>");
-      expect(xml).toInclude(
-        '<guid isPermaLink="true">https://example.com/test</guid>',
-      );
+      expect(xml).toInclude('<guid isPermaLink="true">https://example.com/test</guid>');
       expect(xml).toInclude("<pubDate>Mon, 15 Jan 2025 10:00:00 GMT</pubDate>");
-      expect(xml).toInclude(
-        "<description><![CDATA[Test description]]></description>",
-      );
-      expect(xml).toInclude(
-        "<content:encoded><![CDATA[<p>Test content</p>]]></content:encoded>",
-      );
+      expect(xml).toInclude("<description><![CDATA[Test description]]></description>");
+      expect(xml).toInclude("<content:encoded><![CDATA[<p>Test content</p>]]></content:encoded>");
     });
 
     test("should include author when provided", () => {
@@ -154,9 +139,7 @@ describe("XML Builder Utilities", () => {
         image: "https://example.com/image.jpg",
       });
 
-      expect(xml).toInclude(
-        '<media:thumbnail url="https://example.com/image.jpg" />',
-      );
+      expect(xml).toInclude('<media:thumbnail url="https://example.com/image.jpg" />');
       expect(xml).toInclude(
         '<enclosure url="https://example.com/image.jpg" type="image/jpeg" length="0" />',
       );

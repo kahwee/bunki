@@ -1,6 +1,7 @@
-import { Command } from "commander";
+import type { Command } from "commander";
 import { loadConfig } from "../../config";
 import { parseMarkdownDirectory } from "../../parser";
+import type { SiteConfig } from "../../types";
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -13,7 +14,7 @@ export function registerValidateCommand(program: Command) {
     .option("-c, --config <path>", "Path to config file", "bunki.config.ts")
     .option("-d, --dir <path>", "Override content directory")
     .action(async (options: { config: string; dir?: string }) => {
-      let config;
+      let config: SiteConfig;
       try {
         config = await loadConfig(options.config);
       } catch (error) {

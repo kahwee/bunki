@@ -1,6 +1,6 @@
-import path from "path";
+import path from "node:path";
 import { loadConfig } from "../config";
-import { ImageUploadOptions, S3Config } from "../types";
+import type { ImageUploadOptions, S3Config } from "../types";
 import { ensureDir, fileExists } from "./file-utils";
 import { createUploader } from "./s3-uploader";
 
@@ -28,9 +28,7 @@ export async function uploadImages(
 
     // Use config's S3 settings directly
     if (!config.s3 && !process.env.BUNKI_DRY_RUN) {
-      console.error(
-        "Missing S3 configuration. Please check your bunki.config.ts or .env file.",
-      );
+      console.error("Missing S3 configuration. Please check your bunki.config.ts or .env file.");
       process.exit(1);
     }
 
@@ -59,8 +57,7 @@ export async function uploadImages(
     }
 
     // Resolve the assets directory name: CLI flag > config > default "_assets"
-    const assetsDir =
-      options.contentAssetsDir || config.contentAssets?.assetsDir || "_assets";
+    const assetsDir = options.contentAssetsDir || config.contentAssets?.assetsDir || "_assets";
 
     if (contentAssetsMode) {
       // In content-assets mode, prefer the dedicated S3 config if provided in bunki.config.ts
@@ -72,16 +69,10 @@ export async function uploadImages(
         console.log(`[content-assets] Using dedicated S3 config (bucket: ${s3Config.bucket})`);
       }
 
-      console.log(
-        `Uploading content assets from ${imagesDir} to bucket ${s3Config.bucket}`,
-      );
-      console.log(
-        `[content-assets] S3 key: {year}/{filename} (/${assetsDir}/ stripped from path)`,
-      );
+      console.log(`Uploading content assets from ${imagesDir} to bucket ${s3Config.bucket}`);
+      console.log(`[content-assets] S3 key: {year}/{filename} (/${assetsDir}/ stripped from path)`);
     } else {
-      console.log(
-        `Uploading images from ${imagesDir} to bucket ${s3Config.bucket}`,
-      );
+      console.log(`Uploading images from ${imagesDir} to bucket ${s3Config.bucket}`);
     }
 
     if (options.minYear && options.maxYear) {
@@ -100,7 +91,12 @@ export async function uploadImages(
       : undefined;
 
     const uploader = createUploader(s3Config);
-    const imageUrlMap = await uploader.uploadImages(imagesDir, options.minYear, keyTransform, options.maxYear);
+    const imageUrlMap = await uploader.uploadImages(
+      imagesDir,
+      options.minYear,
+      keyTransform,
+      options.maxYear,
+    );
 
     // Output URL mapping to JSON if requested
     if (options.outputJson) {

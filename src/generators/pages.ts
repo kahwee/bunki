@@ -2,18 +2,14 @@
  * Page generation logic
  */
 
+import path from "node:path";
 import nunjucks from "nunjucks";
-import path from "path";
-import type { Post, Site, SiteConfig, TagData } from "../types";
-import { ensureDir } from "../utils/file-utils";
-import {
-  createPagination,
-  getPaginatedItems,
-  getTotalPages,
-} from "../utils/pagination";
-import { generateHomePageSchemas, schemasToHtml } from "../utils/json-ld";
-import { generateCollectionSchemas } from "../utils/schema-factory";
 import { PAGINATION, SEO } from "../constants";
+import type { Site, SiteConfig, TagData } from "../types";
+import { ensureDir } from "../utils/file-utils";
+import { generateHomePageSchemas, schemasToHtml } from "../utils/json-ld";
+import { createPagination, getPaginatedItems, getTotalPages } from "../utils/pagination";
+import { generateCollectionSchemas } from "../utils/schema-factory";
 
 /**
  * Get sorted tags (by post count)
@@ -21,10 +17,7 @@ import { PAGINATION, SEO } from "../constants";
  * @param limit - Optional limit on number of tags
  * @returns Sorted array of TagData
  */
-function getSortedTags(
-  tags: Record<string, TagData>,
-  limit?: number,
-): TagData[] {
+function getSortedTags(tags: Record<string, TagData>, limit?: number): TagData[] {
   const sorted = Object.values(tags).sort((a, b) => b.count - a.count);
   return limit ? sorted.slice(0, limit) : sorted;
 }
@@ -173,20 +166,14 @@ export async function generateTagPages(
         posts: paginatedPosts,
       };
 
-      const pagination = createPagination(
-        tagData.posts,
-        page,
-        pageSize,
-        `/tags/${tagData.slug}/`,
-      );
+      const pagination = createPagination(tagData.posts, page, pageSize, `/tags/${tagData.slug}/`);
 
       // Generate CollectionPage and BreadcrumbList schemas for first page only
       const jsonLd =
         page === 1
           ? generateCollectionSchemas(config, {
               title: tagName,
-              description:
-                tagData.description || `Articles tagged with ${tagName}`,
+              description: tagData.description || `Articles tagged with ${tagName}`,
               url: `${config.baseUrl}/tags/${tagData.slug}/`,
               posts: tagData.posts,
               breadcrumbs: [
@@ -236,12 +223,7 @@ export async function generateYearArchives(
 
     for (let page = 1; page <= totalPages; page++) {
       const paginatedPosts = getPaginatedItems(yearPosts, page, pageSize);
-      const pagination = createPagination(
-        yearPosts,
-        page,
-        pageSize,
-        `/${year}/`,
-      );
+      const pagination = createPagination(yearPosts, page, pageSize, `/${year}/`);
 
       // Generate CollectionPage and BreadcrumbList schemas for first page only
       const jsonLd =
@@ -268,8 +250,7 @@ export async function generateYearArchives(
         jsonLd,
       });
 
-      const outputPath =
-        page === 1 ? `${year}/index.html` : `${year}/page/${page}/index.html`;
+      const outputPath = page === 1 ? `${year}/index.html` : `${year}/page/${page}/index.html`;
 
       await writeHtmlFile(outputDir, outputPath, yearPageHtml);
     }
@@ -281,17 +262,8 @@ export async function generateYearArchives(
  * @param config - Site configuration
  * @param outputDir - Output directory
  */
-export async function generate404Page(
-  config: SiteConfig,
-  outputDir: string,
-): Promise<void> {
-  await generateOptionalPage(
-    "404.njk",
-    { site: config },
-    outputDir,
-    "404.html",
-    "404.html",
-  );
+export async function generate404Page(config: SiteConfig, outputDir: string): Promise<void> {
+  await generateOptionalPage("404.njk", { site: config }, outputDir, "404.html", "404.html");
 }
 
 /**
@@ -319,10 +291,7 @@ export async function generateMapPage(
  * @param config - Site configuration
  * @param outputDir - Output directory
  */
-export async function generatePrivacyPage(
-  config: SiteConfig,
-  outputDir: string,
-): Promise<void> {
+export async function generatePrivacyPage(config: SiteConfig, outputDir: string): Promise<void> {
   await generateOptionalPage(
     "privacy.njk",
     { site: config },

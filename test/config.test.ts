@@ -1,12 +1,6 @@
-import { expect, test, describe, beforeAll, afterAll } from "bun:test";
-import {
-  loadConfig,
-  createDefaultConfig,
-  configExists,
-  getDefaultConfig,
-  saveConfig,
-} from "../src/config";
-import path from "path";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import path from "node:path";
+import { configExists, getDefaultConfig, loadConfig, saveConfig } from "../src/config";
 import { ensureDir } from "../src/utils/file-utils";
 
 const TEST_CONFIG_PATH = path.join(import.meta.dir, "temp-config.json");
@@ -39,15 +33,12 @@ describe("Configuration", () => {
     const configFile = Bun.file(TEST_CONFIG_PATH);
     if (await configFile.exists()) {
       await Bun.write(TEST_CONFIG_PATH, ""); // Truncate the file
-      await Bun.write(TEST_CONFIG_PATH + ".deleted", ""); // Mark as deleted
+      await Bun.write(`${TEST_CONFIG_PATH}.deleted`, ""); // Mark as deleted
     }
   });
 
   test("loadConfig should use default config when file doesn't exist", async () => {
-    const nonExistentPath = path.join(
-      import.meta.dir,
-      "non-existent-config.json",
-    );
+    const nonExistentPath = path.join(import.meta.dir, "non-existent-config.json");
     const config = await loadConfig(nonExistentPath);
 
     expect(config).toHaveProperty("title");
@@ -73,10 +64,7 @@ describe("Configuration", () => {
   test("configExists should correctly detect config file", async () => {
     expect(await configExists(TEST_CONFIG_PATH)).toBeTrue();
 
-    const nonExistentPath = path.join(
-      import.meta.dir,
-      "non-existent-config.json",
-    );
+    const nonExistentPath = path.join(import.meta.dir, "non-existent-config.json");
     expect(await configExists(nonExistentPath)).toBeFalse();
   });
 
@@ -118,7 +106,7 @@ describe("Configuration - Path Safety & Validation", () => {
       await loadConfig("..%2f..%2fetc%2fpasswd");
       // If it doesn't throw, it should at least return default
       expect(true).toBe(true);
-    } catch (error) {
+    } catch (_error) {
       // Unsafe path should throw error
       expect(true).toBe(true);
     }

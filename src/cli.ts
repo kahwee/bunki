@@ -1,4 +1,7 @@
 #!/usr/bin/env bun
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { registerCssCommand } from "./cli/commands/css";
 import { registerGenerateCommand } from "./cli/commands/generate";
@@ -8,15 +11,10 @@ import { registerNewCommand } from "./cli/commands/new-post";
 import { registerServeCommand } from "./cli/commands/serve";
 import { registerValidateCommand } from "./cli/commands/validate";
 import { registerValidateMediaCommand } from "./cli/commands/validate-media";
-import { readFileSync } from "fs";
-import { join, dirname } from "path";
-import { fileURLToPath } from "url";
 
 // Read version from package.json
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const packageJson = JSON.parse(
-  readFileSync(join(__dirname, "../package.json"), "utf-8"),
-);
+const packageJson = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8"));
 const VERSION = packageJson.version;
 
 const program = new Command();

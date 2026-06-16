@@ -1,8 +1,8 @@
-import { spawn } from "child_process";
+import { spawn } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 import { hash } from "bun";
-import fs from "fs";
-import path from "path";
-import { CSSConfig } from "../types";
+import type { CSSConfig } from "../types";
 import { ensureDir } from "./file-utils";
 
 export interface CSSProcessorOptions {
@@ -30,16 +30,8 @@ export interface CSSProcessResult {
  * Throws on error - no fallback
  * Returns output path (with hash if hashing enabled)
  */
-export async function processCSS(
-  options: CSSProcessorOptions,
-): Promise<CSSProcessResult> {
-  const {
-    css,
-    projectRoot,
-    outputDir,
-    verbose = false,
-    enableHashing = false,
-  } = options;
+export async function processCSS(options: CSSProcessorOptions): Promise<CSSProcessResult> {
+  const { css, projectRoot, outputDir, verbose = false, enableHashing = false } = options;
 
   if (!css.enabled) {
     if (verbose) {
@@ -72,13 +64,7 @@ export async function processCSS(
   }
 
   // Process CSS with PostCSS
-  await runPostCSS(
-    inputPath,
-    tempOutputPath,
-    postcssConfigPath,
-    projectRoot,
-    verbose,
-  );
+  await runPostCSS(inputPath, tempOutputPath, postcssConfigPath, projectRoot, verbose);
 
   // Apply content hashing if enabled
   if (enableHashing) {
@@ -123,14 +109,7 @@ function runPostCSS(
   verbose: boolean,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const args = [
-      "postcss",
-      inputPath,
-      "-o",
-      outputPath,
-      "--config",
-      configPath,
-    ];
+    const args = ["postcss", inputPath, "-o", outputPath, "--config", configPath];
 
     const postcss = spawn("bunx", args, {
       stdio: verbose ? "inherit" : ["ignore", "pipe", "pipe"],
@@ -150,11 +129,7 @@ function runPostCSS(
         return resolve();
       }
 
-      reject(
-        new Error(
-          `PostCSS failed with exit code ${code}: ${errorOutput.trim()}`,
-        ),
-      );
+      reject(new Error(`PostCSS failed with exit code ${code}: ${errorOutput.trim()}`));
     });
 
     postcss.on("error", (err) => {
@@ -182,25 +157,18 @@ export async function watchCSS(options: CSSProcessorOptions): Promise<void> {
 
   // Note: This is a basic implementation. In a production system,
   // you might want to use a more sophisticated file watcher
-  const watcher = fs.watch(
-    watchDir,
-    { recursive: true },
-    async (eventType, filename) => {
-      if (
-        filename &&
-        (filename.endsWith(".css") || filename.endsWith(".pcss"))
-      ) {
-        if (verbose) {
-          console.log(`🔄 CSS file changed: ${filename}`);
-        }
-        try {
-          await processCSS(options);
-        } catch (error) {
-          console.error("❌ CSS rebuild failed:", error);
-        }
+  const watcher = fs.watch(watchDir, { recursive: true }, async (_eventType, filename) => {
+    if (filename && (filename.endsWith(".css") || filename.endsWith(".pcss"))) {
+      if (verbose) {
+        console.log(`🔄 CSS file changed: ${filename}`);
       }
-    },
-  );
+      try {
+        await processCSS(options);
+      } catch (error) {
+        console.error("❌ CSS rebuild failed:", error);
+      }
+    }
+  });
 
   // Return a promise that never resolves (keeps watching)
   return new Promise(() => {

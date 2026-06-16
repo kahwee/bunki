@@ -84,13 +84,10 @@ export interface RSSItemParams {
 }
 
 export function buildRSSItem(params: RSSItemParams): string {
-  const { title, link, pubDate, description, content, tags, author, image } =
-    params;
+  const { title, link, pubDate, description, content, tags, author, image } = params;
 
   const categoryTags =
-    tags
-      ?.map((tag) => `      <category>${escapeXml(tag)}</category>`)
-      .join("\n") || "";
+    tags?.map((tag) => `      <category>${escapeXml(tag)}</category>`).join("\n") || "";
 
   let itemXml = `    <item>
       <title><![CDATA[${title}]]></title>

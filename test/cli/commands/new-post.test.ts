@@ -1,10 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import path from "path";
-import {
-  handleNewCommand,
-  registerNewCommand,
-} from "../../../src/cli/commands/new-post";
+import path from "node:path";
 import { Command } from "commander";
+import { handleNewCommand, registerNewCommand } from "../../../src/cli/commands/new-post";
 
 describe("CLI New Command (handler)", () => {
   test("creates a slugged markdown file with frontmatter and tags", async () => {
@@ -31,11 +28,7 @@ describe("CLI New Command (handler)", () => {
     const resultPath = await handleNewCommand(title, options, deps);
 
     // Path should resolve to <cwd>/content/<slug>.md
-    const expectedPath = path.join(
-      process.cwd(),
-      "content",
-      `${expectedSlug}.md`,
-    );
+    const expectedPath = path.join(process.cwd(), "content", `${expectedSlug}.md`);
     expect(resultPath).toBe(expectedPath);
     expect(calls.filePath).toBe(expectedPath);
 
@@ -135,7 +128,7 @@ describe("CLI New Command (handler)", () => {
       now: () => new Date(),
       logger: {
         log: (_: string) => {},
-        error: (msg: string, err: any) => {
+        error: (msg: string, _err: unknown) => {
           errorLogged = msg;
         },
       },
@@ -150,7 +143,7 @@ describe("CLI New Command (handler)", () => {
   test("logs success message when post created", async () => {
     let loggedMessage = "";
     const deps = {
-      writeFile: async (filePath: string) => {
+      writeFile: async (_filePath: string) => {
         return 0;
       },
       now: () => new Date(),
@@ -223,9 +216,7 @@ describe("CLI New Command (registration)", () => {
     if (newCmd) {
       // Verify options - check that the command has the tags option
       const options = newCmd.options;
-      const tagsOption = options.find(
-        (opt) => opt.short === "-t" || opt.long === "--tags",
-      );
+      const tagsOption = options.find((opt) => opt.short === "-t" || opt.long === "--tags");
       expect(tagsOption).toBeDefined();
 
       // Verify the command is callable (has an action set)

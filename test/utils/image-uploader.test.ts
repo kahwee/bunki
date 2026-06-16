@@ -1,7 +1,7 @@
-import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { uploadImages } from "../../src/utils/image-uploader";
-import path from "path";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import path from "node:path";
 import { ensureDir } from "../../src/utils/file-utils";
+import { uploadImages } from "../../src/utils/image-uploader";
 
 describe("Image Uploader", () => {
   describe("uploadImages function", () => {
@@ -16,10 +16,7 @@ describe("Image Uploader", () => {
 
       // Create test image files
       const jpgContent = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
-      await Bun.write(
-        path.join(imagesDir, "2023/travel/paris.jpg"),
-        jpgContent,
-      );
+      await Bun.write(path.join(imagesDir, "2023/travel/paris.jpg"), jpgContent);
       await Bun.write(path.join(imagesDir, "2024/food/pizza.jpg"), jpgContent);
 
       // Create a minimal bunki.config.ts for testing
@@ -96,7 +93,7 @@ describe("Image Uploader", () => {
       process.env.BUNKI_DRY_RUN = "true";
 
       const outputFile = path.join(testBaseDir, "image-urls.json");
-      const result = await uploadImages({
+      const _result = await uploadImages({
         images: imagesDir,
         outputJson: outputFile,
       });
@@ -160,10 +157,7 @@ describe("Image Uploader", () => {
     test("should handle deeply nested directory structures", async () => {
       process.env.BUNKI_DRY_RUN = "true";
 
-      const nestedDir = path.join(
-        dirTestBase,
-        "nested/2023/category/subcategory",
-      );
+      const nestedDir = path.join(dirTestBase, "nested/2023/category/subcategory");
       await ensureDir(nestedDir);
 
       const jpgContent = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
@@ -175,9 +169,7 @@ describe("Image Uploader", () => {
       });
 
       // Should find the deeply nested image
-      const hasNestedImage = Object.keys(result).some((k) =>
-        k.includes("subcategory"),
-      );
+      const hasNestedImage = Object.keys(result).some((k) => k.includes("subcategory"));
       expect(hasNestedImage).toBe(true);
 
       delete process.env.BUNKI_DRY_RUN;

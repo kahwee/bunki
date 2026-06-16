@@ -2,16 +2,10 @@
  * RSS feed and sitemap generation
  */
 
-import path from "path";
-import type { Post, Site, SiteConfig } from "../types";
+import { CACHE, PAGINATION } from "../constants";
+import type { Site, SiteConfig } from "../types";
 import { toPacificTime } from "../utils/date-utils";
-import {
-  escapeXml,
-  buildSitemapUrl,
-  calculateFreshnessPriority,
-  buildRSSItem,
-} from "../utils/xml-builder";
-import { PAGINATION, CACHE } from "../constants";
+import { buildRSSItem, buildSitemapUrl, calculateFreshnessPriority } from "../utils/xml-builder";
 
 /**
  * Make image URL absolute if it's relative
@@ -54,9 +48,7 @@ export function generateRSSFeed(site: Site, config: SiteConfig): string {
       const pubDate = formatRSSDate(post.date);
 
       // Use cached featured image from post initialization
-      const absoluteImageUrl = post.image
-        ? makeAbsoluteUrl(post.image, config.baseUrl)
-        : null;
+      const absoluteImageUrl = post.image ? makeAbsoluteUrl(post.image, config.baseUrl) : null;
 
       // Build author string
       const author =
@@ -126,11 +118,7 @@ ${rssItems}
  * @param pageSize - Items per page for pagination
  * @returns Sitemap XML content
  */
-export function generateSitemap(
-  site: Site,
-  config: SiteConfig,
-  pageSize: number = 10,
-): string {
+export function generateSitemap(site: Site, config: SiteConfig, _pageSize: number = 10): string {
   const currentDate = toPacificTime(new Date()).toISOString();
   const now = toPacificTime(new Date()).getTime();
 
@@ -139,12 +127,7 @@ export function generateSitemap(
 `;
 
   // Homepage
-  sitemapContent += buildSitemapUrl(
-    `${config.baseUrl}/`,
-    currentDate,
-    "daily",
-    1.0,
-  );
+  sitemapContent += buildSitemapUrl(`${config.baseUrl}/`, currentDate, "daily", 1.0);
 
   // Individual posts
   for (const post of site.posts) {
@@ -158,20 +141,10 @@ export function generateSitemap(
   }
 
   // Tags index
-  sitemapContent += buildSitemapUrl(
-    `${config.baseUrl}/tags/`,
-    currentDate,
-    "weekly",
-    0.5,
-  );
+  sitemapContent += buildSitemapUrl(`${config.baseUrl}/tags/`, currentDate, "weekly", 0.5);
 
   // Map page
-  sitemapContent += buildSitemapUrl(
-    `${config.baseUrl}/map/`,
-    currentDate,
-    "weekly",
-    0.6,
-  );
+  sitemapContent += buildSitemapUrl(`${config.baseUrl}/map/`, currentDate, "weekly", 0.6);
 
   // Individual tag pages with pagination
   for (const [, tagData] of Object.entries(site.tags)) {
@@ -183,18 +156,13 @@ export function generateSitemap(
       ? calculateFreshnessPriority(mostRecentPost.date, 0.4, now)
       : 0.4;
 
-    sitemapContent += buildSitemapUrl(
-      tagUrl,
-      currentDate,
-      "weekly",
-      tagPriority,
-    );
+    sitemapContent += buildSitemapUrl(tagUrl, currentDate, "weekly", tagPriority);
   }
 
   // Year archives with pagination
-  for (const [year, yearPosts] of Object.entries(site.postsByYear)) {
+  for (const [year, _yearPosts] of Object.entries(site.postsByYear)) {
     const currentYear = new Date().getFullYear();
-    const isCurrentYear = parseInt(year) === currentYear;
+    const isCurrentYear = parseInt(year, 10) === currentYear;
     const yearPriority = isCurrentYear ? 0.7 : 0.5;
 
     sitemapContent += buildSitemapUrl(

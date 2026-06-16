@@ -1,4 +1,4 @@
-import { SiteConfig } from "bunki";
+import type { SiteConfig } from "bunki";
 import { config } from "dotenv";
 
 // Load environment variables from .env file

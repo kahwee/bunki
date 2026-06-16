@@ -1,6 +1,6 @@
-import { Command } from "commander";
-import { readdirSync, readFileSync, existsSync, statSync } from "fs";
-import { join, dirname, resolve, basename } from "path";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { basename, dirname, join, resolve } from "node:path";
+import type { Command } from "commander";
 
 interface MediaReference {
   file: string;
@@ -38,7 +38,7 @@ export async function handleValidateMediaCommand(
     contentDir?: string;
     fix?: boolean;
   },
-  deps = { logger: console, exit: (code: number) => process.exit(code) }
+  deps = { logger: console, exit: (code: number) => process.exit(code) },
 ): Promise<void> {
   const contentDir = options.contentDir || join(process.cwd(), "content");
   const assetsDir = join(process.cwd(), "assets");
@@ -60,9 +60,7 @@ export async function handleValidateMediaCommand(
   deps.logger.log(`   Total media files: ${result.totalMediaFiles}`);
   deps.logger.log(`   Referenced: ${result.referencedMediaCount}`);
   deps.logger.log(`   Unused: ${result.unusedMedia.length}`);
-  deps.logger.log(
-    `   Unused size: ${(result.unusedMediaSize / 1024 / 1024).toFixed(2)} MB`
-  );
+  deps.logger.log(`   Unused size: ${(result.unusedMediaSize / 1024 / 1024).toFixed(2)} MB`);
 
   if (result.missingReferences.length > 0) {
     deps.logger.log("\n❌ Missing Media Files:\n");
@@ -88,7 +86,7 @@ export async function handleValidateMediaCommand(
       if (files.length === 0) continue;
       const totalSize = files.reduce((sum, f) => sum + f.size, 0);
       deps.logger.log(
-        `${location} (${files.length} files, ${(totalSize / 1024 / 1024).toFixed(2)} MB):`
+        `${location} (${files.length} files, ${(totalSize / 1024 / 1024).toFixed(2)} MB):`,
       );
       for (const file of files.slice(0, 10)) {
         deps.logger.log(`  ${file.year}/${file.filename}`);
@@ -100,10 +98,7 @@ export async function handleValidateMediaCommand(
     }
   }
 
-  if (
-    result.missingReferences.length === 0 &&
-    result.unusedMedia.length === 0
-  ) {
+  if (result.missingReferences.length === 0 && result.unusedMedia.length === 0) {
     deps.logger.log("\n✅ All media files validated successfully!");
     deps.exit(0);
   } else {
@@ -111,10 +106,7 @@ export async function handleValidateMediaCommand(
   }
 }
 
-function validateMedia(
-  contentDir: string,
-  assetsDir: string
-): ValidationResult {
+function validateMedia(contentDir: string, assetsDir: string): ValidationResult {
   let totalMarkdownFiles = 0;
   let totalMediaReferences = 0;
   const missingReferences: MediaReference[] = [];
@@ -154,9 +146,7 @@ function validateMedia(
           const mediaPath = match[2];
           if (mediaPath.startsWith("http")) continue;
 
-          const ext = mediaPath
-            .substring(mediaPath.lastIndexOf("."))
-            .toLowerCase();
+          const ext = mediaPath.substring(mediaPath.lastIndexOf(".")).toLowerCase();
           if (!imageExtensions.includes(ext)) continue;
 
           totalMediaReferences++;
@@ -179,9 +169,7 @@ function validateMedia(
   }
 
   // Find unused media
-  const unusedMedia = allMediaFiles.filter(
-    (media) => !referencedMedia.has(media.filename)
-  );
+  const unusedMedia = allMediaFiles.filter((media) => !referencedMedia.has(media.filename));
   const unusedMediaSize = unusedMedia.reduce((sum, file) => sum + file.size, 0);
 
   return {
@@ -272,17 +260,17 @@ function checkMediaReference(
   lineNumber: number,
   mediaPath: string,
   type: "image" | "video",
-  missingReferences: MediaReference[]
+  missingReferences: MediaReference[],
 ): void {
   const markdownDir = dirname(markdownFile);
   const resolvedPath = resolve(markdownDir, mediaPath);
 
   if (!existsSync(resolvedPath)) {
     missingReferences.push({
-      file: markdownFile.replace(process.cwd() + "/", ""),
+      file: markdownFile.replace(`${process.cwd()}/`, ""),
       line: lineNumber,
       mediaPath,
-      resolvedPath: resolvedPath.replace(process.cwd() + "/", ""),
+      resolvedPath: resolvedPath.replace(`${process.cwd()}/`, ""),
       exists: false,
       type,
     });
@@ -293,10 +281,7 @@ export function registerValidateMediaCommand(program: Command): Command {
   return program
     .command("validate:media")
     .description("Validate media files (check for missing and unused files)")
-    .option(
-      "-c, --content-dir <dir>",
-      "Content directory path (default: ./content)"
-    )
+    .option("-c, --content-dir <dir>", "Content directory path (default: ./content)")
     .option("--fix", "Attempt to fix issues automatically")
     .action(async (options) => {
       await handleValidateMediaCommand(options);

@@ -1,11 +1,11 @@
-import { expect, test, describe, beforeEach } from "bun:test";
-import {
-  extractExcerpt,
-  convertMarkdownToHtml,
-  setNoFollowExceptions,
-  createMarked,
-} from "../../../src/utils/markdown/parser";
+import { beforeEach, describe, expect, test } from "bun:test";
 import type { CDNConfig } from "../../../src/types";
+import {
+  convertMarkdownToHtml,
+  createMarked,
+  extractExcerpt,
+  setNoFollowExceptions,
+} from "../../../src/utils/markdown/parser";
 
 describe("Markdown Parser", () => {
   // Reset nofollow exceptions before each test
@@ -206,9 +206,7 @@ console.log(x);
       const markdown = `![Mexico panorama](../2023/_assets/panoramic-view-of-mexico.webp)`;
       const html = convertMarkdownToHtml(markdown, cdnConfig);
 
-      expect(html).toInclude(
-        "https://img.beconfused.com/2023/panoramic-view-of-mexico.webp",
-      );
+      expect(html).toInclude("https://img.beconfused.com/2023/panoramic-view-of-mexico.webp");
       expect(html).not.toInclude("../2023/_assets/");
     });
 
@@ -222,9 +220,7 @@ console.log(x);
       const markdown = `![Old photo](../2021/_assets/salt-point-campfire.webp)`;
       const html = convertMarkdownToHtml(markdown, cdnConfig);
 
-      expect(html).toInclude(
-        "https://img.beconfused.com/2021/salt-point-campfire.webp",
-      );
+      expect(html).toInclude("https://img.beconfused.com/2021/salt-point-campfire.webp");
       expect(html).not.toInclude("/2025/");
     });
   });
@@ -311,10 +307,7 @@ console.log(x);
         pathPattern: "{year}/{filename}",
         postYear: "2026",
       };
-      const html = convertMarkdownToHtml(
-        "[next post](./my-post)",
-        cdnConfig,
-      );
+      const html = convertMarkdownToHtml("[next post](./my-post)", cdnConfig);
       expect(html).toInclude('href="/2026/my-post/"');
     });
 
@@ -325,17 +318,12 @@ console.log(x);
         pathPattern: "{year}/{filename}",
         postYear: "2026",
       };
-      const html = convertMarkdownToHtml(
-        "[section](./my-post.md#section)",
-        cdnConfig,
-      );
+      const html = convertMarkdownToHtml("[section](./my-post.md#section)", cdnConfig);
       expect(html).toInclude('href="/2026/my-post/#section"');
     });
 
     test("should not resolve ./slug.md without postYear", () => {
-      const html = convertMarkdownToHtml(
-        "[link](./singapore-night-one.md)",
-      );
+      const html = convertMarkdownToHtml("[link](./singapore-night-one.md)");
       expect(html).not.toInclude('href="/2026/');
     });
   });

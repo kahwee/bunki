@@ -1,5 +1,5 @@
-import path from "path";
-import { SiteConfig } from "./types";
+import path from "node:path";
+import type { SiteConfig } from "./types";
 
 const PROJECT_ROOT = process.cwd();
 const ALLOWED_CONFIG_EXTS = [".ts", ".js", ".mjs", ".cjs", ".json"]; // keep tight
@@ -23,19 +23,13 @@ export const DEFAULT_TEMPLATES_DIR = path.join(process.cwd(), "templates");
 export const DEFAULT_CONFIG_TS = path.join(process.cwd(), "bunki.config.ts");
 export const DEFAULT_CONFIG_FILE = DEFAULT_CONFIG_TS;
 
-export async function configExists(
-  configPath: string = DEFAULT_CONFIG_FILE,
-): Promise<boolean> {
+export async function configExists(configPath: string = DEFAULT_CONFIG_FILE): Promise<boolean> {
   return await Bun.file(configPath).exists();
 }
 
-export async function loadConfig(
-  configPath: string = DEFAULT_CONFIG_FILE,
-): Promise<SiteConfig> {
+export async function loadConfig(configPath: string = DEFAULT_CONFIG_FILE): Promise<SiteConfig> {
   // Normalize relative path to project root
-  const resolved = path.isAbsolute(configPath)
-    ? configPath
-    : path.join(PROJECT_ROOT, configPath);
+  const resolved = path.isAbsolute(configPath) ? configPath : path.join(PROJECT_ROOT, configPath);
 
   if (!isSafeConfigPath(resolved)) {
     throw new Error("Unsafe config path: must be within project directory");
@@ -48,7 +42,7 @@ export async function loadConfig(
 
   try {
     const imported = await import(resolved);
-    let cfg: any = imported.default;
+    let cfg: SiteConfig | (() => SiteConfig | Promise<SiteConfig>) | undefined = imported.default;
     if (typeof cfg === "function") {
       cfg = await cfg();
     }
@@ -72,19 +66,19 @@ export async function loadConfig(
 }
 
 export function getDefaultConfig(): SiteConfig {
-  const base: any = {
+  const base: SiteConfig = {
     title: "My Blog",
     description: "A blog built with Bunki",
     baseUrl: "https://example.com",
     domain: "blog",
+    site: {
+      title: "My Blog",
+      description: "A blog built with Bunki",
+      url: "https://example.com",
+      author: "",
+    },
   };
-  base.site = {
-    title: base.title,
-    description: base.description,
-    url: base.baseUrl,
-    author: "",
-  };
-  return base as SiteConfig;
+  return base;
 }
 
 export async function createDefaultConfig(

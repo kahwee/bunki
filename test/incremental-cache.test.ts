@@ -11,8 +11,8 @@
  * filePath is always paired with the post derived from that exact file.
  */
 
-import { expect, test, describe, afterAll } from "bun:test";
-import path from "path";
+import { afterAll, describe, expect, test } from "bun:test";
+import path from "node:path";
 import { parseMarkdownFiles } from "../src/parser";
 import { createEmptyCache, updateCacheEntry } from "../src/utils/build-cache";
 import { ensureDir } from "../src/utils/file-utils";
@@ -64,7 +64,7 @@ Content for ${f.title}.
 
 afterAll(async () => {
   // Clean up temp files
-  const { rmdir } = await import("fs/promises");
+  const { rmdir } = await import("node:fs/promises");
   await rmdir(TMP_DIR, { recursive: true }).catch(() => {});
 });
 

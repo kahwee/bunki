@@ -63,11 +63,7 @@ export class MetricsCollector {
   /**
    * Get final build metrics
    */
-  getMetrics(outputs: {
-    posts: number;
-    pages: number;
-    totalSize: number;
-  }): BuildMetrics {
+  getMetrics(outputs: { posts: number; pages: number; totalSize: number }): BuildMetrics {
     // End any running stage
     if (this.currentStage) {
       this.endStage();
@@ -99,7 +95,7 @@ export function formatBytes(bytes: number): string {
   const sizes = ["B", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+  return `${(bytes / k ** i).toFixed(2)} ${sizes[i]}`;
 }
 
 /**
@@ -109,21 +105,11 @@ export function displayMetrics(metrics: BuildMetrics): void {
   console.log(`\n📊 Build Complete in ${metrics.totalTime.toFixed(0)}ms\n`);
 
   console.log("⏱️  Timing Breakdown:");
-  console.log(
-    `   Initialization:  ${metrics.stages.initialization.toFixed(0)}ms`,
-  );
-  console.log(
-    `   CSS Processing:  ${metrics.stages.cssProcessing.toFixed(0)}ms`,
-  );
-  console.log(
-    `   Page Generation: ${metrics.stages.pageGeneration.toFixed(0)}ms`,
-  );
-  console.log(
-    `   Feed Generation: ${metrics.stages.feedGeneration.toFixed(0)}ms`,
-  );
-  console.log(
-    `   Asset Copying:   ${metrics.stages.assetCopying.toFixed(0)}ms`,
-  );
+  console.log(`   Initialization:  ${metrics.stages.initialization.toFixed(0)}ms`);
+  console.log(`   CSS Processing:  ${metrics.stages.cssProcessing.toFixed(0)}ms`);
+  console.log(`   Page Generation: ${metrics.stages.pageGeneration.toFixed(0)}ms`);
+  console.log(`   Feed Generation: ${metrics.stages.feedGeneration.toFixed(0)}ms`);
+  console.log(`   Asset Copying:   ${metrics.stages.assetCopying.toFixed(0)}ms`);
 
   console.log(`\n📦 Output:`);
   console.log(`   Posts:     ${metrics.outputs.posts}`);

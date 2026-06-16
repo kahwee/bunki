@@ -19,10 +19,10 @@ import type { CDNConfig } from "../../types";
 import {
   ALERT_ICONS,
   EXTERNAL_LINK_REGEX,
-  IMAGE_PATH_REGEX,
   IMAGE_PATH_ASSETS_DIR,
   IMAGE_PATH_ASSETS_SAME_DIR,
   IMAGE_PATH_CROSS_YEAR_ASSETS,
+  IMAGE_PATH_REGEX,
   RELATIVE_LINK_REGEX,
   SAME_DIR_LINK_REGEX,
   YOUTUBE_EMBED_REGEX,
@@ -60,10 +60,7 @@ export function setNoFollowExceptions(exceptions: string[]) {
  * @param config - CDN configuration with baseUrl and pathPattern
  * @returns Transformed CDN URL or null if path doesn't match pattern
  */
-function transformImagePath(
-  relativePath: string,
-  config: CDNConfig,
-): string | null {
+function transformImagePath(relativePath: string, config: CDNConfig): string | null {
   // Try legacy pattern first: ../../assets/{year}/{slug}/{filename}
   const legacyMatch = relativePath.match(IMAGE_PATH_REGEX);
   if (legacyMatch) {
@@ -130,7 +127,7 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
     markedHighlight({
       emptyLangClass: "hljs",
       langPrefix: "hljs language-",
-      highlight(code, lang, info) {
+      highlight(code, lang, _info) {
         const language = hljs.getLanguage(lang) ? lang : "json";
         return hljs.highlight(code, { language }).value;
       },
@@ -161,6 +158,11 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
     walkTokens(token) {
       if (token.type === "link") {
         token.href = token.href || "";
+        const linkToken = token as {
+          href?: string;
+          isExternalLink?: boolean;
+          isYouTubeLink?: boolean;
+        };
 
         // Convert relative markdown links to absolute URLs
         // Matches: ../2015/slug.md or ../2015/slug/ or ../2015/slug or ../../2015/slug.md
@@ -189,13 +191,10 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
             token.href.startsWith("//"));
 
         if (isExternal) {
-          (token as any).isExternalLink = true;
+          linkToken.isExternalLink = true;
 
-          if (
-            token.href.includes("youtube.com/watch") ||
-            token.href.includes("youtu.be/")
-          ) {
-            (token as any).isYouTubeLink = true;
+          if (token.href.includes("youtube.com/watch") || token.href.includes("youtu.be/")) {
+            linkToken.isYouTubeLink = true;
           }
         }
       }
@@ -213,7 +212,7 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
         ) {
           const transformed = transformImagePath(href, cdnConfig);
           if (transformed) {
-            (token as any).href = transformed;
+            token.href = transformed;
           }
         }
         // CDN URLs (https://...) and other paths pass through unchanged
@@ -232,14 +231,14 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
 
           // Replace src="./_assets/filename" (video, img in raw HTML)
           html = html.replace(
-            /src=(["'])\.\/\_assets\/([^\s"']+)\1/g,
+            /src=(["'])\.\/_assets\/([^\s"']+)\1/g,
             (_m, q, filename) => `src=${q}${base}/${year}/${filename}${q}`,
           );
 
           // Replace raw markdown image syntax ![alt](./_assets/filename) left
           // as text inside HTML blocks — convert to <img> tags
           html = html.replace(
-            /!\[([^\]]*)\]\(\.\/\_assets\/([^\s)]+)\)/g,
+            /!\[([^\]]*)\]\(\.\/_assets\/([^\s)]+)\)/g,
             (_m, alt, filename) =>
               `<img src="${base}/${year}/${filename}" alt="${alt}" loading="lazy">`,
           );
@@ -255,7 +254,7 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
         html = html.replace(/<img /g, '<img loading="lazy" ');
 
         // Process external links and add rel attributes
-        return html.replace(EXTERNAL_LINK_REGEX, (match, protocol, rest) => {
+        return html.replace(EXTERNAL_LINK_REGEX, (_match, protocol, rest) => {
           const fullUrl = protocol + rest;
           let relAttr = 'rel="noopener noreferrer';
 
@@ -289,10 +288,7 @@ export function createMarked(cdnConfig?: CDNConfig): Marked {
  * @param cdnConfig - Optional CDN configuration
  * @returns Sanitized HTML string
  */
-export function convertMarkdownToHtml(
-  markdownContent: string,
-  cdnConfig?: CDNConfig,
-): string {
+export function convertMarkdownToHtml(markdownContent: string, cdnConfig?: CDNConfig): string {
   // Create marked instance with CDN config if provided
   const marked = createMarked(cdnConfig);
 
@@ -333,15 +329,7 @@ export function convertMarkdownToHtml(
         "poster",
       ],
       source: ["src", "type"],
-      svg: [
-        "class",
-        "viewBox",
-        "width",
-        "height",
-        "aria-hidden",
-        "fill",
-        "xmlns",
-      ],
+      svg: ["class", "viewBox", "width", "height", "aria-hidden", "fill", "xmlns"],
       path: ["d", "fill", "fill-rule", "stroke", "stroke-width"],
     },
     allowedClasses: {
@@ -390,5 +378,5 @@ export function extractExcerpt(content: string, maxLength = 200): string {
   const truncated = plainText.substring(0, maxLength);
   const lastSpace = truncated.lastIndexOf(" ");
 
-  return truncated.substring(0, lastSpace) + "...";
+  return `${truncated.substring(0, lastSpace)}...`;
 }

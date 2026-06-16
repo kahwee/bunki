@@ -36,9 +36,9 @@ jobs:
       - name: TypeScript check
         run: bun run typecheck
 
-      # Verify code formatting
-      - name: Check formatting
-        run: bun run format:check
+      # Verify code style and formatting
+      - name: Check code style
+        run: bun run lint
 
       # Run tests with coverage
       - name: Run tests with coverage

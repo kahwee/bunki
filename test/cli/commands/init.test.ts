@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
-import path from "path";
+import path from "node:path";
 import { handleInitCommand } from "../../../src/cli/commands/init";
 import { fileExists, isDirectory } from "../../../src/utils/file-utils";
 
@@ -31,36 +31,18 @@ describe("CLI Init Command (modular)", () => {
     // Directories
     expect(await isDirectory(path.join(tmpRoot, "content"))).toBeTrue();
     expect(await isDirectory(path.join(tmpRoot, "templates"))).toBeTrue();
-    expect(
-      await isDirectory(path.join(tmpRoot, "templates", "styles")),
-    ).toBeTrue();
+    expect(await isDirectory(path.join(tmpRoot, "templates", "styles"))).toBeTrue();
     expect(await isDirectory(path.join(tmpRoot, "public"))).toBeTrue();
 
     // Files
-    expect(
-      await fileExists(path.join(tmpRoot, "content", "welcome.md")),
-    ).toBeTrue();
-    expect(
-      await fileExists(path.join(tmpRoot, "templates", "base.njk")),
-    ).toBeTrue();
-    expect(
-      await fileExists(path.join(tmpRoot, "templates", "index.njk")),
-    ).toBeTrue();
-    expect(
-      await fileExists(path.join(tmpRoot, "templates", "post.njk")),
-    ).toBeTrue();
-    expect(
-      await fileExists(path.join(tmpRoot, "templates", "tag.njk")),
-    ).toBeTrue();
-    expect(
-      await fileExists(path.join(tmpRoot, "templates", "tags.njk")),
-    ).toBeTrue();
-    expect(
-      await fileExists(path.join(tmpRoot, "templates", "archive.njk")),
-    ).toBeTrue();
-    expect(
-      await fileExists(path.join(tmpRoot, "templates", "styles", "main.css")),
-    ).toBeTrue();
+    expect(await fileExists(path.join(tmpRoot, "content", "welcome.md"))).toBeTrue();
+    expect(await fileExists(path.join(tmpRoot, "templates", "base.njk"))).toBeTrue();
+    expect(await fileExists(path.join(tmpRoot, "templates", "index.njk"))).toBeTrue();
+    expect(await fileExists(path.join(tmpRoot, "templates", "post.njk"))).toBeTrue();
+    expect(await fileExists(path.join(tmpRoot, "templates", "tag.njk"))).toBeTrue();
+    expect(await fileExists(path.join(tmpRoot, "templates", "tags.njk"))).toBeTrue();
+    expect(await fileExists(path.join(tmpRoot, "templates", "archive.njk"))).toBeTrue();
+    expect(await fileExists(path.join(tmpRoot, "templates", "styles", "main.css"))).toBeTrue();
   });
 
   test("should be idempotent when config already exists", async () => {
@@ -81,12 +63,12 @@ describe("CLI Init Command (modular)", () => {
       writeFile: async () => 0,
       logger: {
         log: () => {},
-        error: (msg: string, err: any) => {
+        error: (msg: string, _err: unknown) => {
           errorLogged = msg;
         },
       },
-      exit: (code: number) => {
-        exitCode = code;
+      exit: (_code: number) => {
+        exitCode = _code;
       },
     };
 
@@ -109,7 +91,7 @@ describe("CLI Init Command (modular)", () => {
         },
         error: () => {},
       },
-      exit: (code: number) => {},
+      exit: (_code: number) => {},
     };
 
     await handleInitCommand({ config: "bunki.config.ts" }, mockDeps);

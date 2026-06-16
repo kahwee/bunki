@@ -1,5 +1,5 @@
-import { Command } from "commander";
-import path from "path";
+import path from "node:path";
+import type { Command } from "commander";
 import {
   DEFAULT_CONTENT_DIR,
   DEFAULT_OUTPUT_DIR,
@@ -10,9 +10,7 @@ import { SiteGenerator } from "../../site-generator";
 
 interface GenerateDeps {
   loadConfig: typeof loadConfig;
-  createGenerator: (
-    opts: ConstructorParameters<typeof SiteGenerator>[0],
-  ) => SiteGenerator;
+  createGenerator: (opts: ConstructorParameters<typeof SiteGenerator>[0]) => SiteGenerator;
   logger: Pick<typeof console, "log" | "error">;
   exit: (code: number) => void;
 }
@@ -82,15 +80,8 @@ export function registerGenerateCommand(program: Command): Command {
     .option("-c, --config <file>", "Config file path", "bunki.config.ts")
     .option("-d, --content <dir>", "Content directory", DEFAULT_CONTENT_DIR)
     .option("-o, --output <dir>", "Output directory", DEFAULT_OUTPUT_DIR)
-    .option(
-      "-t, --templates <dir>",
-      "Templates directory",
-      DEFAULT_TEMPLATES_DIR,
-    )
-    .option(
-      "-i, --incremental",
-      "Enable incremental builds (only rebuild changed files)",
-    )
+    .option("-t, --templates <dir>", "Templates directory", DEFAULT_TEMPLATES_DIR)
+    .option("-i, --incremental", "Enable incremental builds (only rebuild changed files)")
     .action(async (options) => {
       await handleGenerateCommand(options);
     });

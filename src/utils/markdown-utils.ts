@@ -4,24 +4,20 @@
  */
 
 import matter from "gray-matter";
-import type { Post, CDNConfig } from "../types";
-import { toPacificTime, getPacificYear } from "./date-utils";
+import type { CDNConfig, Post } from "../types";
+import { getPacificYear, toPacificTime } from "./date-utils";
 import { getBaseFilename, readFileAsText } from "./file-utils";
-import {
-  convertMarkdownToHtml,
-  extractExcerpt,
-  setNoFollowExceptions,
-} from "./markdown/parser";
+import { convertMarkdownToHtml, extractExcerpt, setNoFollowExceptions } from "./markdown/parser";
 import type { ValidationError } from "./markdown/validators";
 import {
+  checkDeprecatedLocationField,
   validateBusinessLocation,
   validateTags,
-  checkDeprecatedLocationField,
 } from "./markdown/validators";
 
-// Re-export for backward compatibility
-export { setNoFollowExceptions, extractExcerpt, convertMarkdownToHtml };
 export type { ValidationError as ParseError };
+// Re-export for backward compatibility
+export { convertMarkdownToHtml, extractExcerpt, setNoFollowExceptions };
 
 export interface ParseMarkdownResult {
   post: Post | null;
@@ -111,9 +107,8 @@ export async function parseMarkdownFile(
     const resolvedYear = String(postYear) !== "NaN" ? String(postYear) : yearFromPath;
 
     // Add postYear to CDN config for year-based asset paths
-    const cdnConfigWithYear = cdnConfig && resolvedYear
-      ? { ...cdnConfig, postYear: resolvedYear }
-      : undefined;
+    const cdnConfigWithYear =
+      cdnConfig && resolvedYear ? { ...cdnConfig, postYear: resolvedYear } : undefined;
 
     const sanitizedHtml = convertMarkdownToHtml(content, cdnConfigWithYear);
 
@@ -132,9 +127,7 @@ export async function parseMarkdownFile(
       ...(data.business && {
         business: (() => {
           // Handle array format - use first element
-          const biz = Array.isArray(data.business)
-            ? data.business[0]
-            : data.business;
+          const biz = Array.isArray(data.business) ? data.business[0] : data.business;
           return {
             type: biz.type,
             name: biz.name,
@@ -163,9 +156,7 @@ export async function parseMarkdownFile(
     const msg = error instanceof Error ? error.message : String(error);
     const name = error instanceof Error ? error.name : "";
     const isYamlError =
-      name === "YAMLException" ||
-      msg.includes("YAML") ||
-      msg.includes("mapping pair");
+      name === "YAMLException" || msg.includes("YAML") || msg.includes("mapping pair");
 
     let suggestion: string | undefined;
     if (isYamlError) {
@@ -173,8 +164,7 @@ export async function parseMarkdownFile(
         suggestion =
           'Quote titles/descriptions containing colons (e.g., title: "My Post: A Guide")';
       } else if (msg.includes("multiline key")) {
-        suggestion =
-          "Remove nested quotes or use single quotes inside double quotes";
+        suggestion = "Remove nested quotes or use single quotes inside double quotes";
       }
     }
 

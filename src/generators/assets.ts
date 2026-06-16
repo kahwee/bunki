@@ -2,8 +2,8 @@
  * Asset generation - CSS and static file copying
  */
 
+import path from "node:path";
 import { Glob } from "bun";
-import path from "path";
 import type { CSSConfig, SiteConfig } from "../types";
 import { getDefaultCSSConfig, processCSS } from "../utils/css-processor";
 import { copyFile, ensureDir, isDirectory } from "../utils/file-utils";
@@ -13,10 +13,7 @@ import { copyFile, ensureDir, isDirectory } from "../utils/file-utils";
  * @param config - Site configuration
  * @param outputDir - Output directory
  */
-export async function generateStylesheet(
-  config: SiteConfig,
-  outputDir: string,
-): Promise<void> {
+export async function generateStylesheet(config: SiteConfig, outputDir: string): Promise<void> {
   // Use CSS configuration from site config, or fallback to default
   const cssConfig = config.css || getDefaultCSSConfig();
 
@@ -46,10 +43,7 @@ export async function generateStylesheet(
  * @param cssConfig - CSS configuration
  * @param outputDir - Output directory
  */
-async function fallbackCSSGeneration(
-  cssConfig: CSSConfig,
-  outputDir: string,
-): Promise<void> {
+async function fallbackCSSGeneration(cssConfig: CSSConfig, outputDir: string): Promise<void> {
   const cssFilePath = path.resolve(process.cwd(), cssConfig.input);
   const cssFile = Bun.file(cssFilePath);
 
@@ -77,10 +71,7 @@ async function fallbackCSSGeneration(
  * @param templatesDir - Templates directory
  * @param outputDir - Output directory
  */
-export async function copyStaticAssets(
-  templatesDir: string,
-  outputDir: string,
-): Promise<void> {
+export async function copyStaticAssets(templatesDir: string, outputDir: string): Promise<void> {
   const assetsDir = path.join(templatesDir, "assets");
   const publicDir = path.join(process.cwd(), "public");
 
@@ -125,8 +116,6 @@ export async function copyStaticAssets(
       await copyFile(file, destPath);
     }
 
-    console.log(
-      "Copied public files to site (including extensionless & dotfiles)",
-    );
+    console.log("Copied public files to site (including extensionless & dotfiles)");
   }
 }

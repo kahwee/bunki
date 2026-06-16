@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test";
+import { Command } from "commander";
 import {
   handleImagesPushCommand,
   registerImagesPushCommand,
 } from "../../../src/cli/commands/images-push";
-import { Command } from "commander";
-import path from "path";
+import type { ImageUploadOptions } from "../../../src/types";
+
+type UploadImagesOptions = ImageUploadOptions;
 
 describe("images:push CLI Command", () => {
   describe("Command Registration", () => {
@@ -30,9 +32,7 @@ describe("images:push CLI Command", () => {
       registerImagesPushCommand(program);
 
       const command = program.commands.find((c) => c.name() === "images:push");
-      expect(command?.description()).toBe(
-        "Upload images to S3-compatible storage",
-      );
+      expect(command?.description()).toBe("Upload images to S3-compatible storage");
     });
 
     test("should support --domain option", () => {
@@ -58,9 +58,7 @@ describe("images:push CLI Command", () => {
       registerImagesPushCommand(program);
 
       const command = program.commands.find((c) => c.name() === "images:push");
-      const outputOption = command?.options.find(
-        (o) => o.long === "--output-json",
-      );
+      const outputOption = command?.options.find((o) => o.long === "--output-json");
       expect(outputOption).toBeDefined();
     });
 
@@ -69,9 +67,7 @@ describe("images:push CLI Command", () => {
       registerImagesPushCommand(program);
 
       const command = program.commands.find((c) => c.name() === "images:push");
-      const minYearOption = command?.options.find(
-        (o) => o.long === "--min-year",
-      );
+      const minYearOption = command?.options.find((o) => o.long === "--min-year");
       expect(minYearOption).toBeDefined();
     });
 
@@ -80,9 +76,7 @@ describe("images:push CLI Command", () => {
       registerImagesPushCommand(program);
 
       const command = program.commands.find((c) => c.name() === "images:push");
-      const minYearOption = command?.options.find(
-        (o) => o.long === "--min-year",
-      );
+      const minYearOption = command?.options.find((o) => o.long === "--min-year");
       const description = minYearOption?.description || "";
       expect(description.toLowerCase()).toContain("year");
     });
@@ -90,15 +84,15 @@ describe("images:push CLI Command", () => {
 
   describe("Command Handler", () => {
     test("should handle basic options", async () => {
-      const mockUploadImages = async (options: any) => {
+      const mockUploadImages = async (_options: UploadImagesOptions) => {
         return { "test-image.jpg": "https://example.com/test-image.jpg" };
       };
 
       const mockLogger = {
-        error: (msg: string) => {},
+        error: (_msg: string) => {},
       };
 
-      const mockExit = (code: number) => {};
+      const mockExit = (_code: number) => {};
 
       const deps = {
         uploadImages: mockUploadImages,
@@ -116,18 +110,18 @@ describe("images:push CLI Command", () => {
     });
 
     test("should pass domain option through to uploadImages", async () => {
-      let passedOptions: any = null;
+      let passedOptions: UploadImagesOptions | null = null;
 
-      const mockUploadImages = async (options: any) => {
+      const mockUploadImages = async (options: UploadImagesOptions) => {
         passedOptions = options;
         return {};
       };
 
       const mockLogger = {
-        error: (msg: string) => {},
+        error: (_msg: string) => {},
       };
 
-      const mockExit = (code: number) => {};
+      const mockExit = (_code: number) => {};
 
       const deps = {
         uploadImages: mockUploadImages,
@@ -146,18 +140,18 @@ describe("images:push CLI Command", () => {
     });
 
     test("should pass minYear option through to uploadImages as number", async () => {
-      let passedOptions: any = null;
+      let passedOptions: UploadImagesOptions | null = null;
 
-      const mockUploadImages = async (options: any) => {
+      const mockUploadImages = async (options: UploadImagesOptions) => {
         passedOptions = options;
         return {};
       };
 
       const mockLogger = {
-        error: (msg: string) => {},
+        error: (_msg: string) => {},
       };
 
-      const mockExit = (code: number) => {};
+      const mockExit = (_code: number) => {};
 
       const deps = {
         uploadImages: mockUploadImages,
@@ -172,23 +166,23 @@ describe("images:push CLI Command", () => {
 
       await handleImagesPushCommand(options, deps);
 
-      expect(passedOptions.minYear).toBe(2023);
-      expect(typeof passedOptions.minYear).toBe("number");
+      expect(passedOptions?.minYear).toBe(2023);
+      expect(typeof passedOptions?.minYear).toBe("number");
     });
 
     test("should pass outputJson option through", async () => {
-      let passedOptions: any = null;
+      let passedOptions: UploadImagesOptions | null = null;
 
-      const mockUploadImages = async (options: any) => {
+      const mockUploadImages = async (options: UploadImagesOptions) => {
         passedOptions = options;
         return {};
       };
 
       const mockLogger = {
-        error: (msg: string) => {},
+        error: (_msg: string) => {},
       };
 
-      const mockExit = (code: number) => {};
+      const mockExit = (_code: number) => {};
 
       const deps = {
         uploadImages: mockUploadImages,
@@ -203,16 +197,16 @@ describe("images:push CLI Command", () => {
 
       await handleImagesPushCommand(options, deps);
 
-      expect(passedOptions.outputJson).toBe("./output.json");
+      expect(passedOptions?.outputJson).toBe("./output.json");
     });
 
     test("should call exit with code 1 on error", async () => {
-      const mockUploadImages = async (options: any) => {
+      const mockUploadImages = async (_options: UploadImagesOptions) => {
         throw new Error("Upload failed");
       };
 
       const mockLogger = {
-        error: (msg: string) => {},
+        error: (_msg: string) => {},
       };
 
       let exitCode = 0;
@@ -238,7 +232,7 @@ describe("images:push CLI Command", () => {
     test("should log errors to logger", async () => {
       let errorMessage = "";
 
-      const mockUploadImages = async (options: any) => {
+      const mockUploadImages = async (_options: UploadImagesOptions) => {
         throw new Error("Upload failed");
       };
 
@@ -248,7 +242,7 @@ describe("images:push CLI Command", () => {
         },
       };
 
-      const mockExit = (code: number) => {};
+      const mockExit = (_code: number) => {};
 
       const deps = {
         uploadImages: mockUploadImages,
@@ -266,18 +260,18 @@ describe("images:push CLI Command", () => {
     });
 
     test("should handle all options together", async () => {
-      let passedOptions: any = null;
+      let passedOptions: UploadImagesOptions | null = null;
 
-      const mockUploadImages = async (options: any) => {
+      const mockUploadImages = async (options: UploadImagesOptions) => {
         passedOptions = options;
         return {};
       };
 
       const mockLogger = {
-        error: (msg: string) => {},
+        error: (_msg: string) => {},
       };
 
-      const mockExit = (code: number) => {};
+      const mockExit = (_code: number) => {};
 
       const deps = {
         uploadImages: mockUploadImages,
@@ -294,25 +288,25 @@ describe("images:push CLI Command", () => {
 
       await handleImagesPushCommand(options, deps);
 
-      expect(passedOptions.domain).toBe("my-domain");
-      expect(passedOptions.images).toBe("./custom-images");
-      expect(passedOptions.outputJson).toBe("./urls.json");
-      expect(passedOptions.minYear).toBe(2024);
+      expect(passedOptions?.domain).toBe("my-domain");
+      expect(passedOptions?.images).toBe("./custom-images");
+      expect(passedOptions?.outputJson).toBe("./urls.json");
+      expect(passedOptions?.minYear).toBe(2024);
     });
 
     test("should handle undefined minYear gracefully", async () => {
-      let passedOptions: any = null;
+      let passedOptions: UploadImagesOptions | null = null;
 
-      const mockUploadImages = async (options: any) => {
+      const mockUploadImages = async (options: UploadImagesOptions) => {
         passedOptions = options;
         return {};
       };
 
       const mockLogger = {
-        error: (msg: string) => {},
+        error: (_msg: string) => {},
       };
 
-      const mockExit = (code: number) => {};
+      const mockExit = (_code: number) => {};
 
       const deps = {
         uploadImages: mockUploadImages,
@@ -328,59 +322,51 @@ describe("images:push CLI Command", () => {
       await handleImagesPushCommand(options, deps);
 
       // minYear should be undefined when not provided
-      expect(passedOptions.minYear).toBeUndefined();
+      expect(passedOptions?.minYear).toBeUndefined();
     });
   });
 
   describe("Option Parsing", () => {
     test("should convert minYear string to number", () => {
       const minYearString = "2023";
-      const minYearNumber = minYearString
-        ? parseInt(minYearString, 10)
-        : undefined;
+      const minYearNumber = minYearString ? parseInt(minYearString, 10) : undefined;
       expect(minYearNumber).toBe(2023);
       expect(typeof minYearNumber).toBe("number");
     });
 
     test("should handle invalid minYear string gracefully", () => {
       const minYearString = "invalid";
-      const minYearNumber = minYearString
-        ? parseInt(minYearString, 10)
-        : undefined;
-      expect(isNaN(minYearNumber)).toBe(true);
+      const minYearNumber = minYearString ? parseInt(minYearString, 10) : undefined;
+      expect(Number.isNaN(minYearNumber)).toBe(true);
     });
 
     test("should handle negative minYear", () => {
       const minYearString = "-2023";
-      const minYearNumber = minYearString
-        ? parseInt(minYearString, 10)
-        : undefined;
+      const minYearNumber = minYearString ? parseInt(minYearString, 10) : undefined;
       expect(minYearNumber).toBe(-2023);
     });
 
     test("should handle zero minYear", () => {
       const minYearString = "0";
-      const minYearNumber = minYearString
-        ? parseInt(minYearString, 10)
-        : undefined;
+      const minYearNumber = minYearString ? parseInt(minYearString, 10) : undefined;
       expect(minYearNumber).toBe(0);
     });
   });
 
   describe("Default Values", () => {
     test("should use default images directory when not provided", async () => {
-      let passedOptions: any = null;
+      let passedOptions: UploadImagesOptions | null = null;
 
-      const mockUploadImages = async (options: any) => {
+      const mockUploadImages = async (options: UploadImagesOptions) => {
         passedOptions = options;
         return {};
       };
 
       const mockLogger = {
-        error: (msg: string) => {},
+        error: (_msg: string) => {},
       };
 
-      const mockExit = (code: number) => {};
+      const mockExit = (_code: number) => {};
 
       const deps = {
         uploadImages: mockUploadImages,
@@ -394,7 +380,7 @@ describe("images:push CLI Command", () => {
 
       await handleImagesPushCommand(options, deps);
 
-      expect(passedOptions.images).toBe("./images");
+      expect(passedOptions?.images).toBe("./images");
     });
   });
 });

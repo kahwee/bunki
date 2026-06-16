@@ -1,21 +1,16 @@
-import { expect, test, describe, beforeEach } from "bun:test";
+import { describe, expect, test } from "bun:test";
+import fs from "node:fs";
+import path from "node:path";
+import type { CDNConfig } from "../../src/types";
 import {
-  extractExcerpt,
   convertMarkdownToHtml,
+  extractExcerpt,
   parseMarkdownFile,
   setNoFollowExceptions,
 } from "../../src/utils/markdown-utils";
-import { CDNConfig } from "../../src/types";
-import path from "path";
-import fs from "fs";
 
 const FIXTURES_DIR = path.join(import.meta.dir, "../../fixtures");
-const SAMPLE_FILE = path.join(
-  FIXTURES_DIR,
-  "content",
-  "2025",
-  "test-post-1.md",
-);
+const SAMPLE_FILE = path.join(FIXTURES_DIR, "content", "2025", "test-post-1.md");
 
 describe("Markdown Utilities", () => {
   test("extractExcerpt should create a plain text excerpt", () => {
@@ -151,8 +146,7 @@ const x = 1;
   });
 
   test("convertMarkdownToHtml should convert YouTube links to embedded videos", () => {
-    const youtubeMarkdown =
-      "[Watch this](https://www.youtube.com/watch?v=dQw4w9WgXcQ)";
+    const youtubeMarkdown = "[Watch this](https://www.youtube.com/watch?v=dQw4w9WgXcQ)";
     const html = convertMarkdownToHtml(youtubeMarkdown);
 
     expect(html).toInclude("<iframe");
@@ -419,8 +413,7 @@ Content here`,
     await fs.promises.mkdir(testDir, { recursive: true });
 
     const testFile = path.join(testDir, "no-excerpt.md");
-    const content =
-      "This is a test post with some content that should be excerpted automatically.";
+    const content = "This is a test post with some content that should be excerpted automatically.";
     await fs.promises.writeFile(
       testFile,
       `---
@@ -887,9 +880,7 @@ describe("CDN Image URL Transformation", () => {
     const markdown = `![Alt text](../../assets/2025/test-post/image.jpg)`;
     const html = convertMarkdownToHtml(markdown, cdnConfig);
 
-    expect(html).toInclude(
-      'src="https://img.example.com/2025/test-post/image.jpg"',
-    );
+    expect(html).toInclude('src="https://img.example.com/2025/test-post/image.jpg"');
     expect(html).not.toInclude("../../assets/");
   });
 
@@ -928,9 +919,7 @@ describe("CDN Image URL Transformation", () => {
     const markdown = `![Image](../../assets/2025/tech-post/photo.webp)`;
     const html = convertMarkdownToHtml(markdown, customConfig);
 
-    expect(html).toInclude(
-      'src="https://assets.kahwee.com/images/2025/tech-post/photo.webp"',
-    );
+    expect(html).toInclude('src="https://assets.kahwee.com/images/2025/tech-post/photo.webp"');
   });
 
   test("should not transform when CDN is disabled", () => {
@@ -996,9 +985,7 @@ tags: [test]
 
     const result = await parseMarkdownFile(testFile, cdnConfig);
     expect(result.post).not.toBeNull();
-    expect(result.post?.html).toInclude(
-      'src="https://img.example.com/2025/cdn-test/photo.jpg"',
-    );
+    expect(result.post?.html).toInclude('src="https://img.example.com/2025/cdn-test/photo.jpg"');
     expect(result.post?.html).not.toInclude("../../assets/");
 
     await fs.promises.rm(testDir, { recursive: true });
@@ -1190,9 +1177,7 @@ See [markdown link](../2025/post.md) and [directory link](../2024/other/).
     const html = convertMarkdownToHtml(markdown);
 
     // Anchors are URL-encoded by marked.js (á → %C3%A1)
-    expect(html).toInclude(
-      'href="/2025/post/#day-trips-monte-alb%C3%A1n-and-hierve-el-agua/"',
-    );
+    expect(html).toInclude('href="/2025/post/#day-trips-monte-alb%C3%A1n-and-hierve-el-agua/"');
     expect(html).not.toInclude("../");
   });
 

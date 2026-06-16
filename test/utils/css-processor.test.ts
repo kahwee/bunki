@@ -1,19 +1,8 @@
-import {
-  expect,
-  test,
-  describe,
-  beforeAll,
-  afterAll,
-  beforeEach,
-  afterEach,
-} from "bun:test";
-import {
-  processCSS,
-  getDefaultCSSConfig,
-  validateCSSConfig,
-} from "../../src/utils/css-processor";
-import path from "path";
-import fs from "fs";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import fs from "node:fs";
+import path from "node:path";
+import type { CSSConfig } from "../../src/types";
+import { getDefaultCSSConfig, processCSS, validateCSSConfig } from "../../src/utils/css-processor";
 
 const TEST_DIR = path.join(import.meta.dir, "css-test");
 const OUTPUT_DIR = path.join(TEST_DIR, "output");
@@ -130,7 +119,7 @@ body {
   });
 
   test("should create output directory if it doesn't exist", async () => {
-    const nestedOutputDir = path.join(OUTPUT_DIR, "nested", "deep");
+    const _nestedOutputDir = path.join(OUTPUT_DIR, "nested", "deep");
 
     const cssConfig = {
       input: "input.css",
@@ -209,7 +198,7 @@ describe("CSS Config Tests", () => {
       input: "",
       output: "",
       postcssConfig: "postcss.config.js",
-      enabled: "true" as any,
+      enabled: "true" as unknown as CSSConfig["enabled"],
       watch: false,
     };
 
@@ -225,7 +214,7 @@ describe("CSS Config Tests", () => {
       input: "main.css",
       output: "style.css",
       enabled: true,
-    } as any;
+    } as unknown as CSSConfig;
 
     const errors = validateCSSConfig(partialConfig);
     expect(errors.length).toBe(0);
@@ -267,10 +256,7 @@ describe("Error Handling Tests", () => {
   background: url('data:image/svg+xml;utf8,<svg>...</svg>');
 }`;
 
-    await fs.promises.writeFile(
-      path.join(TEST_DIR, "special.css"),
-      cssWithSpecialChars,
-    );
+    await fs.promises.writeFile(path.join(TEST_DIR, "special.css"), cssWithSpecialChars);
 
     const cssConfig = {
       input: "special.css",
@@ -296,7 +282,7 @@ describe("Error Handling Tests", () => {
       input: "",
       output: "style.css",
       enabled: true,
-    } as any;
+    } as unknown as CSSConfig;
 
     const errors = validateCSSConfig(config);
     expect(errors.length).toBeGreaterThan(0);
@@ -308,7 +294,7 @@ describe("Error Handling Tests", () => {
       input: "main.css",
       output: "",
       enabled: true,
-    } as any;
+    } as unknown as CSSConfig;
 
     const errors = validateCSSConfig(config);
     expect(errors.length).toBeGreaterThan(0);
@@ -320,7 +306,7 @@ describe("Error Handling Tests", () => {
       input: "main.css",
       output: "style.css",
       enabled: "yes",
-    } as any;
+    } as unknown as CSSConfig;
 
     const errors = validateCSSConfig(config);
     expect(errors.length).toBeGreaterThan(0);
@@ -356,10 +342,7 @@ describe("Integration Tests", () => {
   @apply font-bold text-blue-500;
 }`;
 
-    await fs.promises.writeFile(
-      path.join(TEST_DIR, "tailwind.css"),
-      tailwindInput,
-    );
+    await fs.promises.writeFile(path.join(TEST_DIR, "tailwind.css"), tailwindInput);
 
     const cssConfig = {
       input: "tailwind.css",
@@ -436,10 +419,7 @@ body {
   });
 
   test("should handle deeply nested output paths", async () => {
-    await fs.promises.writeFile(
-      path.join(TEST_DIR, "input.css"),
-      "body { margin: 0; }",
-    );
+    await fs.promises.writeFile(path.join(TEST_DIR, "input.css"), "body { margin: 0; }");
 
     const cssConfig = {
       input: "input.css",
@@ -479,10 +459,7 @@ body {
   border-radius: 4px;
 }`;
 
-    await fs.promises.writeFile(
-      path.join(TEST_DIR, "preserve.css"),
-      originalContent,
-    );
+    await fs.promises.writeFile(path.join(TEST_DIR, "preserve.css"), originalContent);
 
     const cssConfig = {
       input: "preserve.css",
@@ -509,10 +486,7 @@ describe("CSS Processor - Critical Paths", () => {
   beforeEach(async () => {
     await fs.promises.mkdir(TEST_DIR, { recursive: true });
     await fs.promises.mkdir(OUTPUT_DIR, { recursive: true });
-    await fs.promises.writeFile(
-      path.join(TEST_DIR, "main.css"),
-      `body { margin: 0; }`,
-    );
+    await fs.promises.writeFile(path.join(TEST_DIR, "main.css"), `body { margin: 0; }`);
   });
 
   afterEach(async () => {
@@ -572,10 +546,7 @@ describe("CSS Processor - Verbose Logging Paths", () => {
   beforeEach(async () => {
     await fs.promises.mkdir(TEST_DIR, { recursive: true });
     await fs.promises.mkdir(OUTPUT_DIR, { recursive: true });
-    await fs.promises.writeFile(
-      path.join(TEST_DIR, "main.css"),
-      `body { margin: 0; }`,
-    );
+    await fs.promises.writeFile(path.join(TEST_DIR, "main.css"), `body { margin: 0; }`);
   });
 
   afterEach(async () => {
@@ -594,8 +565,8 @@ describe("CSS Processor - Verbose Logging Paths", () => {
 
     let logOutput = "";
     const originalLog = console.log;
-    console.log = (msg: any) => {
-      logOutput += msg;
+    console.log = (msg: unknown) => {
+      logOutput += String(msg);
     };
 
     try {
@@ -622,8 +593,8 @@ describe("CSS Processor - Verbose Logging Paths", () => {
 
     let logOutput = "";
     const originalLog = console.log;
-    console.log = (msg: any) => {
-      logOutput += msg;
+    console.log = (msg: unknown) => {
+      logOutput += String(msg);
     };
 
     try {
@@ -633,8 +604,7 @@ describe("CSS Processor - Verbose Logging Paths", () => {
         outputDir: OUTPUT_DIR,
         verbose: true,
       });
-      expect(logOutput).toInclude("Building CSS") ||
-        expect(logOutput).toInclude("PostCSS");
+      expect(logOutput).toInclude("Building CSS") || expect(logOutput).toInclude("PostCSS");
     } finally {
       console.log = originalLog;
     }
@@ -650,8 +620,8 @@ describe("CSS Processor - Verbose Logging Paths", () => {
 
     let logOutput = "";
     const originalLog = console.log;
-    console.log = (msg: any) => {
-      logOutput += msg;
+    console.log = (msg: unknown) => {
+      logOutput += String(msg);
     };
 
     try {
@@ -696,8 +666,10 @@ describe("CSS Processor - Error Handling & Validation", () => {
         verbose: false,
       });
       expect(true).toBe(false); // Should not reach
-    } catch (error: any) {
-      expect(error.message).toInclude("CSS input file not found");
+    } catch (error: unknown) {
+      expect(error instanceof Error ? error.message : String(error)).toInclude(
+        "CSS input file not found",
+      );
     }
   });
 
@@ -729,7 +701,7 @@ describe("CSS Processor - Error Handling & Validation", () => {
     const invalidConfig = {
       input: "main.css",
       output: "style.css",
-      enabled: "true" as any,
+      enabled: "true" as unknown as CSSConfig["enabled"],
       watch: false,
     };
 
@@ -753,7 +725,7 @@ describe("CSS Processor - Error Handling & Validation", () => {
     const invalidConfig = {
       input: "",
       output: "",
-      enabled: 123 as any,
+      enabled: 123 as unknown as CSSConfig["enabled"],
       watch: false,
     };
 
@@ -766,9 +738,9 @@ describe("CSS Processor - Error Handling & Validation", () => {
 
   test("should handle null config values", () => {
     const invalidConfig = {
-      input: null as any,
-      output: null as any,
-      enabled: null as any,
+      input: null as unknown as CSSConfig["input"],
+      output: null as unknown as CSSConfig["output"],
+      enabled: null as unknown as CSSConfig["enabled"],
       watch: false,
     };
 
@@ -789,10 +761,7 @@ describe("CSS Processor - Error Handling & Validation", () => {
   });
 
   test("should handle fallback copy when no PostCSS config", async () => {
-    await fs.promises.writeFile(
-      path.join(TEST_DIR, "simple.css"),
-      "body { color: red; }",
-    );
+    await fs.promises.writeFile(path.join(TEST_DIR, "simple.css"), "body { color: red; }");
 
     const cssConfig = {
       input: "simple.css",
@@ -888,9 +857,7 @@ describe("CSS Processor - Error Handling & Validation", () => {
 
     // Hashes should match for identical content
     expect(result1.hash).toBe(result2.hash);
-    expect(path.basename(result1.outputPath)).toBe(
-      path.basename(result2.outputPath),
-    );
+    expect(path.basename(result1.outputPath)).toBe(path.basename(result2.outputPath));
   });
 
   test("should generate different hash when CSS content changes", async () => {
@@ -940,9 +907,7 @@ body {
 
     // Hashes should differ for different content
     expect(result1.hash).not.toBe(result2.hash);
-    expect(path.basename(result1.outputPath)).not.toBe(
-      path.basename(result2.outputPath),
-    );
+    expect(path.basename(result1.outputPath)).not.toBe(path.basename(result2.outputPath));
 
     // Restore original CSS for other tests
     await fs.promises.writeFile(

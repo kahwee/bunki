@@ -3,9 +3,9 @@
  * Determines which files have changed and what needs to be rebuilt
  */
 
+import type { Post } from "../types";
 import type { BuildCache } from "./build-cache";
 import { hasFileChanged } from "./build-cache";
-import type { Post } from "../types";
 
 export interface ChangeSet {
   /** Posts that were added or modified */
@@ -104,10 +104,7 @@ export async function detectChanges(
 /**
  * Determine affected tags from changed posts
  */
-export function getAffectedTags(
-  changedPosts: Post[],
-  allPosts: Post[],
-): Set<string> {
+export function getAffectedTags(changedPosts: Post[], _allPosts: Post[]): Set<string> {
   const affectedTags = new Set<string>();
 
   for (const post of changedPosts) {
@@ -126,20 +123,13 @@ export function needsIndexRegeneration(changes: ChangeSet): boolean {
   // Regenerate index if:
   // - Posts were added or deleted
   // - Full rebuild required
-  return (
-    changes.changedPosts.length > 0 ||
-    changes.deletedPosts.length > 0 ||
-    changes.fullRebuild
-  );
+  return changes.changedPosts.length > 0 || changes.deletedPosts.length > 0 || changes.fullRebuild;
 }
 
 /**
  * Estimate time saved by incremental build
  */
-export function estimateTimeSaved(
-  totalPosts: number,
-  changedPosts: number,
-): number {
+export function estimateTimeSaved(totalPosts: number, changedPosts: number): number {
   const avgTimePerPost = 6; // ms (from real-world data)
   const skippedPosts = totalPosts - changedPosts;
   return skippedPosts * avgTimePerPost;

@@ -70,8 +70,7 @@ export function validateBusinessLocation(
         file: filePath,
         type: "validation",
         message: `Use 'lat' and 'lng' instead of 'latitude' and 'longitude' in business${locIndex}`,
-        suggestion:
-          "Replace 'latitude:' with 'lat:' and 'longitude:' with 'lng:' in frontmatter",
+        suggestion: "Replace 'latitude:' with 'lat:' and 'longitude:' with 'lng:' in frontmatter",
       };
     }
 
@@ -98,10 +97,7 @@ export function validateBusinessLocation(
  * @param filePath - File path for error reporting
  * @returns ValidationError if invalid, null if valid
  */
-export function validateTags(
-  tags: string[],
-  filePath: string,
-): ValidationError | null {
+export function validateTags(tags: string[], filePath: string): ValidationError | null {
   if (!tags || !Array.isArray(tags)) return null;
 
   const tagsWithSpaces = tags.filter((tag: string) => tag.includes(" "));
@@ -127,7 +123,7 @@ export function checkDeprecatedLocationField(
   data: Record<string, unknown>,
   filePath: string,
 ): ValidationError | null {
-  if (data && data.location) {
+  if (data?.location) {
     return {
       file: filePath,
       type: "validation",

@@ -3,8 +3,8 @@
  * Tracks file hashes, modification times, parsed post data, and build outputs
  */
 
+import path from "node:path";
 import { hash } from "bun";
-import path from "path";
 import type { Post } from "../types";
 import { getFileMtime as getFileMtimeFromUtils } from "./file-utils";
 
@@ -41,7 +41,7 @@ export async function hashFile(filePath: string): Promise<string> {
     const file = Bun.file(filePath);
     const content = await file.arrayBuffer();
     return hash(content).toString(36);
-  } catch (error) {
+  } catch (_error) {
     // File doesn't exist or can't be read
     return "";
   }
@@ -70,9 +70,7 @@ export async function loadCache(cwd: string): Promise<BuildCache> {
 
       // Validate cache version
       if (cache.version !== CACHE_VERSION) {
-        console.log(
-          `Cache version mismatch (${cache.version} vs ${CACHE_VERSION}), rebuilding...`,
-        );
+        console.log(`Cache version mismatch (${cache.version} vs ${CACHE_VERSION}), rebuilding...`);
         return createEmptyCache();
       }
 
@@ -111,10 +109,7 @@ export function createEmptyCache(): BuildCache {
 /**
  * Check if a file has changed since last build
  */
-export async function hasFileChanged(
-  filePath: string,
-  cache: BuildCache,
-): Promise<boolean> {
+export async function hasFileChanged(filePath: string, cache: BuildCache): Promise<boolean> {
   const cached = cache.files[filePath];
 
   if (!cached) {
@@ -166,10 +161,7 @@ export function removeCacheEntry(filePath: string, cache: BuildCache): void {
 /**
  * Check if config file has changed
  */
-export async function hasConfigChanged(
-  configPath: string,
-  cache: BuildCache,
-): Promise<boolean> {
+export async function hasConfigChanged(configPath: string, cache: BuildCache): Promise<boolean> {
   const currentHash = await hashFile(configPath);
 
   if (!cache.configHash) {
@@ -207,10 +199,7 @@ export function needsFullRebuild(cache: BuildCache, maxAge: number): boolean {
 /**
  * Load cached posts for files that haven't changed
  */
-export function loadCachedPosts(
-  cache: BuildCache,
-  filePaths: string[],
-): Post[] {
+export function loadCachedPosts(cache: BuildCache, filePaths: string[]): Post[] {
   const posts: Post[] = [];
 
   for (const filePath of filePaths) {

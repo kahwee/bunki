@@ -1,5 +1,5 @@
-import { Command } from "commander";
-import path from "path";
+import path from "node:path";
+import type { Command } from "commander";
 import { DEFAULT_CONTENT_DIR } from "../../config";
 
 type WriteFileFn = (filePath: string, data: string) => Promise<number>;

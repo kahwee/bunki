@@ -1,15 +1,8 @@
-import {
-  expect,
-  test,
-  describe,
-  beforeAll,
-  afterAll,
-  beforeEach,
-} from "bun:test";
+import { afterAll, beforeAll, beforeEach, describe, expect, test } from "bun:test";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { startServer } from "../src/server";
-import path from "path";
-import fs from "fs";
-import { fileURLToPath } from "url";
 
 // Resolve directory path in a way that satisfies TypeScript
 const __filename = fileURLToPath(import.meta.url);
@@ -19,7 +12,7 @@ const TEST_OUTPUT_DIR = path.join(__dirname, "server-test-output");
 const TEST_PORT = 3333;
 
 // Helper to check if directory exists
-async function directoryExists(dirPath: string): Promise<boolean> {
+async function _directoryExists(dirPath: string): Promise<boolean> {
   try {
     const stats = await fs.promises.stat(dirPath);
     return stats.isDirectory();
@@ -29,10 +22,7 @@ async function directoryExists(dirPath: string): Promise<boolean> {
 }
 
 // Helper to create test files
-async function createTestFile(
-  filePath: string,
-  content: string,
-): Promise<void> {
+async function createTestFile(filePath: string, content: string): Promise<void> {
   const dir = path.dirname(filePath);
   await fs.promises.mkdir(dir, { recursive: true });
   await fs.promises.writeFile(filePath, content);
@@ -46,7 +36,7 @@ async function makeRequest(url: string): Promise<Response> {
 // Helper to check if server is running on port
 async function isPortInUse(port: number): Promise<boolean> {
   try {
-    const response = await fetch(`http://localhost:${port}`);
+    const _response = await fetch(`http://localhost:${port}`);
     return true;
   } catch {
     return false;
@@ -123,10 +113,7 @@ describe("Server Path Traversal Security Tests", () => {
     // Create a sensitive file outside the output directory
     const sensitiveDir = path.join(__dirname, "sensitive");
     await fs.promises.mkdir(sensitiveDir, { recursive: true });
-    await createTestFile(
-      path.join(sensitiveDir, "secret.txt"),
-      "This should not be accessible",
-    );
+    await createTestFile(path.join(sensitiveDir, "secret.txt"), "This should not be accessible");
   });
 
   afterAll(async () => {
@@ -148,10 +135,7 @@ describe("Server Path Traversal Security Tests", () => {
     try {
       await fs.promises.access(indexPath);
     } catch {
-      await fs.promises.writeFile(
-        indexPath,
-        "<html><body>Safe content</body></html>",
-      );
+      await fs.promises.writeFile(indexPath, "<html><body>Safe content</body></html>");
     }
     const server1 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 1);
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -166,9 +150,7 @@ describe("Server Path Traversal Security Tests", () => {
     ];
 
     for (const attempt of traversalAttempts) {
-      const response = await makeRequest(
-        `http://localhost:${TEST_PORT + 1}${attempt}`,
-      );
+      const response = await makeRequest(`http://localhost:${TEST_PORT + 1}${attempt}`);
       expect(response.status).toBe(404); // Should return 404, not the sensitive file
     }
 
@@ -181,18 +163,13 @@ describe("Server Path Traversal Security Tests", () => {
     try {
       await fs.promises.access(safeFile);
     } catch {
-      await fs.promises.writeFile(
-        safeFile,
-        "<html><body>Safe file</body></html>",
-      );
+      await fs.promises.writeFile(safeFile, "<html><body>Safe file</body></html>");
     }
     const server2 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 2);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Test legitimate requests
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 2}/safe.html`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 2}/safe.html`);
     expect(response.status).toBe(200);
 
     const content = await response.text();
@@ -205,22 +182,10 @@ describe("Server Path Traversal Security Tests", () => {
 describe("Server Content-Type and Security Headers Tests", () => {
   beforeAll(async () => {
     await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
-    await createTestFile(
-      path.join(TEST_OUTPUT_DIR, "test.html"),
-      "<html><body>HTML</body></html>",
-    );
-    await createTestFile(
-      path.join(TEST_OUTPUT_DIR, "test.css"),
-      "body { color: red; }",
-    );
-    await createTestFile(
-      path.join(TEST_OUTPUT_DIR, "test.js"),
-      "console.log('test');",
-    );
-    await createTestFile(
-      path.join(TEST_OUTPUT_DIR, "test.json"),
-      '{"test": true}',
-    );
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.html"), "<html><body>HTML</body></html>");
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.css"), "body { color: red; }");
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.js"), "console.log('test');");
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.json"), '{"test": true}');
   });
 
   afterAll(async () => {
@@ -231,22 +196,10 @@ describe("Server Content-Type and Security Headers Tests", () => {
 
   test("should set correct Content-Type headers", async () => {
     await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
-    await createTestFile(
-      path.join(TEST_OUTPUT_DIR, "test.html"),
-      "<html><body>HTML</body></html>",
-    );
-    await createTestFile(
-      path.join(TEST_OUTPUT_DIR, "test.css"),
-      "body { color: red; }",
-    );
-    await createTestFile(
-      path.join(TEST_OUTPUT_DIR, "test.js"),
-      "console.log('test');",
-    );
-    await createTestFile(
-      path.join(TEST_OUTPUT_DIR, "test.json"),
-      '{"test": true}',
-    );
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.html"), "<html><body>HTML</body></html>");
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.css"), "body { color: red; }");
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.js"), "console.log('test');");
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.json"), '{"test": true}');
     const server3 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 3);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -258,9 +211,7 @@ describe("Server Content-Type and Security Headers Tests", () => {
     ];
 
     for (const { file, expectedType } of testCases) {
-      const response = await makeRequest(
-        `http://localhost:${TEST_PORT + 3}${file}`,
-      );
+      const response = await makeRequest(`http://localhost:${TEST_PORT + 3}${file}`);
       expect(response.status).toBe(200);
       expect(response.headers.get("Content-Type")).toBe(expectedType);
     }
@@ -273,9 +224,7 @@ describe("Server Content-Type and Security Headers Tests", () => {
     const server4 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 4);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 4}/nonexistent.html`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 4}/nonexistent.html`);
     expect(response.status).toBe(404);
 
     const content = await response.text();
@@ -296,10 +245,7 @@ describe("Server Edge Cases Tests", () => {
     // Create subdirectory structure
     const subDir = path.join(TEST_OUTPUT_DIR, "subdir");
     await fs.promises.mkdir(subDir, { recursive: true });
-    await createTestFile(
-      path.join(subDir, "index.html"),
-      "<html><body>Sub</body></html>",
-    );
+    await createTestFile(path.join(subDir, "index.html"), "<html><body>Sub</body></html>");
   });
 
   afterAll(async () => {
@@ -330,16 +276,11 @@ describe("Server Edge Cases Tests", () => {
     await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
     const subDir = path.join(TEST_OUTPUT_DIR, "subdir");
     await fs.promises.mkdir(subDir, { recursive: true });
-    await createTestFile(
-      path.join(subDir, "index.html"),
-      "<html><body>Sub</body></html>",
-    );
+    await createTestFile(path.join(subDir, "index.html"), "<html><body>Sub</body></html>");
     const server6 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 6);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 6}/subdir/`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 6}/subdir/`);
     expect(response.status).toBe(200);
 
     const content = await response.text();
@@ -354,9 +295,7 @@ describe("Server Edge Cases Tests", () => {
     const server7 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 7);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 7}/empty/`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 7}/empty/`);
     expect(response.status).toBe(404);
 
     server7.stop?.();
@@ -381,10 +320,7 @@ describe("Server Image and Media Types Tests", () => {
     await createTestFile(path.join(TEST_OUTPUT_DIR, "test.jpg"), "JPEG data");
     await createTestFile(path.join(TEST_OUTPUT_DIR, "test.jpeg"), "JPEG data");
     await createTestFile(path.join(TEST_OUTPUT_DIR, "test.svg"), "<svg></svg>");
-    await createTestFile(
-      path.join(TEST_OUTPUT_DIR, "test.xml"),
-      "<?xml version='1.0'?><root/>",
-    );
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.xml"), "<?xml version='1.0'?><root/>");
   });
 
   afterAll(async () => {
@@ -400,9 +336,7 @@ describe("Server Image and Media Types Tests", () => {
     const server9 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 9);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 9}/test.png`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 9}/test.png`);
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("image/png");
 
@@ -416,9 +350,7 @@ describe("Server Image and Media Types Tests", () => {
     const server10 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 10);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 10}/test.jpg`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 10}/test.jpg`);
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("image/jpeg");
 
@@ -432,9 +364,7 @@ describe("Server Image and Media Types Tests", () => {
     const server11 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 11);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 11}/test.svg`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 11}/test.svg`);
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("image/svg+xml");
 
@@ -443,17 +373,12 @@ describe("Server Image and Media Types Tests", () => {
 
   test("should serve XML with correct content type", async () => {
     await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
-    await createTestFile(
-      path.join(TEST_OUTPUT_DIR, "test.xml"),
-      "<?xml version='1.0'?><root/>",
-    );
+    await createTestFile(path.join(TEST_OUTPUT_DIR, "test.xml"), "<?xml version='1.0'?><root/>");
 
     const server12 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 12);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 12}/test.xml`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 12}/test.xml`);
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("application/xml");
 
@@ -470,14 +395,7 @@ describe("Server Pagination Routes Tests", () => {
       "<html><body>Page 2</body></html>",
     );
     await createTestFile(
-      path.join(
-        TEST_OUTPUT_DIR,
-        "tags",
-        "javascript",
-        "page",
-        "1",
-        "index.html",
-      ),
+      path.join(TEST_OUTPUT_DIR, "tags", "javascript", "page", "1", "index.html"),
       "<html><body>JavaScript Tag Page 1</body></html>",
     );
     await createTestFile(
@@ -502,9 +420,7 @@ describe("Server Pagination Routes Tests", () => {
     const server13 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 13);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 13}/page/2`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 13}/page/2`);
     expect(response.status).toBe(200);
 
     const content = await response.text();
@@ -516,23 +432,14 @@ describe("Server Pagination Routes Tests", () => {
   test("should serve tag pagination routes", async () => {
     await fs.promises.mkdir(TEST_OUTPUT_DIR, { recursive: true });
     await createTestFile(
-      path.join(
-        TEST_OUTPUT_DIR,
-        "tags",
-        "javascript",
-        "page",
-        "1",
-        "index.html",
-      ),
+      path.join(TEST_OUTPUT_DIR, "tags", "javascript", "page", "1", "index.html"),
       "<html><body>JavaScript Tag Page 1</body></html>",
     );
 
     const server14 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 14);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 14}/tags/javascript/page/1`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 14}/tags/javascript/page/1`);
     expect(response.status).toBe(200);
 
     const content = await response.text();
@@ -551,9 +458,7 @@ describe("Server Pagination Routes Tests", () => {
     const server15 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 15);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 15}/2025/page/1`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 15}/2025/page/1`);
     expect(response.status).toBe(200);
 
     const content = await response.text();
@@ -575,18 +480,14 @@ describe("Server File Resolution Tests", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Request without .html extension
-    const response1 = await makeRequest(
-      `http://localhost:${TEST_PORT + 16}/about`,
-    );
+    const response1 = await makeRequest(`http://localhost:${TEST_PORT + 16}/about`);
     expect(response1.status).toBe(200);
 
     const content1 = await response1.text();
     expect(content1).toInclude("About Page");
 
     // Request with .html extension
-    const response2 = await makeRequest(
-      `http://localhost:${TEST_PORT + 16}/about.html`,
-    );
+    const response2 = await makeRequest(`http://localhost:${TEST_PORT + 16}/about.html`);
     expect(response2.status).toBe(200);
 
     const content2 = await response2.text();
@@ -598,18 +499,13 @@ describe("Server File Resolution Tests", () => {
   test("should serve directory index files", async () => {
     const dir = path.join(TEST_OUTPUT_DIR, "docs");
     await fs.promises.mkdir(dir, { recursive: true });
-    await createTestFile(
-      path.join(dir, "index.html"),
-      "<html><body>Documentation</body></html>",
-    );
+    await createTestFile(path.join(dir, "index.html"), "<html><body>Documentation</body></html>");
 
     const server17 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 17);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Request directory path
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 17}/docs`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 17}/docs`);
     expect(response.status).toBe(200);
 
     const content = await response.text();
@@ -631,9 +527,7 @@ describe("Server Bun.file() Integration Tests", () => {
     const server18 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 18);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 18}/large.html`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 18}/large.html`);
     expect(response.status).toBe(200);
 
     const content = await response.text();
@@ -652,9 +546,7 @@ describe("Server Bun.file() Integration Tests", () => {
     const server19 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 19);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 19}/file-with-dashes.html`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 19}/file-with-dashes.html`);
     expect(response.status).toBe(200);
 
     const content = await response.text();
@@ -666,17 +558,12 @@ describe("Server Bun.file() Integration Tests", () => {
   test("should handle deeply nested paths", async () => {
     const deepPath = path.join(TEST_OUTPUT_DIR, "a", "b", "c", "d", "e", "f");
     await fs.promises.mkdir(deepPath, { recursive: true });
-    await createTestFile(
-      path.join(deepPath, "index.html"),
-      "<html><body>Deep</body></html>",
-    );
+    await createTestFile(path.join(deepPath, "index.html"), "<html><body>Deep</body></html>");
 
     const server20 = await startServer(TEST_OUTPUT_DIR, TEST_PORT + 20);
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const response = await makeRequest(
-      `http://localhost:${TEST_PORT + 20}/a/b/c/d/e/f/`,
-    );
+    const response = await makeRequest(`http://localhost:${TEST_PORT + 20}/a/b/c/d/e/f/`);
     expect(response.status).toBe(200);
 
     const content = await response.text();

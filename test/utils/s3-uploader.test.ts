@@ -1,8 +1,8 @@
-import { describe, expect, test, beforeAll, afterAll } from "bun:test";
-import { S3Uploader, createUploader } from "../../src/utils/s3-uploader";
-import { S3Config } from "../../src/types";
-import path from "path";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import path from "node:path";
+import type { S3Config } from "../../src/types";
 import { ensureDir } from "../../src/utils/file-utils";
+import { createUploader, S3Uploader } from "../../src/utils/s3-uploader";
 
 // Use a temporary directory for test images
 const TEST_IMAGES_DIR = path.join(import.meta.dir, "test-images");
@@ -25,32 +25,21 @@ describe("S3Uploader", () => {
   describe("Directory Structure Preservation", () => {
     beforeAll(async () => {
       // Create test image directory structure with nested subdirectories
-      await ensureDir(
-        path.join(TEST_IMAGES_DIR, "2023/fish-tacos-at-el-pescadito-roma"),
-      );
+      await ensureDir(path.join(TEST_IMAGES_DIR, "2023/fish-tacos-at-el-pescadito-roma"));
       await ensureDir(path.join(TEST_IMAGES_DIR, "2025/travel-guides"));
 
       // Create test image files
       const jpgContent = Buffer.from([0xff, 0xd8, 0xff, 0xe0]); // JPEG magic bytes
 
       await Bun.write(
-        path.join(
-          TEST_IMAGES_DIR,
-          "2023/fish-tacos-at-el-pescadito-roma/img-2680-1024x768.jpg",
-        ),
+        path.join(TEST_IMAGES_DIR, "2023/fish-tacos-at-el-pescadito-roma/img-2680-1024x768.jpg"),
         jpgContent,
       );
       await Bun.write(
-        path.join(
-          TEST_IMAGES_DIR,
-          "2023/fish-tacos-at-el-pescadito-roma/img-2681-1024x576.jpg",
-        ),
+        path.join(TEST_IMAGES_DIR, "2023/fish-tacos-at-el-pescadito-roma/img-2681-1024x576.jpg"),
         jpgContent,
       );
-      await Bun.write(
-        path.join(TEST_IMAGES_DIR, "2025/travel-guides/singapore-1.jpg"),
-        jpgContent,
-      );
+      await Bun.write(path.join(TEST_IMAGES_DIR, "2025/travel-guides/singapore-1.jpg"), jpgContent);
       await Bun.write(path.join(TEST_IMAGES_DIR, "root-image.jpg"), jpgContent);
     });
 
@@ -81,10 +70,8 @@ describe("S3Uploader", () => {
 
       // Get result keys for verification
       const keys = Object.keys(result);
-      const nestedImageKey =
-        "2023/fish-tacos-at-el-pescadito-roma/img-2680-1024x768.jpg";
-      const nestedImage2Key =
-        "2023/fish-tacos-at-el-pescadito-roma/img-2681-1024x576.jpg";
+      const nestedImageKey = "2023/fish-tacos-at-el-pescadito-roma/img-2680-1024x768.jpg";
+      const nestedImage2Key = "2023/fish-tacos-at-el-pescadito-roma/img-2681-1024x576.jpg";
       const travelGuideKey = "2025/travel-guides/singapore-1.jpg";
       const rootKey = "root-image.jpg";
 
@@ -131,12 +118,8 @@ describe("S3Uploader", () => {
 
       // Verify all expected files are present
       const keys = Object.keys(result);
-      expect(keys).toContain(
-        "2023/fish-tacos-at-el-pescadito-roma/img-2680-1024x768.jpg",
-      );
-      expect(keys).toContain(
-        "2023/fish-tacos-at-el-pescadito-roma/img-2681-1024x576.jpg",
-      );
+      expect(keys).toContain("2023/fish-tacos-at-el-pescadito-roma/img-2680-1024x768.jpg");
+      expect(keys).toContain("2023/fish-tacos-at-el-pescadito-roma/img-2681-1024x576.jpg");
       expect(keys).toContain("2025/travel-guides/singapore-1.jpg");
       expect(keys).toContain("root-image.jpg");
 
@@ -165,10 +148,7 @@ describe("S3Uploader", () => {
       await ensureDir(testUploadDir);
       // Create some test files to upload
       await Bun.write(path.join(testUploadDir, "index.html"), "<h1>Test</h1>");
-      await Bun.write(
-        path.join(testUploadDir, "style.css"),
-        "body { color: red; }",
-      );
+      await Bun.write(path.join(testUploadDir, "style.css"), "body { color: red; }");
     });
 
     afterAll(async () => {
@@ -197,9 +177,7 @@ describe("S3Uploader", () => {
         domain: "test",
       };
 
-      await expect(
-        uploader.upload(testUploadDir, siteConfig),
-      ).resolves.toBeUndefined();
+      await expect(uploader.upload(testUploadDir, siteConfig)).resolves.toBeUndefined();
 
       delete process.env.BUNKI_DRY_RUN;
     });
@@ -334,8 +312,7 @@ describe("S3Uploader", () => {
       };
 
       // Set custom domain with underscores (bucket hyphens converted to underscores)
-      process.env.S3_CUSTOM_DOMAIN_MY_HYPHENATED_BUCKET =
-        "cdn-hyphenated.example.com";
+      process.env.S3_CUSTOM_DOMAIN_MY_HYPHENATED_BUCKET = "cdn-hyphenated.example.com";
 
       process.env.BUNKI_DRY_RUN = "true";
       const uploader = new S3Uploader(config);
@@ -380,9 +357,7 @@ describe("S3Uploader", () => {
 
       // Should not duplicate bucket name since it's already in publicUrl
       const imageUrl = result["photo.jpg"];
-      expect(imageUrl).toContain(
-        "https://cdn.example.com/test-bucket/photo.jpg",
-      );
+      expect(imageUrl).toContain("https://cdn.example.com/test-bucket/photo.jpg");
 
       delete process.env.BUNKI_DRY_RUN;
 
@@ -449,22 +424,10 @@ describe("S3Uploader", () => {
       const jpgContent = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
 
       // Create images in each year
-      await Bun.write(
-        path.join(yearFilterDir, "2021/post-1/image.jpg"),
-        jpgContent,
-      );
-      await Bun.write(
-        path.join(yearFilterDir, "2022/post-2/image.jpg"),
-        jpgContent,
-      );
-      await Bun.write(
-        path.join(yearFilterDir, "2023/post-3/image.jpg"),
-        jpgContent,
-      );
-      await Bun.write(
-        path.join(yearFilterDir, "2024/post-4/image.jpg"),
-        jpgContent,
-      );
+      await Bun.write(path.join(yearFilterDir, "2021/post-1/image.jpg"), jpgContent);
+      await Bun.write(path.join(yearFilterDir, "2022/post-2/image.jpg"), jpgContent);
+      await Bun.write(path.join(yearFilterDir, "2023/post-3/image.jpg"), jpgContent);
+      await Bun.write(path.join(yearFilterDir, "2024/post-4/image.jpg"), jpgContent);
     });
 
     afterAll(async () => {

@@ -3,20 +3,18 @@
  * Centralizes Nunjucks configuration and custom filters
  */
 
+import { existsSync } from "node:fs";
+import path from "node:path";
 import nunjucks from "nunjucks";
-import path from "path";
-import { existsSync } from "fs";
-import { toPacificTime } from "./date-utils";
 import { DATE } from "../constants";
+import { toPacificTime } from "./date-utils";
 
 // In the built bundle (dist/cli.js), import.meta.dir is the dist/ directory and
 // fragments live at dist/fragments/. When running tests directly from source,
 // import.meta.dir is src/utils/ so we fall back to src/fragments/.
 const _distFragments = path.join(import.meta.dir, "fragments");
 const _srcFragments = path.join(import.meta.dir, "../fragments");
-const BUNKI_FRAGMENTS_DIR = existsSync(_distFragments)
-  ? _distFragments
-  : _srcFragments;
+const BUNKI_FRAGMENTS_DIR = existsSync(_distFragments) ? _distFragments : _srcFragments;
 
 /**
  * Create and configure Nunjucks template engine with custom filters
@@ -54,8 +52,26 @@ export function createTemplateEngine(
  * Converts hyphenated slugs to display titles, uppercasing known acronyms
  */
 const TECH_ACRONYMS = new Set([
-  "ai", "llm", "api", "ui", "ux", "ios", "url", "seo", "css", "html",
-  "js", "ts", "sql", "cdn", "aws", "rss", "sdk", "cli", "gpu", "cpu",
+  "ai",
+  "llm",
+  "api",
+  "ui",
+  "ux",
+  "ios",
+  "url",
+  "seo",
+  "css",
+  "html",
+  "js",
+  "ts",
+  "sql",
+  "cdn",
+  "aws",
+  "rss",
+  "sdk",
+  "cli",
+  "gpu",
+  "cpu",
 ]);
 
 function titleCase(str: string): string {

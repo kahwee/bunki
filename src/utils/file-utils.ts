@@ -1,6 +1,6 @@
-import { Glob } from "bun";
-import path from "path";
 import { mkdir } from "node:fs/promises";
+import path from "node:path";
+import { Glob } from "bun";
 import { FILES } from "../constants";
 
 /**
@@ -99,9 +99,7 @@ export async function readFileAsText(filePath: string): Promise<string | null> {
  * @param filePath - Path to file
  * @returns File contents as Uint8Array or null if file doesn't exist
  */
-export async function readFileAsBuffer(
-  filePath: string,
-): Promise<Uint8Array | null> {
+export async function readFileAsBuffer(filePath: string): Promise<Uint8Array | null> {
   try {
     const file = Bun.file(filePath);
     if (!(await file.exists())) {
@@ -120,10 +118,7 @@ export async function readFileAsBuffer(
  * @param filePath - Path to file
  * @param content - Text content to write
  */
-export async function writeFile(
-  filePath: string,
-  content: string,
-): Promise<void> {
+export async function writeFile(filePath: string, content: string): Promise<void> {
   try {
     await Bun.write(filePath, content);
   } catch (error) {
@@ -157,10 +152,7 @@ export async function writeFileBuffer(
  * @param extension - Extension to remove (default: ".md")
  * @returns Base filename (slug)
  */
-export function getBaseFilename(
-  filePath: string,
-  extension: string = ".md",
-): string {
+export function getBaseFilename(filePath: string, extension: string = ".md"): string {
   const basename = path.basename(filePath, extension);
 
   // If filename is README (case-insensitive), use parent directory name
@@ -213,10 +205,7 @@ export async function ensureDir(dirPath: string): Promise<void> {
  * @param sourcePath - Source file path
  * @param targetPath - Target file path
  */
-export async function copyFile(
-  sourcePath: string,
-  targetPath: string,
-): Promise<void> {
+export async function copyFile(sourcePath: string, targetPath: string): Promise<void> {
   try {
     const sourceFile = Bun.file(sourcePath);
 
@@ -228,10 +217,7 @@ export async function copyFile(
     // No data is loaded into application memory during the transfer
     await Bun.write(targetPath, sourceFile);
   } catch (error) {
-    console.error(
-      `Error copying file from ${sourcePath} to ${targetPath}:`,
-      error,
-    );
+    console.error(`Error copying file from ${sourcePath} to ${targetPath}:`, error);
     throw error;
   }
 }
@@ -288,10 +274,7 @@ export async function getFileMtime(filePath: string): Promise<number | null> {
  * @param recursive - Include subdirectories (default: false)
  * @returns Array of file paths
  */
-export async function listDir(
-  dirPath: string,
-  recursive: boolean = false,
-): Promise<string[]> {
+export async function listDir(dirPath: string, recursive: boolean = false): Promise<string[]> {
   try {
     const pattern = recursive ? "**/*" : "*";
     return await findFilesByPattern(pattern, dirPath, true);

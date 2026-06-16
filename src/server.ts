@@ -1,11 +1,8 @@
-import path from "path";
+import path from "node:path";
 import { DEFAULT_OUTPUT_DIR } from "./config";
 import { isDirectory } from "./utils/file-utils";
 
-export async function startServer(
-  outputDir: string = DEFAULT_OUTPUT_DIR,
-  port: number = 3000,
-) {
+export async function startServer(outputDir: string = DEFAULT_OUTPUT_DIR, port: number = 3000) {
   if (!(await isDirectory(outputDir))) {
     const msg = `Error: Output directory ${outputDir} does not exist or is not accessible.`;
     console.error(msg);
@@ -27,16 +24,12 @@ export async function startServer(
         }
 
         if (pathname.endsWith("/")) {
-          pathname = pathname + "index.html";
+          pathname = `${pathname}index.html`;
         }
 
         const homePaginationMatch = pathname.match(/^\/page\/(\d+)\/?$/);
-        const tagPaginationMatch = pathname.match(
-          /^\/tags\/([^\/]+)\/page\/(\d+)\/?$/,
-        );
-        const yearPaginationMatch = pathname.match(
-          /^\/(\d{4})\/page\/(\d+)\/?$/,
-        );
+        const tagPaginationMatch = pathname.match(/^\/tags\/([^/]+)\/page\/(\d+)\/?$/);
+        const yearPaginationMatch = pathname.match(/^\/(\d{4})\/page\/(\d+)\/?$/);
 
         let filePath = "";
 
@@ -46,30 +39,15 @@ export async function startServer(
         } else if (tagPaginationMatch) {
           const tagSlug = tagPaginationMatch[1];
           const pageNumber = tagPaginationMatch[2];
-          filePath = path.join(
-            outputDir,
-            "tags",
-            tagSlug,
-            "page",
-            pageNumber,
-            "index.html",
-          );
+          filePath = path.join(outputDir, "tags", tagSlug, "page", pageNumber, "index.html");
         } else if (yearPaginationMatch) {
           const year = yearPaginationMatch[1];
           const pageNumber = yearPaginationMatch[2];
-          filePath = path.join(
-            outputDir,
-            year,
-            "page",
-            pageNumber,
-            "index.html",
-          );
+          filePath = path.join(outputDir, year, "page", pageNumber, "index.html");
         } else {
           const directPath = path.join(outputDir, pathname);
-          const withoutSlash = path.join(outputDir, pathname + ".html");
-          const withHtml = pathname.endsWith(".html")
-            ? directPath
-            : withoutSlash;
+          const withoutSlash = path.join(outputDir, `${pathname}.html`);
+          const withHtml = pathname.endsWith(".html") ? directPath : withoutSlash;
 
           const bunFileDirect = Bun.file(directPath);
           const bunFileHtml = Bun.file(withHtml);
@@ -86,13 +64,10 @@ export async function startServer(
               filePath = indexPath;
             } else {
               console.log(`404 Not Found: ${pathname}`);
-              return new Response(
-                `<h1>404 Not Found</h1><p>Could not find ${pathname}</p>`,
-                {
-                  status: 404,
-                  headers: { "Content-Type": "text/html" },
-                },
-              );
+              return new Response(`<h1>404 Not Found</h1><p>Could not find ${pathname}</p>`, {
+                status: 404,
+                headers: { "Content-Type": "text/html" },
+              });
             }
           }
         }

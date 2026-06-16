@@ -24,7 +24,7 @@ import type { Post, SiteConfig } from "../types.js";
 interface SchemaOrgThing {
   "@context": "https://schema.org";
   "@type": string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**
@@ -88,10 +88,7 @@ export interface CollectionPageOptions {
  * const author = generatePersonSchema("John Doe", "john@example.com");
  * // Returns: { "@type": "Person", "name": "John Doe", "email": "john@example.com" }
  */
-export function generatePersonSchema(
-  name: string,
-  email?: string,
-): SchemaOrgThing {
+export function generatePersonSchema(name: string, email?: string): SchemaOrgThing {
   const person: SchemaOrgThing = {
     "@context": "https://schema.org",
     "@type": "Person",
@@ -148,9 +145,7 @@ export function generateOrganizationSchema(site: SiteConfig): SchemaOrgThing {
  *
  * @see https://schema.org/BlogPosting
  */
-export function generateBlogPostingSchema(
-  options: BlogPostingOptions,
-): SchemaOrgThing {
+export function generateBlogPostingSchema(options: BlogPostingOptions): SchemaOrgThing {
   const { post, site, imageUrl, dateModified } = options;
   const postUrl = `${site.baseUrl}${post.url}`;
 
@@ -272,9 +267,7 @@ export function generateWebSiteSchema(options: WebSiteOptions): SchemaOrgThing {
  *
  * @see https://schema.org/BreadcrumbList
  */
-export function generateBreadcrumbListSchema(
-  options: BreadcrumbListOptions,
-): SchemaOrgThing {
+export function generateBreadcrumbListSchema(options: BreadcrumbListOptions): SchemaOrgThing {
   const { site, post, items } = options;
 
   const breadcrumbs: SchemaOrgThing = {
@@ -337,9 +330,7 @@ export function generateBreadcrumbListSchema(
  *
  * @see https://schema.org/CollectionPage
  */
-export function generateCollectionPageSchema(
-  options: CollectionPageOptions,
-): SchemaOrgThing {
+export function generateCollectionPageSchema(options: CollectionPageOptions): SchemaOrgThing {
   const { title, description, url, posts, site } = options;
 
   return {
@@ -405,14 +396,11 @@ export function schemasToHtml(schemas: SchemaOrgThing[]): string {
  * );
  * // Returns: 'https://example.com/img/photo.jpg'
  */
-export function extractFirstImageUrl(
-  html: string,
-  baseUrl: string,
-): string | undefined {
+export function extractFirstImageUrl(html: string, baseUrl: string): string | undefined {
   // Simple regex to find first img tag's src attribute
   const imgMatch = html.match(/<img[^>]+src=["']([^"']+)["']/i);
 
-  if (!imgMatch || !imgMatch[1]) {
+  if (!imgMatch?.[1]) {
     return undefined;
   }
 
@@ -447,9 +435,7 @@ export function extractFirstImageUrl(
  * });
  * // Returns: [BlogPosting, BreadcrumbList]
  */
-export function generatePostPageSchemas(
-  options: BlogPostingOptions,
-): SchemaOrgThing[] {
+export function generatePostPageSchemas(options: BlogPostingOptions): SchemaOrgThing[] {
   const schemas: SchemaOrgThing[] = [];
 
   // Add BlogPosting schema
@@ -481,9 +467,7 @@ export function generatePostPageSchemas(
  * });
  * // Returns: [WebSite, Organization]
  */
-export function generateHomePageSchemas(
-  options: WebSiteOptions,
-): SchemaOrgThing[] {
+export function generateHomePageSchemas(options: WebSiteOptions): SchemaOrgThing[] {
   const schemas: SchemaOrgThing[] = [];
 
   // Add WebSite schema

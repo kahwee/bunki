@@ -1,12 +1,12 @@
-import { expect, test, describe } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import {
+  ALERT_ICONS,
+  EXTERNAL_LINK_REGEX,
+  IMAGE_PATH_REGEX,
   RELATIVE_LINK_REGEX,
   SAME_DIR_LINK_REGEX,
-  IMAGE_PATH_REGEX,
-  YOUTUBE_EMBED_REGEX,
-  EXTERNAL_LINK_REGEX,
   SCHEMA_ORG_PLACE_TYPES,
-  ALERT_ICONS,
+  YOUTUBE_EMBED_REGEX,
 } from "../../../src/utils/markdown/constants";
 
 describe("Markdown Constants", () => {
@@ -42,8 +42,8 @@ describe("Markdown Constants", () => {
     test("should extract year and slug correctly", () => {
       const match = "../2025/my-awesome-post.md".match(RELATIVE_LINK_REGEX);
       expect(match).not.toBeNull();
-      expect(match![2]).toBe("2025"); // year
-      expect(match![3]).toBe("my-awesome-post"); // slug
+      expect(match?.[2]).toBe("2025"); // year
+      expect(match?.[3]).toBe("my-awesome-post"); // slug
     });
   });
 
@@ -79,12 +79,12 @@ describe("Markdown Constants", () => {
     test("should extract slug and optional anchor correctly", () => {
       const match = "./singapore-night-one.md".match(SAME_DIR_LINK_REGEX);
       expect(match).not.toBeNull();
-      expect(match![1]).toBe("singapore-night-one"); // slug
+      expect(match?.[1]).toBe("singapore-night-one"); // slug
 
       const matchWithAnchor = "./my-post.md#section".match(SAME_DIR_LINK_REGEX);
       expect(matchWithAnchor).not.toBeNull();
-      expect(matchWithAnchor![1]).toBe("my-post"); // slug
-      expect(matchWithAnchor![2]).toBe("#section"); // anchor
+      expect(matchWithAnchor?.[1]).toBe("my-post"); // slug
+      expect(matchWithAnchor?.[2]).toBe("#section"); // anchor
     });
   });
 
@@ -106,9 +106,9 @@ describe("Markdown Constants", () => {
       const match = path.match(IMAGE_PATH_REGEX);
 
       expect(match).not.toBeNull();
-      expect(match![1]).toBe("2025"); // year
-      expect(match![2]).toBe("my-post"); // slug
-      expect(match![3]).toBe("image.jpg"); // filename
+      expect(match?.[1]).toBe("2025"); // year
+      expect(match?.[2]).toBe("my-post"); // slug
+      expect(match?.[3]).toBe("image.jpg"); // filename
     });
 
     test("should not match invalid paths", () => {
@@ -126,13 +126,12 @@ describe("Markdown Constants", () => {
 
   describe("YOUTUBE_EMBED_REGEX", () => {
     test("should match youtube.com URLs", () => {
-      const html =
-        '<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Video</a>';
+      const html = '<a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Video</a>';
       const match = html.match(YOUTUBE_EMBED_REGEX);
 
       expect(match).not.toBeNull();
-      expect(match![0]).toInclude("youtube.com/watch");
-      expect(match![0]).toInclude("dQw4w9WgXcQ");
+      expect(match?.[0]).toInclude("youtube.com/watch");
+      expect(match?.[0]).toInclude("dQw4w9WgXcQ");
     });
 
     test("should match youtu.be URLs", () => {
@@ -150,8 +149,8 @@ describe("Markdown Constants", () => {
       const match = html.match(EXTERNAL_LINK_REGEX);
 
       expect(match).not.toBeNull();
-      expect(match![0]).toInclude('href="https://');
-      expect(match![0]).toInclude("example.com/page");
+      expect(match?.[0]).toInclude('href="https://');
+      expect(match?.[0]).toInclude("example.com/page");
     });
 
     test("should match protocol-relative URLs", () => {
@@ -159,7 +158,7 @@ describe("Markdown Constants", () => {
       const match = html.match(EXTERNAL_LINK_REGEX);
 
       expect(match).not.toBeNull();
-      expect(match![0]).toInclude('href="//');
+      expect(match?.[0]).toInclude('href="//');
     });
   });
 
@@ -169,14 +168,7 @@ describe("Markdown Constants", () => {
     });
 
     test("should contain common place types", () => {
-      const commonTypes = [
-        "Restaurant",
-        "Hotel",
-        "Museum",
-        "Park",
-        "Beach",
-        "Cafe",
-      ];
+      const commonTypes = ["Restaurant", "Hotel", "Museum", "Park", "Beach", "Cafe"];
 
       commonTypes.forEach((type) => {
         expect(SCHEMA_ORG_PLACE_TYPES.has(type)).toBe(true);

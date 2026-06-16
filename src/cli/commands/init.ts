@@ -1,5 +1,5 @@
-import { Command } from "commander";
-import path from "path";
+import path from "node:path";
+import type { Command } from "commander";
 import { createDefaultConfig } from "../../config";
 import { ensureDir } from "../../utils/file-utils";
 
@@ -30,9 +30,7 @@ export async function handleInitCommand(
     const configCreated = await deps.createDefaultConfig(configPath);
 
     if (!configCreated) {
-      deps.logger.log(
-        "\nSkipped initialization because the config file already exists",
-      );
+      deps.logger.log("\nSkipped initialization because the config file already exists");
       return;
     }
 
@@ -83,7 +81,7 @@ export function registerInitCommand(
 
 function getDefaultTemplates(): Record<string, string> {
   return {
-    "base.njk": String.raw`<!DOCTYPE html>
+    "base.njk": `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -136,7 +134,7 @@ function getDefaultTemplates(): Record<string, string> {
   </footer>
 </body>
 </html>`,
-    "index.njk": String.raw`{% extends "base.njk" %}
+    "index.njk": `{% extends "base.njk" %}
 
 {% block canonical %}{{ site.baseUrl }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
 {% block og_url %}{{ site.baseUrl }}/{% if pagination.currentPage > 1 %}page/{{ pagination.currentPage }}/{% endif %}{% endblock %}
@@ -180,7 +178,7 @@ function getDefaultTemplates(): Record<string, string> {
     <p>No posts yet.</p>
   {% endif %}
 {% endblock %}`,
-    "post.njk": String.raw`{% extends "base.njk" %}
+    "post.njk": `{% extends "base.njk" %}
 
 {% from "og-image.njk" import og_image, twitter_image %}
 {% from "json-ld.njk" import blog_posting_schema %}
@@ -244,7 +242,7 @@ function getDefaultTemplates(): Record<string, string> {
     </footer>
   </article>
 {% endblock %}`,
-    "tag.njk": String.raw`{% extends "base.njk" %}
+    "tag.njk": `{% extends "base.njk" %}
 
 {% block title %}{{ tag.name }} | {{ site.title }}{% endblock %}
 {% block description %}Posts tagged with {{ tag.name }} on {{ site.title }}{% endblock %}
@@ -294,7 +292,7 @@ function getDefaultTemplates(): Record<string, string> {
     <p>No posts with this tag yet.</p>
   {% endif %}
 {% endblock %}`,
-    "tags.njk": String.raw`{% extends "base.njk" %}
+    "tags.njk": `{% extends "base.njk" %}
 
 {% block title %}Tags | {{ site.title }}{% endblock %}
 {% block description %}Browse all tags on {{ site.title }}{% endblock %}
@@ -327,7 +325,7 @@ function getDefaultTemplates(): Record<string, string> {
     <p>No tags yet.</p>
   {% endif %}
 {% endblock %}`,
-    "archive.njk": String.raw`{% extends "base.njk" %}
+    "archive.njk": `{% extends "base.njk" %}
 
 {% block title %}Archive {{ year }} | {{ site.title }}{% endblock %}
 {% block description %}Posts from {{ year }} on {{ site.title }}{% endblock %}
@@ -384,7 +382,7 @@ function getDefaultTemplates(): Record<string, string> {
 }
 
 function getDefaultCss(): string {
-  return String.raw`/* Reset & base styles */
+  return `/* Reset & base styles */
   * {
     margin: 0;
     padding: 0;

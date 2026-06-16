@@ -1,7 +1,7 @@
-import path from "path";
-import { Post, CDNConfig } from "./types";
+import path from "node:path";
+import type { CDNConfig, Post } from "./types";
 import { findFilesByPattern, getBaseFilename } from "./utils/file-utils";
-import { parseMarkdownFile, type ParseError } from "./utils/markdown-utils";
+import { type ParseError, parseMarkdownFile } from "./utils/markdown-utils";
 
 function logErrorGroup(
   label: string,
@@ -49,7 +49,7 @@ function detectFileConflicts(files: string[]): ParseError[] {
     if (!slugMap.has(key)) {
       slugMap.set(key, []);
     }
-    slugMap.get(key)!.push(filePath);
+    slugMap.get(key)?.push(filePath);
   }
 
   // Find year/slug combinations with multiple files
@@ -115,15 +115,11 @@ export async function parseMarkdownDirectory(
       console.error("");
 
       if (strictMode) {
-        throw new Error(
-          `File conflicts detected. Fix conflicts before building.`,
-        );
+        throw new Error(`File conflicts detected. Fix conflicts before building.`);
       }
     }
 
-    const resultsPromises = markdownFiles.map((filePath) =>
-      parseMarkdownFile(filePath, cdnConfig),
-    );
+    const resultsPromises = markdownFiles.map((filePath) => parseMarkdownFile(filePath, cdnConfig));
     const results = await Promise.all(resultsPromises);
 
     // Separate successful posts from errors
@@ -144,15 +140,10 @@ export async function parseMarkdownDirectory(
 
       // Group errors by type for better readability
       const yamlErrors = errors.filter((e) => e.type === "yaml");
-      const missingFieldErrors = errors.filter(
-        (e) => e.type === "missing_field",
-      );
+      const missingFieldErrors = errors.filter((e) => e.type === "missing_field");
       const validationErrors = errors.filter((e) => e.type === "validation");
       const otherErrors = errors.filter(
-        (e) =>
-          e.type !== "yaml" &&
-          e.type !== "missing_field" &&
-          e.type !== "validation",
+        (e) => e.type !== "yaml" && e.type !== "missing_field" && e.type !== "validation",
       );
 
       logErrorGroup("YAML Parsing Errors", yamlErrors, {
@@ -180,12 +171,8 @@ export async function parseMarkdownDirectory(
         limit: 3,
       });
 
-      console.error(
-        `📝 Tip: Fix YAML errors by quoting titles/descriptions with colons`,
-      );
-      console.error(
-        `   Example: title: "My Post: A Guide"  (quotes required for colons)\n`,
-      );
+      console.error(`📝 Tip: Fix YAML errors by quoting titles/descriptions with colons`);
+      console.error(`   Example: title: "My Post: A Guide"  (quotes required for colons)\n`);
 
       // Always fail on validation errors (business location format)
       if (validationErrors.length > 0) {

@@ -1,17 +1,17 @@
-import { describe, test, expect } from "bun:test";
-import {
-  generateBlogPostingSchema,
-  generateWebSiteSchema,
-  generateBreadcrumbListSchema,
-  generatePersonSchema,
-  generateOrganizationSchema,
-  generatePostPageSchemas,
-  generateHomePageSchemas,
-  toScriptTag,
-  schemasToHtml,
-  extractFirstImageUrl,
-} from "../../src/utils/json-ld.js";
+import { describe, expect, test } from "bun:test";
 import type { Post, SiteConfig } from "../../src/types.js";
+import {
+  extractFirstImageUrl,
+  generateBlogPostingSchema,
+  generateBreadcrumbListSchema,
+  generateHomePageSchemas,
+  generateOrganizationSchema,
+  generatePersonSchema,
+  generatePostPageSchemas,
+  generateWebSiteSchema,
+  schemasToHtml,
+  toScriptTag,
+} from "../../src/utils/json-ld.js";
 
 describe("JSON-LD Utilities", () => {
   // Test fixtures
@@ -71,9 +71,7 @@ describe("JSON-LD Utilities", () => {
       expect(schema["@type"]).toBe("Organization");
       expect(schema.name).toBe("My Awesome Blog");
       expect(schema.url).toBe("https://example.com/");
-      expect(schema.description).toBe(
-        "A blog about web development and technology",
-      );
+      expect(schema.description).toBe("A blog about web development and technology");
     });
 
     test("should generate Organization schema without description if not provided", () => {
@@ -101,9 +99,7 @@ describe("JSON-LD Utilities", () => {
       expect(schema.description).toBe(
         "Learn how to get started with Bun, the fast JavaScript runtime.",
       );
-      expect(schema.url).toBe(
-        "https://example.com/2025/getting-started-with-bun/",
-      );
+      expect(schema.url).toBe("https://example.com/2025/getting-started-with-bun/");
       expect(schema.mainEntityOfPage).toEqual({
         "@type": "WebPage",
         "@id": "https://example.com/2025/getting-started-with-bun/",
@@ -236,9 +232,7 @@ describe("JSON-LD Utilities", () => {
       expect(schema["@type"]).toBe("WebSite");
       expect(schema.name).toBe("My Awesome Blog");
       expect(schema.url).toBe("https://example.com/");
-      expect(schema.description).toBe(
-        "A blog about web development and technology",
-      );
+      expect(schema.description).toBe("A blog about web development and technology");
     });
 
     test("should include search action", () => {
@@ -381,8 +375,7 @@ describe("JSON-LD Utilities", () => {
     });
 
     test("should extract first image when multiple images exist", () => {
-      const html =
-        '<img src="/first.jpg"><img src="/second.jpg"><img src="/third.jpg">';
+      const html = '<img src="/first.jpg"><img src="/second.jpg"><img src="/third.jpg">';
       const imageUrl = extractFirstImageUrl(html, "https://example.com");
 
       expect(imageUrl).toBe("https://example.com/first.jpg");

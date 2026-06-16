@@ -1,6 +1,6 @@
+import path from "node:path";
 import { S3Client } from "bun";
-import path from "path";
-import { ImageUploader, S3Config, SiteConfig, Uploader } from "../types";
+import type { ImageUploader, S3Config, SiteConfig, Uploader } from "../types";
 
 /**
  * Bun-native S3 uploader implementation
@@ -20,7 +20,7 @@ export class S3Uploader implements Uploader, ImageUploader {
         file: () => ({
           write: async () => Promise.resolve(),
         }),
-      } as any as S3Client;
+      } as unknown as S3Client;
     } else {
       // Create a new S3Client with the provided configuration
       this.client = new S3Client({
@@ -73,9 +73,7 @@ export class S3Uploader implements Uploader, ImageUploader {
   private getPublicUrl(s3Path: string): string {
     const bucketName = this.s3Config.bucket;
     const customDomain =
-      process.env[
-        `S3_CUSTOM_DOMAIN_${bucketName.replace(/-/g, "_").toUpperCase()}`
-      ];
+      process.env[`S3_CUSTOM_DOMAIN_${bucketName.replace(/-/g, "_").toUpperCase()}`];
 
     if (customDomain) {
       // Use the custom domain for this specific bucket
@@ -103,7 +101,7 @@ export class S3Uploader implements Uploader, ImageUploader {
     concurrency: number,
   ): Promise<T[]> {
     const results: T[] = [];
-    const executing: Promise<any>[] = [];
+    const executing: Promise<unknown>[] = [];
 
     for (const task of tasks) {
       const promise = task()
@@ -113,7 +111,7 @@ export class S3Uploader implements Uploader, ImageUploader {
           const index = executing.indexOf(promise);
           if (index > -1) executing.splice(index, 1);
         })
-        .catch((error) => {
+        .catch((_error) => {
           // Still remove from executing on error
           const index = executing.indexOf(promise);
           if (index > -1) executing.splice(index, 1);
@@ -136,9 +134,7 @@ export class S3Uploader implements Uploader, ImageUploader {
     keyTransform?: (relativePath: string) => string,
     maxYear?: number,
   ): Promise<Record<string, string>> {
-    console.log(
-      `[S3] Uploading all images from ${imagesDir} to bucket ${this.s3Config.bucket}...`,
-    );
+    console.log(`[S3] Uploading all images from ${imagesDir} to bucket ${this.s3Config.bucket}...`);
 
     if (minYear && maxYear) {
       console.log(`[S3] Filtering images from year ${minYear} to ${maxYear}`);
@@ -218,9 +214,7 @@ export class S3Uploader implements Uploader, ImageUploader {
           uploadedCount++;
 
           if (uploadedCount % 10 === 0) {
-            console.log(
-              `[S3] Progress: ${uploadedCount}/${imageFiles.length} images uploaded`,
-            );
+            console.log(`[S3] Progress: ${uploadedCount}/${imageFiles.length} images uploaded`);
           }
 
           return { success: true, file: s3Key };

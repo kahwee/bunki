@@ -1,11 +1,9 @@
 #!/usr/bin/env bun
 
-import { join } from "path";
+import { join } from "node:path";
 
 // Configuration
 const FIXTURES_DIR = join(process.cwd(), "fixtures");
-const OUTPUT_DIR = join(FIXTURES_DIR, "dist");
-
 /**
  * Run a command and return its output
  * @param {string} cmd Command to run
@@ -44,7 +42,7 @@ async function runFixtureTests() {
     // Step 1: Generate the site
     console.log("\n📝 Generating site from fixtures...");
     const generateStart = performance.now();
-    const generateOutput = await runCommand("bunki", ["generate"]);
+    const _generateOutput = await runCommand("bunki", ["generate"]);
     const generateTime = performance.now() - generateStart;
 
     console.log(`✅ Site generation completed in ${generateTime.toFixed(2)}ms`);
@@ -52,14 +50,7 @@ async function runFixtureTests() {
     // Step 2: Verify output files exist
     console.log("\n🔍 Verifying generated files...");
     const verifyStart = performance.now();
-    const verifyOutput = await runCommand("find", [
-      "dist",
-      "-type",
-      "f",
-      "|",
-      "wc",
-      "-l",
-    ]);
+    const verifyOutput = await runCommand("find", ["dist", "-type", "f", "|", "wc", "-l"]);
     const fileCount = parseInt(verifyOutput.trim(), 10);
     const verifyTime = performance.now() - verifyStart;
 

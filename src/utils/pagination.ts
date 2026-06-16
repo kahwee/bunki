@@ -51,11 +51,7 @@ export function createPagination(
  * @param pageSize - Number of items per page
  * @returns Slice of items for the requested page
  */
-export function getPaginatedItems<T>(
-  items: T[],
-  page: number,
-  pageSize: number,
-): T[] {
+export function getPaginatedItems<T>(items: T[], page: number, pageSize: number): T[] {
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   return items.slice(startIndex, endIndex);

@@ -1,4 +1,4 @@
-import { Command } from "commander";
+import type { Command } from "commander";
 import { uploadImages } from "../../utils/image-uploader";
 
 interface ImagesPushDeps {

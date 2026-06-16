@@ -1,9 +1,9 @@
-import { expect, test, describe, beforeAll, afterAll } from "bun:test";
-import { SiteGenerator } from "../src/site-generator";
-import { loadConfig } from "../src/config";
-import path from "path";
-import { ensureDir } from "../src/utils/file-utils";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import path from "node:path";
 import { Glob } from "bun";
+import { loadConfig } from "../src/config";
+import { SiteGenerator } from "../src/site-generator";
+import { ensureDir } from "../src/utils/file-utils";
 
 const FIXTURES_DIR = path.join(import.meta.dir, "../fixtures");
 // Use a temporary directory within test/ to ensure it's ignored by git
@@ -13,7 +13,7 @@ const TEMPLATES_DIR = path.join(FIXTURES_DIR, "templates");
 const CONFIG_PATH = path.join(FIXTURES_DIR, "bunki.config.json");
 
 // Helper to check if a file exists
-async function fileExists(filePath: string): Promise<boolean> {
+async function _fileExists(filePath: string): Promise<boolean> {
   try {
     // For directories, we need a different approach since Bun.file().exists()
     // doesn't work reliably for directories
@@ -39,7 +39,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 }
 
 // Helper to count files in a directory recursively
-async function countFiles(dir: string): Promise<number> {
+async function _countFiles(dir: string): Promise<number> {
   let count = 0;
 
   async function traverse(currentDir: string) {
@@ -91,17 +91,17 @@ describe("SiteGenerator", () => {
 
   test("should initialize successfully", () => {
     expect(generator).toBeDefined();
-    expect(generator["site"]).toBeDefined();
-    expect(generator["site"].posts).toBeArray();
-    expect(generator["site"].tags).toBeObject();
+    expect(generator.site).toBeDefined();
+    expect(generator.site.posts).toBeArray();
+    expect(generator.site.tags).toBeObject();
   });
 
   test("should have parsed markdown files correctly", () => {
     // We should have the correct number of posts
-    expect(generator["site"].posts.length).toBeGreaterThan(0);
+    expect(generator.site.posts.length).toBeGreaterThan(0);
 
     // Check post structure
-    const firstPost = generator["site"].posts[0];
+    const firstPost = generator.site.posts[0];
     expect(firstPost).toHaveProperty("title");
     expect(firstPost).toHaveProperty("date");
     expect(firstPost).toHaveProperty("content");
@@ -113,7 +113,7 @@ describe("SiteGenerator", () => {
 
   test("should have parsed tags correctly", () => {
     // We should have tags
-    const tags = generator["site"].tags;
+    const tags = generator.site.tags;
     expect(Object.keys(tags).length).toBeGreaterThan(0);
 
     // Check tag structure
@@ -144,9 +144,7 @@ describe("SiteGenerator", () => {
     expect(await sitemapFile.exists()).toBeTrue();
 
     // Instead of checking directories, check that expected index.html files exist in those dirs
-    const twentyFiveIndex = Bun.file(
-      path.join(OUTPUT_DIR, "2025", "index.html"),
-    );
+    const twentyFiveIndex = Bun.file(path.join(OUTPUT_DIR, "2025", "index.html"));
     expect(await twentyFiveIndex.exists()).toBeTrue();
 
     const tagsIndex = Bun.file(path.join(OUTPUT_DIR, "tags", "index.html"));
@@ -166,8 +164,7 @@ describe("SiteGenerator", () => {
       "robots.txt": "User-agent: *\nAllow: /",
       "humans.txt": "We are people.",
       ".well-known/security.txt": "Contact: mailto:security@example.com",
-      "images/logo.svg":
-        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>',
+      "images/logo.svg": '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>',
       CNAME: "example.com",
     };
 
@@ -188,7 +185,7 @@ describe("SiteGenerator", () => {
   });
 
   test("tags can be sorted by count", () => {
-    const tags = generator["site"].tags;
+    const tags = generator.site.tags;
     const tagArray = Object.values(tags);
 
     // Sort tags by count descending
@@ -196,17 +193,13 @@ describe("SiteGenerator", () => {
 
     // Verify tags are properly sorted (descending order)
     for (let i = 0; i < sortedTags.length - 1; i++) {
-      expect(sortedTags[i].count).toBeGreaterThanOrEqual(
-        sortedTags[i + 1].count,
-      );
+      expect(sortedTags[i].count).toBeGreaterThanOrEqual(sortedTags[i + 1].count);
     }
   });
 
   test("tags can be limited to maxTagsOnHomepage", () => {
     // Get all tags sorted by count
-    const allTags = Object.values(generator["site"].tags).sort(
-      (a, b) => b.count - a.count,
-    );
+    const allTags = Object.values(generator.site.tags).sort((a, b) => b.count - a.count);
 
     const maxTags = 20;
     const limited = allTags.slice(0, maxTags);
@@ -231,13 +224,9 @@ describe("SiteGenerator", () => {
     // Verify Atom namespace for self-discovery links
     expect(feedContent).toContain('xmlns:atom="http://www.w3.org/2005/Atom"');
     // Verify Content module namespace for full-text RSS
-    expect(feedContent).toContain(
-      'xmlns:content="http://purl.org/rss/1.0/modules/content/"',
-    );
+    expect(feedContent).toContain('xmlns:content="http://purl.org/rss/1.0/modules/content/"');
     // Verify Media RSS module namespace for image/thumbnail support
-    expect(feedContent).toContain(
-      'xmlns:media="http://search.yahoo.com/mrss/"',
-    );
+    expect(feedContent).toContain('xmlns:media="http://search.yahoo.com/mrss/"');
   });
 
   // ============================================
@@ -258,9 +247,7 @@ describe("SiteGenerator", () => {
     expect(feedContent).toContain(
       "<managingEditor>author@example.com (Test Author)</managingEditor>",
     );
-    expect(feedContent).toContain(
-      "<webMaster>webmaster@example.com</webMaster>",
-    );
+    expect(feedContent).toContain("<webMaster>webmaster@example.com</webMaster>");
   });
 
   test("RSS feed should include copyright information", async () => {
@@ -294,7 +281,7 @@ describe("SiteGenerator", () => {
     // Should have multiple guid entries (one per item)
     const guidMatches = feedContent.match(/<guid isPermaLink="true">/g);
     expect(guidMatches).toBeDefined();
-    expect(guidMatches!.length).toBeGreaterThan(0);
+    expect(guidMatches?.length).toBeGreaterThan(0);
   });
 
   test("RSS feed items should include author information", async () => {
@@ -317,7 +304,7 @@ describe("SiteGenerator", () => {
     // Should have multiple categories from different posts
     const categoryMatches = feedContent.match(/<category>/g);
     expect(categoryMatches).toBeDefined();
-    expect(categoryMatches!.length).toBeGreaterThan(0);
+    expect(categoryMatches?.length).toBeGreaterThan(0);
   });
 
   // ============================================
@@ -335,7 +322,7 @@ describe("SiteGenerator", () => {
     // Should have one content:encoded entry per item
     const contentMatches = feedContent.match(/<content:encoded>/g);
     expect(contentMatches).toBeDefined();
-    expect(contentMatches!.length).toBeGreaterThan(0);
+    expect(contentMatches?.length).toBeGreaterThan(0);
 
     // Verify it contains actual HTML content (not just empty tags)
     expect(feedContent).toContain("<h1>");

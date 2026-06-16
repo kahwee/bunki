@@ -1,19 +1,14 @@
-import { describe, test, expect, afterAll } from "bun:test";
-import path from "path";
+import { afterAll, describe, expect, test } from "bun:test";
 import { mkdir, rm } from "node:fs/promises";
+import path from "node:path";
+import { createEmptyCache, updateCacheEntry } from "../../src/utils/build-cache";
+import type { ChangeSet, Post } from "../../src/utils/change-detector";
 import {
   detectChanges,
+  estimateTimeSaved,
   getAffectedTags,
   needsIndexRegeneration,
-  estimateTimeSaved,
 } from "../../src/utils/change-detector";
-import {
-  createEmptyCache,
-  updateCacheEntry,
-  getFileMtime,
-  hashFile,
-} from "../../src/utils/build-cache";
-import type { Post, ChangeSet } from "../../src/utils/change-detector";
 
 // Re-export ChangeSet since it's declared in change-detector
 export type { ChangeSet };
@@ -181,10 +176,7 @@ describe("getAffectedTags", () => {
   }
 
   test("returns all tags from changed posts", () => {
-    const changed = [
-      makePost(["javascript", "typescript"]),
-      makePost(["react", "javascript"]),
-    ];
+    const changed = [makePost(["javascript", "typescript"]), makePost(["react", "javascript"])];
     const tags = getAffectedTags(changed, []);
     expect(tags.has("javascript")).toBe(true);
     expect(tags.has("typescript")).toBe(true);

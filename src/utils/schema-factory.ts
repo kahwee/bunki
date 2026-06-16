@@ -3,12 +3,12 @@
  * Simplifies creation of JSON-LD structured data for common page types
  */
 
+import type { Post, SiteConfig } from "../types";
 import {
-  generateCollectionPageSchema,
   generateBreadcrumbListSchema,
+  generateCollectionPageSchema,
   schemasToHtml,
 } from "./json-ld";
-import type { SiteConfig, Post } from "../types";
 
 /**
  * Options for generating collection page schemas (tag pages, year archives, etc.)

@@ -1215,7 +1215,7 @@ bun run build              # Build distribution
 bun test                   # Run test suite
 bun test:coverage          # Test coverage report
 bun run typecheck          # TypeScript validation
-bun run format             # Prettier formatting
+bun run format             # Biome formatting
 ```
 
 ## Project Structure

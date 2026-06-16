@@ -1,9 +1,6 @@
-import { describe, test, expect } from "bun:test";
-import {
-  generateCollectionSchemas,
-  generateHomeBreadcrumbs,
-} from "../../src/utils/schema-factory";
-import type { SiteConfig, Post } from "../../src/types";
+import { describe, expect, test } from "bun:test";
+import type { Post, SiteConfig } from "../../src/types";
+import { generateCollectionSchemas, generateHomeBreadcrumbs } from "../../src/utils/schema-factory";
 
 const config: SiteConfig = {
   title: "Test Blog",

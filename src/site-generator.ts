@@ -3,51 +3,43 @@
  * Coordinates all generation tasks using modular generators
  */
 
-import path from "path";
+import path from "node:path";
 import slugify from "slugify";
-import { parseMarkdownDirectory, parseMarkdownFiles } from "./parser";
-import type { GeneratorOptions, Post, Site, TagData } from "./types";
-import { getPacificYear } from "./utils/date-utils";
-import { ensureDir, findFilesByPattern } from "./utils/file-utils";
-import { setNoFollowExceptions } from "./utils/markdown/parser";
+import { FILES, PAGINATION } from "./constants";
+import { copyStaticAssets, generateStylesheet } from "./generators/assets";
 import {
-  extractFirstImageUrl,
-  generatePostPageSchemas,
-  schemasToHtml,
-} from "./utils/json-ld";
-import {
-  loadCache,
-  saveCache,
-  updateCacheEntry,
-  hasConfigChanged,
-  loadCachedPosts,
-  hasFileChanged,
-  type BuildCache,
-} from "./utils/build-cache";
-import { detectChanges, estimateTimeSaved } from "./utils/change-detector";
-import {
+  generateRobotsTxt,
   generateRSSFeed,
   generateSitemap,
   generateSitemapIndex,
-  generateRobotsTxt,
 } from "./generators/feeds";
 import {
+  generate404Page,
   generateIndexPages,
+  generateMapPage,
   generatePostPages,
+  generatePrivacyPage,
   generateTagPages,
   generateYearArchives,
-  generate404Page,
-  generateMapPage,
-  generatePrivacyPage,
 } from "./generators/pages";
-import { generateStylesheet, copyStaticAssets } from "./generators/assets";
+import { parseMarkdownDirectory, parseMarkdownFiles } from "./parser";
+import type { GeneratorOptions, Post, Site, TagData } from "./types";
 import {
-  MetricsCollector,
-  displayMetrics,
-  type BuildMetrics,
-} from "./utils/build-metrics";
+  type BuildCache,
+  hasConfigChanged,
+  hasFileChanged,
+  loadCache,
+  loadCachedPosts,
+  saveCache,
+  updateCacheEntry,
+} from "./utils/build-cache";
+import { displayMetrics, MetricsCollector } from "./utils/build-metrics";
+import { detectChanges, estimateTimeSaved } from "./utils/change-detector";
+import { getPacificYear } from "./utils/date-utils";
+import { ensureDir, findFilesByPattern } from "./utils/file-utils";
+import { extractFirstImageUrl, generatePostPageSchemas, schemasToHtml } from "./utils/json-ld";
+import { setNoFollowExceptions } from "./utils/markdown/parser";
 import { createTemplateEngine } from "./utils/template-engine";
-import { PAGINATION, FILES } from "./constants";
 
 export class SiteGenerator {
   private options: GeneratorOptions;
@@ -88,16 +80,17 @@ export class SiteGenerator {
     // Images must live in content/{year}/_assets/ — never at the content root.
     const flatAssetsDir = path.join(process.cwd(), "content", "_assets");
     try {
-      const stat = await import("fs/promises").then((m) => m.stat(flatAssetsDir));
+      const stat = await import("node:fs/promises").then((m) => m.stat(flatAssetsDir));
       if (stat.isDirectory()) {
         throw new Error(
           `Build error: content/_assets/ must not exist.\n` +
-          `Images must be placed in content/{year}/_assets/ (e.g. content/2025/_assets/).\n` +
-          `Move any files from content/_assets/ into the correct year folder and retry.`
+            `Images must be placed in content/{year}/_assets/ (e.g. content/2025/_assets/).\n` +
+            `Move any files from content/_assets/ into the correct year folder and retry.`,
         );
       }
-    } catch (err: any) {
-      if (err.code !== "ENOENT") throw err;
+    } catch (err: unknown) {
+      const code = err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined;
+      if (code !== "ENOENT") throw err;
       // ENOENT = directory doesn't exist, which is correct — continue
     }
 
@@ -117,11 +110,7 @@ export class SiteGenerator {
       try {
         const raw = require(tagsTomlPath);
         // Support both flat { tag: "desc" } and nested { tags: { tag: "desc" } } structures
-        if (
-          raw.tags &&
-          typeof raw.tags === "object" &&
-          Object.keys(raw).length === 1
-        ) {
+        if (raw.tags && typeof raw.tags === "object" && Object.keys(raw).length === 1) {
           console.warn(
             "tags.toml uses a [tags] section header — descriptions loaded, but consider removing the [tags] header for cleaner structure.",
           );
@@ -154,10 +143,7 @@ export class SiteGenerator {
       post.tagSlugs = {};
 
       // Extract first image URL from post content for thumbnail/social sharing
-      const imageUrl = extractFirstImageUrl(
-        post.html,
-        this.options.config.baseUrl,
-      );
+      const imageUrl = extractFirstImageUrl(post.html, this.options.config.baseUrl);
       if (imageUrl) {
         post.image = imageUrl;
       }
@@ -221,14 +207,8 @@ export class SiteGenerator {
     // Check if CSS needs rebuilding
     let cssChanged = true;
     if (this.cache && this.incrementalMode && this.options.config.css) {
-      const cssInputPath = path.resolve(
-        process.cwd(),
-        this.options.config.css.input,
-      );
-      const cssOutputPath = path.join(
-        this.options.outputDir,
-        this.options.config.css.output,
-      );
+      const cssInputPath = path.resolve(process.cwd(), this.options.config.css.input);
+      const cssOutputPath = path.join(this.options.outputDir, this.options.config.css.output);
 
       const cssOutputExists = await Bun.file(cssOutputPath).exists();
       cssChanged = await hasFileChanged(cssInputPath, this.cache);
@@ -246,18 +226,10 @@ export class SiteGenerator {
     // Parallelize independent page generation tasks for better performance
     this.metrics.startStage("pageGeneration");
     await Promise.all([
-      generateIndexPages(
-        this.site,
-        this.options.config,
-        this.options.outputDir,
-      ),
+      generateIndexPages(this.site, this.options.config, this.options.outputDir),
       generatePostPages(this.site, this.options.config, this.options.outputDir),
       generateTagPages(this.site, this.options.config, this.options.outputDir),
-      generateYearArchives(
-        this.site,
-        this.options.config,
-        this.options.outputDir,
-      ),
+      generateYearArchives(this.site, this.options.config, this.options.outputDir),
       generateMapPage(this.site, this.options.config, this.options.outputDir),
       generate404Page(this.options.config, this.options.outputDir),
       generatePrivacyPage(this.options.config, this.options.outputDir),
@@ -296,35 +268,22 @@ export class SiteGenerator {
       this.options.config,
       PAGINATION.DEFAULT_PAGE_SIZE,
     );
-    await Bun.write(
-      path.join(this.options.outputDir, "sitemap.xml"),
-      sitemapContent,
-    );
+    await Bun.write(path.join(this.options.outputDir, "sitemap.xml"), sitemapContent);
     console.log("Generated sitemap.xml");
 
     // Generate sitemap index if content is large
-    const urlCount =
-      this.site.posts.length + Object.keys(this.site.tags).length + 10; // rough estimate
+    const urlCount = this.site.posts.length + Object.keys(this.site.tags).length + 10; // rough estimate
     const sitemapSize = sitemapContent.length;
 
-    if (
-      urlCount > FILES.MAX_SITEMAP_URLS ||
-      sitemapSize > FILES.MAX_SITEMAP_SIZE
-    ) {
+    if (urlCount > FILES.MAX_SITEMAP_URLS || sitemapSize > FILES.MAX_SITEMAP_SIZE) {
       const sitemapIndexContent = generateSitemapIndex(this.options.config);
-      await Bun.write(
-        path.join(this.options.outputDir, "sitemap_index.xml"),
-        sitemapIndexContent,
-      );
+      await Bun.write(path.join(this.options.outputDir, "sitemap_index.xml"), sitemapIndexContent);
       console.log("Generated sitemap_index.xml");
     }
 
     // Generate robots.txt
     const robotsTxtContent = generateRobotsTxt(this.options.config);
-    await Bun.write(
-      path.join(this.options.outputDir, "robots.txt"),
-      robotsTxtContent,
-    );
+    await Bun.write(path.join(this.options.outputDir, "robots.txt"), robotsTxtContent);
     console.log("Generated robots.txt");
   }
 
@@ -344,18 +303,11 @@ export class SiteGenerator {
 
       // Update cache for all files with post data
       if (this.cache) {
-        const allFiles = await findFilesByPattern(
-          "**/*.md",
-          this.options.contentDir,
-          true,
-        );
+        const allFiles = await findFilesByPattern("**/*.md", this.options.contentDir, true);
         // Use parseMarkdownFiles to get correct filePath→post pairs.
         // posts[] is date-sorted; allFiles[] is alphabetical — index pairing
         // would map the wrong post to each file.
-        const postsWithPaths = await parseMarkdownFiles(
-          allFiles,
-          this.options.config.cdn,
-        );
+        const postsWithPaths = await parseMarkdownFiles(allFiles, this.options.config.cdn);
         for (const { post, filePath } of postsWithPaths) {
           await updateCacheEntry(filePath, this.cache, { post });
         }
@@ -365,11 +317,7 @@ export class SiteGenerator {
     }
 
     // Incremental build - detect changes
-    const allFiles = await findFilesByPattern(
-      "**/*.md",
-      this.options.contentDir,
-      true,
-    );
+    const allFiles = await findFilesByPattern("**/*.md", this.options.contentDir, true);
 
     const configPath = path.join(process.cwd(), "bunki.config.ts");
     const configChanged = await hasConfigChanged(configPath, this.cache);
@@ -393,17 +341,12 @@ export class SiteGenerator {
       console.log("No content changes detected, using cached posts");
       // Load all posts from cache
       const cachedPosts = loadCachedPosts(this.cache, allFiles);
-      console.log(
-        `✨ Loaded ${cachedPosts.length} posts from cache (0ms parsing)`,
-      );
+      console.log(`✨ Loaded ${cachedPosts.length} posts from cache (0ms parsing)`);
       return cachedPosts;
     }
 
     // Incremental build - parse only changed files
-    const timeSaved = estimateTimeSaved(
-      allFiles.length,
-      changes.changedPosts.length,
-    );
+    const timeSaved = estimateTimeSaved(allFiles.length, changes.changedPosts.length);
     console.log(
       `📦 Incremental build: ${changes.changedPosts.length}/${allFiles.length} files changed (~${timeSaved}ms saved)`,
     );
@@ -415,9 +358,7 @@ export class SiteGenerator {
     );
 
     // Load cached posts for unchanged files
-    const unchangedFiles = allFiles.filter(
-      (f) => !changes.changedPosts.includes(f),
-    );
+    const unchangedFiles = allFiles.filter((f) => !changes.changedPosts.includes(f));
     const cachedPosts = loadCachedPosts(this.cache, unchangedFiles);
 
     console.log(

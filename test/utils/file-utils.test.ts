@@ -1,26 +1,26 @@
-import { describe, test, expect, beforeEach, afterEach } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { writeFile as fsWriteFile, mkdir, rm } from "node:fs/promises";
+import path from "node:path";
 import {
-  findFilesByPattern,
+  copyFile,
+  createDir,
+  createFileWriter,
+  deleteFile,
+  ensureDir,
   fileExists,
-  readFileAsText,
+  findFilesByPattern,
+  getBaseFilename,
+  getFileMtime,
+  getFileSize,
+  isDirectory,
+  isFile,
+  listDir,
   readFileAsBuffer,
+  readFileAsText,
   writeFile,
   writeFileBuffer,
-  getBaseFilename,
-  ensureDir,
-  createDir,
-  copyFile,
-  deleteFile,
-  getFileSize,
-  getFileMtime,
-  listDir,
-  isFile,
-  isDirectory,
-  createFileWriter,
   writeToStdout,
 } from "../../src/utils/file-utils";
-import path from "path";
-import { mkdir, writeFile as fsWriteFile, rm } from "node:fs/promises";
 
 const testDir = path.join(import.meta.dir, "file-utils-test");
 
@@ -30,10 +30,7 @@ describe("File Utils - Basic Operations", () => {
     await fsWriteFile(path.join(testDir, "test.txt"), "Hello, world!");
     await fsWriteFile(path.join(testDir, "test.md"), "# Markdown");
     await mkdir(path.join(testDir, "subdir"), { recursive: true });
-    await fsWriteFile(
-      path.join(testDir, "subdir", "nested.txt"),
-      "Nested content",
-    );
+    await fsWriteFile(path.join(testDir, "subdir", "nested.txt"), "Nested content");
   });
 
   afterEach(async () => {
@@ -82,10 +79,7 @@ describe("File Utils - Reading Files", () => {
   beforeEach(async () => {
     await mkdir(testDir, { recursive: true });
     await fsWriteFile(path.join(testDir, "test.txt"), "Hello!");
-    await fsWriteFile(
-      path.join(testDir, "binary.bin"),
-      Buffer.from([0xff, 0xfe, 0xfd]),
-    );
+    await fsWriteFile(path.join(testDir, "binary.bin"), Buffer.from([0xff, 0xfe, 0xfd]));
   });
 
   afterEach(async () => {
@@ -243,7 +237,10 @@ describe("File Utils - File Information", () => {
     const mtime = await getFileMtime(testFile);
     expect(mtime).not.toBeNull();
     expect(typeof mtime).toBe("number");
-    expect(mtime! > 0).toBe(true);
+    if (mtime === null) {
+      throw new Error("Expected file modification time");
+    }
+    expect(mtime > 0).toBe(true);
   });
 
   test("should return null for non-existent file mtime", async () => {

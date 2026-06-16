@@ -23,8 +23,9 @@ bun run dev               # Development mode with watch
 bun test                  # Run test suite
 bun test:coverage         # Coverage report
 bun run typecheck         # TypeScript validation
-bun run format            # Prettier formatting
+bun run format            # Biome formatting
 bun run format:check      # Check formatting without changes
+bun run lint              # Biome lint and format checks
 bun run clean             # Remove build artifacts
 ```
 

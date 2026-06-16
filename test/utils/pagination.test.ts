@@ -1,9 +1,5 @@
-import { expect, test, describe } from "bun:test";
-import {
-  createPagination,
-  getPaginatedItems,
-  getTotalPages,
-} from "../../src/utils/pagination";
+import { describe, expect, test } from "bun:test";
+import { createPagination, getPaginatedItems, getTotalPages } from "../../src/utils/pagination";
 
 describe("Pagination Utilities", () => {
   describe("createPagination", () => {

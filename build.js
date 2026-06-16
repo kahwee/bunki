@@ -1,30 +1,16 @@
 #!/usr/bin/env bun
 
-import { join } from "path";
+import { join } from "node:path";
 
 async function buildProject() {
   console.log("Building bunki...");
 
   try {
     // Build the library
-    await runCommand("bun", [
-      "build",
-      "./src/index.ts",
-      "--outdir",
-      "./dist",
-      "--target",
-      "bun",
-    ]);
+    await runCommand("bun", ["build", "./src/index.ts", "--outdir", "./dist", "--target", "bun"]);
 
     // Build the CLI with shebang
-    await runCommand("bun", [
-      "build",
-      "./src/cli.ts",
-      "--outdir",
-      "./dist",
-      "--target",
-      "bun",
-    ]);
+    await runCommand("bun", ["build", "./src/cli.ts", "--outdir", "./dist", "--target", "bun"]);
 
     // Add shebang to CLI file
     const cliPath = join(process.cwd(), "dist", "cli.js");
@@ -60,7 +46,7 @@ async function runCommand(command, args) {
     stdout: "inherit",
     stderr: "inherit",
     stdin: "inherit",
-    onExit(proc, exitCode, signalCode, error) {
+    onExit(_proc, exitCode, _signalCode, _error) {
       if (exitCode !== 0) {
         throw new Error(`Command failed with exit code ${exitCode}`);
       }
