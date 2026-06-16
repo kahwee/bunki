@@ -1,6 +1,11 @@
 import path from "node:path";
 import type { SiteConfig } from "./types";
 
+type ConfigLike = Partial<SiteConfig> & {
+  [key: string]: unknown;
+  default?: unknown;
+};
+
 const PROJECT_ROOT = process.cwd();
 const ALLOWED_CONFIG_EXTS = [".ts", ".js", ".mjs", ".cjs", ".json"]; // keep tight
 
@@ -42,7 +47,7 @@ export async function loadConfig(configPath: string = DEFAULT_CONFIG_FILE): Prom
 
   try {
     const imported = await import(resolved);
-    let cfg: SiteConfig | (() => SiteConfig | Promise<SiteConfig>) | undefined = imported.default;
+    let cfg: ConfigLike | (() => ConfigLike | Promise<ConfigLike>) | undefined = imported.default;
     if (typeof cfg === "function") {
       cfg = await cfg();
     }
@@ -55,7 +60,7 @@ export async function loadConfig(configPath: string = DEFAULT_CONFIG_FILE): Prom
         title: cfg.title ?? "My Blog",
         description: cfg.description ?? "A blog built with Bunki",
         url: cfg.baseUrl ?? "https://example.com",
-        author: cfg.author ?? "",
+        author: typeof cfg.author === "string" ? cfg.author : "",
       };
     }
     return cfg as SiteConfig;

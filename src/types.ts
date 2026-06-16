@@ -116,6 +116,12 @@ export interface SiteConfig {
   baseUrl: string;
   /** Site identifier (used for metadata) */
   domain: string;
+  /** Optional author name used by config templates and feeds */
+  author?: string;
+  /** Optional content directory override */
+  contentDir?: string;
+  /** Optional templates directory override */
+  templatesDir?: string;
   /** Optional public URL for the bucket */
   publicUrl?: string;
   /** Optional S3 client configuration (accessKeyId, secretAccessKey, bucket, etc.) */
@@ -154,8 +160,6 @@ export interface SiteConfig {
     url: string;
     author: string;
   };
-  /** Additional custom configuration options */
-  [key: string]: unknown;
 }
 
 /**

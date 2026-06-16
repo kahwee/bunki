@@ -27,6 +27,18 @@ interface SchemaOrgThing {
   [key: string]: unknown;
 }
 
+interface ListItemThing {
+  "@type": "ListItem";
+  position: number;
+  name: string;
+  item: string;
+}
+
+interface BreadcrumbListThing extends SchemaOrgThing {
+  "@type": "BreadcrumbList";
+  itemListElement: ListItemThing[];
+}
+
 /**
  * Options for generating BlogPosting JSON-LD
  */
@@ -270,7 +282,7 @@ export function generateWebSiteSchema(options: WebSiteOptions): SchemaOrgThing {
 export function generateBreadcrumbListSchema(options: BreadcrumbListOptions): SchemaOrgThing {
   const { site, post, items } = options;
 
-  const breadcrumbs: SchemaOrgThing = {
+  const breadcrumbs: BreadcrumbListThing = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [],
@@ -283,12 +295,12 @@ export function generateBreadcrumbListSchema(options: BreadcrumbListOptions): Sc
       position: index + 1,
       name: item.name,
       item: item.url,
-    }));
+    })) as ListItemThing[];
     return breadcrumbs;
   }
 
   // Generate breadcrumbs for homepage
-  const homeItem = {
+  const homeItem: ListItemThing = {
     "@type": "ListItem",
     position: 1,
     name: "Home",
