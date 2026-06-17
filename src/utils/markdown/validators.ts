@@ -2,18 +2,8 @@
  * Frontmatter and business location validators
  */
 
-import type { JsonValue } from "../../types";
+import type { Frontmatter, FrontmatterBusinessInput } from "../../types";
 import { SCHEMA_ORG_PLACE_TYPES } from "./constants";
-
-interface BusinessLocationEntry {
-  type?: JsonValue;
-  name?: JsonValue;
-  address?: JsonValue;
-  latitude?: JsonValue;
-  longitude?: JsonValue;
-  lat?: JsonValue;
-  lng?: JsonValue;
-}
 
 export interface ValidationError {
   file: string;
@@ -30,7 +20,7 @@ export interface ValidationError {
  * @returns ValidationError if invalid, null if valid
  */
 export function validateBusinessLocation(
-  business: BusinessLocationEntry | BusinessLocationEntry[] | null | undefined,
+  business: FrontmatterBusinessInput | null | undefined,
   filePath: string,
 ): ValidationError | null {
   if (!business) return null;
@@ -109,7 +99,7 @@ export function validateBusinessLocation(
  * @returns ValidationError if invalid, null if valid
  */
 export function validateTags(
-  tags: string[] | readonly string[] | null | undefined,
+  tags: Frontmatter["tags"] | null | undefined,
   filePath: string,
 ): ValidationError | null {
   if (!tags || !Array.isArray(tags)) return null;
@@ -134,7 +124,7 @@ export function validateTags(
  * @returns ValidationError if found, null otherwise
  */
 export function checkDeprecatedLocationField(
-  data: { location?: JsonValue | undefined } | null | undefined,
+  data: Frontmatter | null | undefined,
   filePath: string,
 ): ValidationError | null {
   if (data?.location) {

@@ -4,7 +4,13 @@
  */
 
 import matter from "gray-matter";
-import type { CDNConfig, Post } from "../types";
+import type {
+  CDNConfig,
+  Frontmatter,
+  FrontmatterBusiness,
+  FrontmatterBusinessInput,
+  Post,
+} from "../types";
 import { getPacificYear, toPacificTime } from "./date-utils";
 import { getBaseFilename, readFileAsText } from "./file-utils";
 import { convertMarkdownToHtml, extractExcerpt, setNoFollowExceptions } from "./markdown/parser";
@@ -22,6 +28,13 @@ export { convertMarkdownToHtml, extractExcerpt, setNoFollowExceptions };
 export interface ParseMarkdownResult {
   post: Post | null;
   error: ValidationError | null;
+}
+
+function normalizeFrontmatterBusiness(
+  business: FrontmatterBusinessInput,
+): FrontmatterBusiness | null {
+  const normalized = Array.isArray(business) ? business[0] : business;
+  return normalized ?? null;
 }
 
 /**
@@ -48,11 +61,11 @@ export async function parseMarkdownFile(
       };
     }
 
-    const { data, content } = matter(fileContent);
+    const { data, content } = matter(fileContent) as { data: Frontmatter; content: string };
 
     // Validate required fields
     if (!data.title || !data.date) {
-      const missingFields = [];
+      const missingFields: string[] = [];
       if (!data.title) missingFields.push("title");
       if (!data.date) missingFields.push("date");
 
@@ -88,12 +101,14 @@ export async function parseMarkdownFile(
     }
 
     // Validate tags - must not contain spaces
-    const tagsError = validateTags(data.tags, filePath);
-    if (tagsError) {
-      return {
-        post: null,
-        error: tagsError,
-      };
+    if (data.tags) {
+      const tagsError = validateTags(data.tags, filePath);
+      if (tagsError) {
+        return {
+          post: null,
+          error: tagsError,
+        };
+      }
     }
 
     const slug = getBaseFilename(filePath);
@@ -122,30 +137,32 @@ export async function parseMarkdownFile(
       html: sanitizedHtml,
       ...(data.seoTitle && { seoTitle: data.seoTitle }),
       ...(data.category && { category: data.category }),
-      ...(data.business && {
-        business: (() => {
-          // Handle array format - use first element
-          const biz = Array.isArray(data.business) ? data.business[0] : data.business;
+      ...(data.business &&
+        (() => {
+          const biz = normalizeFrontmatterBusiness(data.business);
+          if (!biz) return {};
+
           return {
-            type: biz.type,
-            name: biz.name,
-            address: biz.address,
-            lat: biz.lat,
-            lng: biz.lng,
-            ...(biz.cuisine && { cuisine: biz.cuisine }),
-            ...(biz.priceRange && {
-              priceRange: biz.priceRange,
-            }),
-            ...(biz.telephone && {
-              telephone: biz.telephone,
-            }),
-            ...(biz.url && { url: biz.url }),
-            ...(biz.openingHours && {
-              openingHours: biz.openingHours,
-            }),
+            business: {
+              type: biz.type,
+              name: biz.name,
+              address: biz.address,
+              lat: biz.lat,
+              lng: biz.lng,
+              ...(biz.cuisine && { cuisine: biz.cuisine }),
+              ...(biz.priceRange && {
+                priceRange: biz.priceRange,
+              }),
+              ...(biz.telephone && {
+                telephone: biz.telephone,
+              }),
+              ...(biz.url && { url: biz.url }),
+              ...(biz.openingHours && {
+                openingHours: biz.openingHours,
+              }),
+            },
           };
-        })(),
-      }),
+        })()),
     };
 
     return { post, error: null };

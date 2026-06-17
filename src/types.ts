@@ -15,6 +15,43 @@ export interface TemplateObject {
   [key: string]: TemplateValue;
 }
 
+export interface FrontmatterLocation {
+  name?: string;
+  address?: string;
+  latitude?: number;
+  longitude?: number;
+  lat?: number;
+  lng?: number;
+}
+
+export interface FrontmatterBusiness {
+  type: string;
+  name: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+  lat: number;
+  lng: number;
+  cuisine?: string;
+  priceRange?: string;
+  telephone?: string;
+  url?: string;
+  openingHours?: string;
+}
+
+export type FrontmatterBusinessInput = FrontmatterBusiness | FrontmatterBusiness[];
+
+export interface Frontmatter {
+  title?: string;
+  date?: string;
+  excerpt?: string;
+  tags?: string[];
+  seoTitle?: string;
+  category?: string;
+  location?: FrontmatterLocation;
+  business?: FrontmatterBusinessInput;
+}
+
 export interface Location {
   /** Name of the location */
   name: string;
