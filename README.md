@@ -8,17 +8,14 @@ Fast static site generator for blogs and documentation built with Bun. Supports 
 
 ## Install
 
-Requires **Bun v1.3.0+** (recommended) or Node.js v18+
+Requires **Bun v1.3.14+**
 
 ```bash
-# Install globally with Bun
-bun install -g bunki
-
-# Or with npm
-npm install -g bunki
-
-# Or in your project
+# Install in your project
 bun install bunki
+
+# Or install the CLI globally with Bun
+bun install -g bunki
 ```
 
 ## Quick Start
