@@ -5,6 +5,7 @@
 
 import matter from "gray-matter";
 import type {
+  Business,
   CDNConfig,
   Frontmatter,
   FrontmatterBusiness,
@@ -30,11 +31,131 @@ export interface ParseMarkdownResult {
   error: ValidationError | null;
 }
 
+interface ParsedMarkdownContent {
+  data: Frontmatter;
+  content: string;
+}
+
+function createParseError(
+  filePath: string,
+  type: ValidationError["type"],
+  message: string,
+  suggestion?: string,
+): ParseMarkdownResult {
+  return {
+    post: null,
+    error: {
+      file: filePath,
+      type,
+      message,
+      ...(suggestion && { suggestion }),
+    },
+  };
+}
+
+function parseFrontmatter(fileContent: string): ParsedMarkdownContent {
+  return matter(fileContent) as ParsedMarkdownContent;
+}
+
+function getMissingFrontmatterFields(data: Frontmatter): string[] {
+  const missingFields: string[] = [];
+  if (!data.title) missingFields.push("title");
+  if (!data.date) missingFields.push("date");
+  return missingFields;
+}
+
 function normalizeFrontmatterBusiness(
   business: FrontmatterBusinessInput,
 ): FrontmatterBusiness | null {
   const normalized = Array.isArray(business) ? business[0] : business;
   return normalized ?? null;
+}
+
+function buildBusinessSchema(business: FrontmatterBusinessInput | undefined): Business | null {
+  if (!business) {
+    return null;
+  }
+
+  const normalized = normalizeFrontmatterBusiness(business);
+  if (!normalized) {
+    return null;
+  }
+
+  return {
+    type: normalized.type,
+    name: normalized.name,
+    address: normalized.address,
+    lat: normalized.lat,
+    lng: normalized.lng,
+    ...(normalized.cuisine && { cuisine: normalized.cuisine }),
+    ...(normalized.priceRange && { priceRange: normalized.priceRange }),
+    ...(normalized.telephone && { telephone: normalized.telephone }),
+    ...(normalized.url && { url: normalized.url }),
+    ...(normalized.openingHours && { openingHours: normalized.openingHours }),
+  };
+}
+
+function resolveCdnConfigWithYear(
+  cdnConfig: CDNConfig | undefined,
+  filePath: string,
+  postYear: number,
+): CDNConfig | undefined {
+  const yearFromPath = filePath.match(/\/(\d{4})\//)?.[1];
+  const resolvedYear = String(postYear) !== "NaN" ? String(postYear) : yearFromPath;
+
+  return cdnConfig && resolvedYear ? { ...cdnConfig, postYear: resolvedYear } : undefined;
+}
+
+function buildPost(
+  filePath: string,
+  content: string,
+  data: Frontmatter,
+  cdnConfig?: CDNConfig,
+): Post {
+  const slug = getBaseFilename(filePath);
+  const pacificDate = toPacificTime(data.date as string);
+  const postYear = getPacificYear(data.date as string);
+  const cdnConfigWithYear = resolveCdnConfigWithYear(cdnConfig, filePath, postYear);
+  const sanitizedHtml = convertMarkdownToHtml(content, cdnConfigWithYear);
+  const business = buildBusinessSchema(data.business);
+
+  return {
+    title: data.title as string,
+    date: pacificDate.toISOString(),
+    tags: data.tags || [],
+    tagSlugs: {},
+    content,
+    slug,
+    url: `/${postYear}/${slug}/`,
+    excerpt: data.excerpt || extractExcerpt(content),
+    html: sanitizedHtml,
+    ...(data.seoTitle && { seoTitle: data.seoTitle }),
+    ...(data.category && { category: data.category }),
+    ...(business && { business }),
+  };
+}
+
+function isYamlParsingError(error: unknown): { message: string; suggestion?: string } | null {
+  if (!(error instanceof Error)) {
+    return null;
+  }
+
+  const { message } = error;
+  const isYamlError =
+    error.name === "YAMLException" || message.includes("YAML") || message.includes("mapping pair");
+
+  if (!isYamlError) {
+    return null;
+  }
+
+  let suggestion: string | undefined;
+  if (message.includes("mapping pair") || message.includes("colon")) {
+    suggestion = 'Quote titles/descriptions containing colons (e.g., title: "My Post: A Guide")';
+  } else if (message.includes("multiline key")) {
+    suggestion = "Remove nested quotes or use single quotes inside double quotes";
+  }
+
+  return { message, suggestion };
 }
 
 /**
@@ -51,33 +172,20 @@ export async function parseMarkdownFile(
     const fileContent = await readFileAsText(filePath);
 
     if (fileContent === null) {
-      return {
-        post: null,
-        error: {
-          file: filePath,
-          type: "file_not_found",
-          message: "File not found or couldn't be read",
-        },
-      };
+      return createParseError(filePath, "file_not_found", "File not found or couldn't be read");
     }
 
-    const { data, content } = matter(fileContent) as { data: Frontmatter; content: string };
+    const { data, content } = parseFrontmatter(fileContent);
 
     // Validate required fields
-    if (!data.title || !data.date) {
-      const missingFields: string[] = [];
-      if (!data.title) missingFields.push("title");
-      if (!data.date) missingFields.push("date");
-
-      return {
-        post: null,
-        error: {
-          file: filePath,
-          type: "missing_field",
-          message: `Missing required fields: ${missingFields.join(", ")}`,
-          suggestion: "Add required frontmatter fields (title and date)",
-        },
-      };
+    const missingFields = getMissingFrontmatterFields(data);
+    if (missingFields.length > 0) {
+      return createParseError(
+        filePath,
+        "missing_field",
+        `Missing required fields: ${missingFields.join(", ")}`,
+        "Add required frontmatter fields (title and date)",
+      );
     }
 
     // Check for deprecated 'location:' field
@@ -93,10 +201,7 @@ export async function parseMarkdownFile(
     if (data.business) {
       const validationError = validateBusinessLocation(data.business, filePath);
       if (validationError) {
-        return {
-          post: null,
-          error: validationError,
-        };
+        return { post: null, error: validationError };
       }
     }
 
@@ -104,92 +209,31 @@ export async function parseMarkdownFile(
     if (data.tags) {
       const tagsError = validateTags(data.tags, filePath);
       if (tagsError) {
-        return {
-          post: null,
-          error: tagsError,
-        };
+        return { post: null, error: tagsError };
       }
     }
 
-    const slug = getBaseFilename(filePath);
-    const pacificDate = toPacificTime(data.date);
-    const postYear = getPacificYear(data.date);
-
-    // Fall back to year extracted from file path (e.g. content/2025/post.md → 2025)
-    const yearFromPath = filePath.match(/\/(\d{4})\//)?.[1];
-    const resolvedYear = String(postYear) !== "NaN" ? String(postYear) : yearFromPath;
-
-    // Add postYear to CDN config for year-based asset paths
-    const cdnConfigWithYear =
-      cdnConfig && resolvedYear ? { ...cdnConfig, postYear: resolvedYear } : undefined;
-
-    const sanitizedHtml = convertMarkdownToHtml(content, cdnConfigWithYear);
-
-    const post: Post = {
-      title: data.title,
-      date: pacificDate.toISOString(),
-      tags: data.tags || [],
-      tagSlugs: {},
-      content,
-      slug,
-      url: `/${postYear}/${slug}/`,
-      excerpt: data.excerpt || extractExcerpt(content),
-      html: sanitizedHtml,
-      ...(data.seoTitle && { seoTitle: data.seoTitle }),
-      ...(data.category && { category: data.category }),
-      ...(data.business &&
-        (() => {
-          const biz = normalizeFrontmatterBusiness(data.business);
-          if (!biz) return {};
-
-          return {
-            business: {
-              type: biz.type,
-              name: biz.name,
-              address: biz.address,
-              lat: biz.lat,
-              lng: biz.lng,
-              ...(biz.cuisine && { cuisine: biz.cuisine }),
-              ...(biz.priceRange && {
-                priceRange: biz.priceRange,
-              }),
-              ...(biz.telephone && {
-                telephone: biz.telephone,
-              }),
-              ...(biz.url && { url: biz.url }),
-              ...(biz.openingHours && {
-                openingHours: biz.openingHours,
-              }),
-            },
-          };
-        })()),
-    };
-
-    return { post, error: null };
+    return { post: buildPost(filePath, content, data, cdnConfig), error: null };
   } catch (error: unknown) {
-    // Check if it's a YAML parsing error
-    const msg = error instanceof Error ? error.message : String(error);
-    const name = error instanceof Error ? error.name : "";
-    const isYamlError =
-      name === "YAMLException" || msg.includes("YAML") || msg.includes("mapping pair");
-
-    let suggestion: string | undefined;
-    if (isYamlError) {
-      if (msg.includes("mapping pair") || msg.includes("colon")) {
-        suggestion =
-          'Quote titles/descriptions containing colons (e.g., title: "My Post: A Guide")';
-      } else if (msg.includes("multiline key")) {
-        suggestion = "Remove nested quotes or use single quotes inside double quotes";
-      }
+    const yamlParsingError = isYamlParsingError(error);
+    if (yamlParsingError) {
+      return {
+        post: null,
+        error: {
+          file: filePath,
+          type: "yaml",
+          message: yamlParsingError.message,
+          suggestion: yamlParsingError.suggestion,
+        },
+      };
     }
 
     return {
       post: null,
       error: {
         file: filePath,
-        type: isYamlError ? "yaml" : "unknown",
-        message: msg,
-        suggestion,
+        type: "unknown",
+        message: error instanceof Error ? error.message : String(error),
       },
     };
   }
