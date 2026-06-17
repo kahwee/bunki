@@ -1,18 +1,7 @@
 /**
  * Pagination utilities
  */
-
-export interface PaginationData {
-  currentPage: number;
-  totalPages: number;
-  hasNextPage: boolean;
-  hasPrevPage: boolean;
-  nextPage: number | null;
-  prevPage: number | null;
-  pageSize: number;
-  totalItems: number;
-  pagePath: string;
-}
+import type { PaginationData } from "../types";
 
 /**
  * Create pagination data for a list of items
@@ -22,8 +11,8 @@ export interface PaginationData {
  * @param pagePath - Base path for pagination (e.g., "/", "/tags/tech/")
  * @returns Pagination data object
  */
-export function createPagination(
-  items: readonly unknown[],
+export function createPagination<T>(
+  items: readonly T[],
   currentPage: number,
   pageSize: number,
   pagePath: string,
@@ -51,7 +40,7 @@ export function createPagination(
  * @param pageSize - Number of items per page
  * @returns Slice of items for the requested page
  */
-export function getPaginatedItems<T>(items: T[], page: number, pageSize: number): T[] {
+export function getPaginatedItems<T>(items: readonly T[], page: number, pageSize: number): T[] {
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   return items.slice(startIndex, endIndex);

@@ -3,6 +3,21 @@ import type { CDNConfig, Post } from "./types";
 import { findFilesByPattern, getBaseFilename } from "./utils/file-utils";
 import { type ParseError, parseMarkdownFile } from "./utils/markdown-utils";
 
+interface ParsedMarkdownFile {
+  post: Post;
+  filePath: string;
+}
+
+interface MarkdownParseAttempt {
+  filePath: string;
+  result: Awaited<ReturnType<typeof parseMarkdownFile>>;
+}
+
+interface MarkdownParseBatch {
+  posts: Post[];
+  errors: ParseError[];
+}
+
 function logErrorGroup(
   label: string,
   errors: ParseError[],
@@ -67,6 +82,24 @@ function detectFileConflicts(files: string[]): ParseError[] {
   return errors;
 }
 
+function buildParseBatch(
+  attempts: MarkdownParseAttempt[],
+  conflictErrors: ParseError[] = [],
+): MarkdownParseBatch {
+  const posts: Post[] = [];
+  const errors: ParseError[] = [...conflictErrors];
+
+  for (const { result } of attempts) {
+    if (result.post) {
+      posts.push(result.post);
+    } else if (result.error) {
+      errors.push(result.error);
+    }
+  }
+
+  return { posts, errors };
+}
+
 /**
  * Parse specific markdown files (for incremental builds)
  * Returns both posts and their file paths for cache updates
@@ -74,23 +107,37 @@ function detectFileConflicts(files: string[]): ParseError[] {
 export async function parseMarkdownFiles(
   filePaths: string[],
   cdnConfig?: CDNConfig,
-): Promise<Array<{ post: Post; filePath: string }>> {
-  const resultsPromises = filePaths.map((filePath) =>
-    parseMarkdownFile(filePath, cdnConfig).then((result) => ({
-      result,
+): Promise<ParsedMarkdownFile[]> {
+  const attempts = await Promise.all(
+    filePaths.map(async (filePath) => ({
       filePath,
+      result: await parseMarkdownFile(filePath, cdnConfig),
     })),
   );
-  const results = await Promise.all(resultsPromises);
 
-  const postsWithPaths: Array<{ post: Post; filePath: string }> = [];
-  for (const { result, filePath } of results) {
+  const postsWithPaths: ParsedMarkdownFile[] = [];
+  for (const { result, filePath } of attempts) {
     if (result.post) {
       postsWithPaths.push({ post: result.post, filePath });
     }
   }
 
   return postsWithPaths;
+}
+
+async function parseMarkdownBatch(
+  filePaths: string[],
+  cdnConfig?: CDNConfig,
+  conflictErrors: ParseError[] = [],
+): Promise<MarkdownParseBatch> {
+  const attempts = await Promise.all(
+    filePaths.map(async (filePath) => ({
+      filePath,
+      result: await parseMarkdownFile(filePath, cdnConfig),
+    })),
+  );
+
+  return buildParseBatch(attempts, conflictErrors);
 }
 
 export async function parseMarkdownDirectory(
@@ -119,20 +166,7 @@ export async function parseMarkdownDirectory(
       }
     }
 
-    const resultsPromises = markdownFiles.map((filePath) => parseMarkdownFile(filePath, cdnConfig));
-    const results = await Promise.all(resultsPromises);
-
-    // Separate successful posts from errors
-    const posts: Post[] = [];
-    const errors: ParseError[] = [...conflictErrors];
-
-    for (const result of results) {
-      if (result.post) {
-        posts.push(result.post);
-      } else if (result.error) {
-        errors.push(result.error);
-      }
-    }
+    const { posts, errors } = await parseMarkdownBatch(markdownFiles, cdnConfig, conflictErrors);
 
     // Display error summary if there are errors
     if (errors.length > 0) {
