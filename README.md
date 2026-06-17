@@ -8,7 +8,7 @@ Fast static site generator for blogs and documentation built with Bun. Supports 
 
 ## Install
 
-Requires **Bun v1.3.14+**
+Requires **Bun v1.3.14+**. Bun is the supported runtime for installing, building, testing, and running Bunki.
 
 ```bash
 # Install in your project
@@ -17,6 +17,8 @@ bun install bunki
 # Or install the CLI globally with Bun
 bun install -g bunki
 ```
+
+Do not use `npm`, `yarn`, or `pnpm` for Bunki workflows. The CLI, scripts, and test suite are designed for Bun.
 
 ## Quick Start
 
