@@ -109,9 +109,9 @@ function runPostCSS(
   verbose: boolean,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const args = ["postcss", inputPath, "-o", outputPath, "--config", configPath];
+    const args = ["x", "postcss", inputPath, "-o", outputPath, "--config", configPath];
 
-    const postcss = spawn("bunx", args, {
+    const postcss = spawn("bun", args, {
       stdio: verbose ? "inherit" : ["ignore", "pipe", "pipe"],
       cwd: projectRoot,
     });

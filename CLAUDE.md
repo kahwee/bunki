@@ -2,505 +2,245 @@
 
 ## Environment Setup
 
-Requires **Bun v1.3.14+**. Bun is the supported runtime for this repository.
+Bunki requires **Bun v1.3.14+**. Bun is the supported runtime for installing, building, testing, and running this repo.
 
 ```bash
 # Install Bun
 curl -fsSL https://bun.sh/install | bash
 bun upgrade --version 1.3.14
 
-# Clone and setup
-git clone git@github.com:kahwee/bunki.git
+# Clone and set up
 cd bunki
 bun install
 ```
 
 ## Development Commands
 
+Use the scripts defined in `package.json`:
+
 ```bash
-bun run build             # Build distribution
-bun run dev               # Development mode with watch
-bun test                  # Run test suite
-bun test:coverage         # Coverage report
-bun run typecheck         # TypeScript validation
-bun run format            # Biome formatting
-bun run format:check      # Check formatting without changes
-bun run lint              # Biome lint and format checks
-bun run clean             # Remove build artifacts
+bun run build          # Build distribution
+bun run dev            # Development mode with watch
+bun test               # Run test suite
+bun test:coverage      # Coverage report
+bun test:watch         # Watch mode for tests
+bun run typecheck      # TypeScript validation
+bun run format         # Biome formatting
+bun run format:check   # Check formatting without changes
+bun run lint           # Biome lint and format checks
+bun run lint:fix       # Write Biome fixes
+bun run clean          # Remove build artifacts
 ```
+
+CLI commands currently registered by `src/cli.ts`:
+
+- `bunki init`
+- `bunki new <title> --tags a,b`
+- `bunki generate`
+- `bunki serve`
+- `bunki css`
+- `bunki images-push`
+- `bunki validate`
+- `bunki validate-media`
 
 ## Code Style
 
-**TypeScript:**
+**TypeScript**
 
 - Strict mode enabled
-- Explicit type annotations
+- Explicit type annotations where helpful
 - Interfaces over type aliases for object shapes
-- PascalCase for types/interfaces
-- camelCase for variables/functions
+- PascalCase for types and interfaces
+- camelCase for variables and functions
 
-**Files & Formatting:**
+**Files & Formatting**
 
-- kebab-case for filenames
+- kebab-case filenames
 - 2-space indentation
 - Semicolons required
-- ES modules with explicit named imports
+- ES modules with named imports
 
-**Templates & Styles:**
+**Templates & Content**
 
-- Nunjucks (.njk) for templates
-- CSS with variables in templates/styles/
+- Nunjucks (`.njk`) for templates
+- CSS lives in `templates/styles/`
 - HTML sanitization for all user content
+- ISO 8601 dates with timezone offsets, e.g. `2025-01-15T09:00:00-07:00`
 
-**Dates:**
+**Prefer Bun native APIs**
 
-- ISO 8601 format: `2025-01-15T09:00:00-07:00`
-- Include timezone offset for consistency
+Use Bun's built-ins first, and only fall back to Node.js APIs when Bun does not provide an equivalent.
 
-**Prefer Bun Native APIs:**
-
-Always use Bun's native implementations for best performance and consistency.
-
-File Operations:
-
-- `Bun.file(path)` - Create BunFile reference
-- `await file.exists()` - Check file existence (files only, not directories)
-- `await file.stat()` - Get file metadata (size, mtime, isFile(), isDirectory())
-- `await file.text()` - Read as text (zero-copy)
-- `await file.arrayBuffer()` - Read as binary (zero-copy)
-- `await file.unlink()` - Delete file
-- `file.writer()` - Create buffered writer for streaming
-- `Bun.write(target, data)` - Write files (zero-copy file-to-file)
-- `Bun.write(Bun.stdout, file)` - Stream to stdout (zero-copy, like `cat`)
-
-Path Operations:
-
-- `Glob` from "bun" - Native glob pattern matching with multiple modes:
-  - Recursive scanning: `for await (const file of glob.scan("."))`
-  - Pattern matching: `glob.match(filepath)` returns boolean
-  - Supports `**/*.ts`, `*.{ts,tsx}`, `???.ts` patterns
-  - Includes single char (`?`) and star (`*`) wildcards
-  - No external dependencies, built-in to Bun
-
-Servers & I/O:
-
-- `Bun.serve()` - HTTP server (use instead of express, fastify for Bun)
-- `fetch()` - Native fetch API (built-in, no library needed)
-- `Bun.stdin`, `Bun.stdout`, `Bun.stderr` - Standard streams
-
-Fall back to Node.js built-ins only when Bun doesn't provide an equivalent:
-
-- `mkdir()` from `node:fs/promises` - For recursive directory creation (Bun doesn't provide this)
-  - Use: `import { mkdir } from "node:fs/promises"`
-  - Call: `await mkdir("path", { recursive: true })` (like `mkdir -p`)
+- `Bun.file(path)` / `await file.text()` / `await file.arrayBuffer()` / `await file.stat()` / `await file.exists()`
+- `Bun.write(target, data)` for file output and zero-copy file-to-file copies
+- `Bun.stdout` / `Bun.stdin` / `Bun.stderr` for stream handling
+- `Glob` from `bun` for file scanning and pattern matching
+- `Bun.serve()` for HTTP servers
+- `mkdir()` from `node:fs/promises` only when recursive directory creation is needed
 
 ## Testing
 
-Tests use Bun's native test framework with Jest-compatible assertions.
+Bunki uses Bun's native test runner with Jest-compatible assertions.
 
-**Conventions:**
+**Conventions**
 
-- Location: `test/` directory mirroring `src/` structure
-- Naming: `.test.ts` suffix (e.g., `utils/markdown-utils.test.ts`)
-- Function: Use `test()` from `bun:test`, NOT `it()`
-- Pattern: "should..." with present tense
-- Organization: Group in `describe()` blocks
+- Tests live in `test/` and mirror `src/`
+- Use `.test.ts` suffix
+- Use `test()` from `bun:test`, not `it()`
+- Name tests with the pattern `should ...`
+- Group related cases in `describe()` blocks
 
-**Example:**
-
-```typescript
-import { describe, test, expect } from "bun:test";
-
-describe("Markdown Utils", () => {
-  test("should extract excerpt from content", () => {
-    const result = extractExcerpt("Hello world", 5);
-    expect(result).toBe("Hello...");
-  });
-
-  test("should sanitize HTML", () => {
-    const html = convertMarkdownToHtml('<img onerror="alert()">');
-    expect(html).not.toInclude("onerror");
-  });
-});
-```
-
-**Run Tests:**
+**Run tests**
 
 ```bash
-bun test                           # All tests
-bun test:coverage                  # With coverage
-bun test test/utils/parser.test.ts # Specific file
+bun test
+bun test:coverage
+bun test test/utils/parser.test.ts
 ```
 
 ## Project Structure
 
-```
+```text
 bunki/
 ├── src/
-│   ├── cli.ts                  # CLI entry point
-│   ├── config.ts               # Configuration loading
-│   ├── site-generator.ts       # Orchestrator (282 lines, was 957)
-│   ├── server.ts               # Development HTTP server
-│   ├── parser.ts               # Markdown + YAML parsing
-│   ├── types.ts                # TypeScript type definitions
-│   ├── generators/             # Modular generation
-│   │   ├── feeds.ts           # RSS, sitemap, robots.txt (285 lines)
-│   │   ├── pages.ts           # HTML generation with batching (357 lines)
-│   │   └── assets.ts          # CSS & static file copying (115 lines)
-│   └── utils/                  # Utility modules
-│       ├── markdown/          # Markdown processing
-│       │   ├── constants.ts   # Pre-compiled patterns (71 lines)
-│       │   ├── validators.ts  # Frontmatter validation (139 lines)
-│       │   └── parser.ts      # Markdown → HTML (308 lines)
-│       ├── pagination.ts      # Pagination utilities (67 lines)
-│       ├── xml-builder.ts     # XML/RSS builders (117 lines)
-│       ├── markdown-utils.ts  # Main export file (177 lines, was 576)
-│       ├── css-processor.ts   # PostCSS + Bun.hash()
-│       ├── file-utils.ts      # Bun native file ops
-│       ├── date-utils.ts      # Date/time utilities
-│       ├── json-ld.ts         # JSON-LD schema generation
-│       ├── image-uploader.ts  # Image upload logic
-│       └── s3-uploader.ts     # S3/R2 API client
-├── test/                       # Test suite (424 tests, mirrors src/)
-│   ├── utils/
-│   │   ├── markdown/          # Modular tests
-│   │   │   ├── constants.test.ts   (25 tests)
-│   │   │   ├── validators.test.ts  (21 tests)
-│   │   │   └── parser.test.ts      (17 tests)
-│   │   ├── pagination.test.ts      (15 tests)
-│   │   ├── xml-builder.test.ts     (13 tests)
-│   │   ├── css-processor.test.ts   (enhanced with hash tests)
-│   │   └── ...
+│   ├── cli.ts
+│   ├── config.ts
+│   ├── site-generator.ts
+│   ├── server.ts
+│   ├── parser.ts
+│   ├── types.ts
 │   ├── cli/commands/
-│   ├── security/
-│   └── ...
-├── templates/                  # Example templates
-├── fixtures/                   # Test fixtures
-└── dist/                       # Built output
+│   ├── generators/
+│   └── utils/
+├── test/
+├── templates/
+├── fixtures/
+├── content/
+└── public/
 ```
+
+## Source-of-truth notes
+
+Read the implementation before updating docs or behavior:
+
+- `src/cli.ts` owns command registration
+- `src/cli/commands/` holds command handlers
+- `src/config.ts` defines config defaults and loading
+- `src/parser.ts` and `src/utils/markdown/` define markdown/frontmatter behavior
+- `src/generators/` owns site output generation
+- `src/utils/image-uploader.ts` and `src/utils/s3-uploader.ts` own media upload behavior
 
 ## Bun Native APIs & Performance
 
-### Zero-Copy File Operations
-
-Bun's native file APIs use zero-copy at the kernel level for maximum performance:
-
-**File-to-File Copy (like `cat`):**
+### Zero-copy file operations
 
 ```typescript
-// ✅ Optimal: kernel-level zero-copy
 await Bun.write("./copy.bin", Bun.file("./source.bin"));
-
-// ❌ Avoid: loads entire file into memory
-const data = await Bun.file("./source.bin").arrayBuffer();
-await Bun.write("./copy.bin", data);
-```
-
-**Streaming to stdout:**
-
-```typescript
-// ✅ Optimal: zero-copy stream to stdout
 await Bun.write(Bun.stdout, Bun.file("./large-file.txt"));
-
-// ❌ Avoid: reads entire file into memory
-const content = await Bun.file("./large-file.txt").text();
-console.log(content);
 ```
 
-**Buffered Incremental Writes:**
+Avoid reading large files into memory unless you need the contents.
 
-```typescript
-// ✅ Optimal: buffered writing with 1MB watermark
-const writer = Bun.file("./output.txt").writer({ highWaterMark: 1024 * 1024 });
-writer.write("chunk 1\n");
-writer.write("chunk 2\n");
-await writer.flush();
-await writer.end();
-```
-
-### Pattern Matching with Glob
-
-Use Bun's native `Glob` for efficient path matching without external dependencies:
-
-**Recursive Directory Scan:**
+### Pattern matching with Glob
 
 ```typescript
 import { Glob } from "bun";
 
-// Find all TypeScript files recursively
 const glob = new Glob("**/*.ts");
 for await (const file of glob.scan(".")) {
-  console.log(file); // Full paths
+  console.log(file);
 }
 ```
 
-**Pattern Matching (no file system access):**
+### File I/O module
 
-```typescript
-import { Glob } from "bun";
+Use Bun file helpers for existence checks, metadata, text reads, and binary reads. Prefer `Bun.write()` for writes and copies.
 
-// Test if a path matches a pattern
-const g = new Glob("**/*.{ts,tsx}");
-g.match("src/index.tsx"); // true
-g.match("src/style.css"); // false
+## Implementation patterns to preserve
 
-// Single character and star wildcards
-new Glob("???.ts").match("foo.ts"); // true (? = single char)
-new Glob("*.ts").match("index.ts"); // true (* = any chars)
-```
+- Use `Promise.all()` for independent work
+- Batch large post collections instead of processing one-by-one
+- Precompile regex patterns at module load time
+- Use `Set` for validation lookups instead of repeated array scans
+- Use `Bun.hash()` for content-based cache busting
 
-### File I/O Module (src/utils/file-utils.ts)
+## Key concepts
 
-All file operations use Bun native APIs for consistency and performance:
-
-**Check File Existence (files only):**
-
-```typescript
-const file = Bun.file("./package.json");
-const exists = await file.exists(); // boolean (doesn't check directories)
-```
-
-**Get File Metadata:**
-
-```typescript
-const stat = await Bun.file("./file.txt").stat();
-if (stat?.isFile()) {
-  /* is a file */
-}
-if (stat?.isDirectory()) {
-  /* is a directory */
-}
-const size = stat?.size; // bytes
-const mtime = stat?.mtime; // Date object
-```
-
-## Modular Architecture
-
-Bunki follows **Single Responsibility Principle** with focused modules:
-
-### Core Orchestrator
-
-- **site-generator.ts** (282 lines) - Clean orchestrator
-  - Minimal business logic (delegates to generators)
-  - Uses dependency injection for testability
-  - Coordinates parallel generation with Promise.all()
-
-### Modular Generators
-
-- **generators/feeds.ts** - RSS feed, sitemap, robots.txt generation
-- **generators/pages.ts** - HTML generation with batched post processing
-- **generators/assets.ts** - CSS processing and static file copying
-
-### Markdown Processing
-
-- **utils/markdown/constants.ts** - Pre-compiled regex patterns, Schema.org types
-- **utils/markdown/validators.ts** - Frontmatter and business location validation
-- **utils/markdown/parser.ts** - Markdown to HTML conversion
-
-### Reusable Utilities
-
-- **utils/pagination.ts** - Pagination logic (eliminates duplication)
-- **utils/xml-builder.ts** - DRY XML/RSS building functions
-
-### Dependency Graph
-
-```
-site-generator.ts (orchestrator)
-  ├── generators/feeds.ts → utils/xml-builder.ts
-  ├── generators/pages.ts → utils/pagination.ts
-  ├── generators/assets.ts
-  └── utils/markdown/
-      ├── constants.ts
-      ├── validators.ts
-      └── parser.ts
-```
-
-## Performance Patterns
-
-**IMPORTANT**: Maintain these patterns when adding new features:
-
-### 1. Parallel Processing
-
-Use Promise.all() for independent tasks:
-
-```typescript
-// ✅ Parallel execution (40-60% faster)
-await Promise.all([
-  generateIndexPages(...),
-  generatePostPages(...),
-  generateTagPages(...),
-  generateYearArchives(...),
-]);
-
-// ❌ Sequential execution (slow)
-await generateIndexPages(...);
-await generatePostPages(...);
-await generateTagPages(...);
-```
-
-### 2. Batched Processing
-
-Process items in batches to avoid overwhelming the system:
-
-```typescript
-// ✅ Batched processing (10x faster for 100+ posts)
-const batchSize = 10;
-for (let i = 0; i < posts.length; i += batchSize) {
-  const batch = posts.slice(i, i + batchSize);
-  await Promise.all(batch.map((post) => generatePostPage(post)));
-}
-
-// ❌ One-by-one sequential processing
-for (const post of posts) {
-  await generatePostPage(post);
-}
-```
-
-### 3. Pre-compiled Patterns
-
-Compile regex patterns once at module load:
-
-```typescript
-// ✅ Pre-compiled at module load (2-3x faster)
-const RELATIVE_LINK_REGEX = /^(\.\.\/)+(\d{4})\/([a-zA-Z0-9_-]+?)(?:\.md)?$/;
-
-export function transformLink(href: string) {
-  const match = href.match(RELATIVE_LINK_REGEX);
-}
-
-// ❌ Compiled on every call
-export function transformLink(href: string) {
-  const match = href.match(/^(\.\.\/)+(\d{4})\/([a-zA-Z0-9_-]+?)(?:\.md)?$/);
-}
-```
-
-### 4. O(1) Lookups
-
-Use Set for validation instead of Array.includes():
-
-```typescript
-// ✅ O(1) Set lookup (35x faster)
-const SCHEMA_ORG_PLACE_TYPES = new Set([
-  "Restaurant",
-  "Hotel",
-  "Museum" /* ... */,
-]);
-
-if (!SCHEMA_ORG_PLACE_TYPES.has(loc.type)) {
-  throw new Error(`Invalid type: ${loc.type}`);
-}
-
-// ❌ O(n) array search
-const validTypes = ["Restaurant", "Hotel", "Museum" /* ... */];
-
-if (!validTypes.includes(loc.type)) {
-  throw new Error(`Invalid type: ${loc.type}`);
-}
-```
-
-### 5. Content-Based Hashing
-
-Use Bun.hash() for cache busting:
-
-```typescript
-import { hash } from "bun";
-
-// ✅ Content-based hash with Bun.hash() (no external deps)
-const cssFile = Bun.file(cssPath);
-const cssContent = await cssFile.arrayBuffer();
-const contentHash = hash(cssContent).toString(36).slice(0, 8);
-const hashedFilename = `style.${contentHash}.css`;
-
-// ❌ Time-based or random hash
-const randomHash = Math.random().toString(36).slice(2, 10);
-```
-
-## Key Concepts
-
-**CLI Structure:**
+**CLI**
 
 - Single entry point: `src/cli.ts`
-- Command implementations: `src/cli/commands/`
-- Dependency injection for testing
-- Bun.main for entry point detection
+- Dependency injection is used to keep command handlers testable
+- `bunki new` slugifies the title, writes an ISO date, and creates a markdown stub in `content/`
 
-**Markdown Processing:**
+**Markdown processing**
 
-- YAML frontmatter parsing (title, date, tags, excerpt)
-- Tag validation (must use hyphens, not spaces: `web-development` not `"web development"`)
-- Relative link conversion (`../2023/post.md` → `/2023/post/`) during build
-- HTML sanitization via DOMPurify
-- Syntax highlighting via highlight.js
-- XSS protection on external links
-- YouTube link to embed conversion
-- Pre-compiled regex patterns for performance
-- O(1) Set-based validation
+- Frontmatter includes `title`, `date`, `tags`, and optional `excerpt`
+- Tags must be hyphenated slugs, not words with spaces
+- Relative markdown links are converted to site URLs during build
+- HTML is sanitized before output
+- Syntax highlighting is handled with `highlight.js`
 
-**CSS Processing:**
+**CSS**
 
-- Optional PostCSS pipeline
-- Content-based cache busting with Bun.hash()
-- Fallback to direct file copy if PostCSS fails
-- Output to configurable dist path
-- Watch mode support for development
+- PostCSS is optional
+- If PostCSS is unavailable or fails, the pipeline should still produce usable output
+- Cache busting should be content-based, not time-based
 
-**Image Uploads:**
+**Images**
 
-- S3/R2 compatible storage (not Git)
-- Bun's native S3 API integration
-- Support for JPG, PNG, GIF, WebP, SVG
-- Optional domain-specific CDN routing
+- S3/R2-compatible storage is used for uploads
+- Support JPG, PNG, GIF, WebP, and SVG
+- Keep public uploads and local site generation separate
 
-## Important Fixes
+## Important fixes
 
-**CLI Entry Detection:**
-File path comparison for Bun.main requires URL protocol normalization:
+**CLI entry detection**
+
+`src/cli.ts` compares the current file with `Bun.main` and normalizes the `file://` prefix:
 
 ```typescript
-// src/cli.ts - handles file:// prefix difference
-const isMainModule =
-  import.meta.url === Bun.main ||
-  import.meta.url === `file://${Bun.main}` ||
-  Bun.main.endsWith(import.meta.path);
+const currentFile = import.meta.url.replace("file://", "");
+const mainFile = Bun.main;
+if (currentFile === mainFile || currentFile.endsWith(mainFile)) {
+  program.parse(Bun.argv);
+}
 ```
 
-**Config Initialization:**
-The config path must be passed to validation:
+**Config path handling**
+
+Resolve the config path before checking or loading it:
 
 ```typescript
-// src/config.ts
-const configPath = resolve(cwd, configFile);
-configExists(configPath); // must pass configPath parameter
+const configPath = path.resolve(options.config);
+const configCreated = await createDefaultConfig(configPath);
 ```
 
-## Common Tasks
+## Common tasks
 
-**Add New Utility Function:**
+**Add a new utility function**
 
-1. Create in `src/utils/module-name.ts`
-2. Add tests in `test/utils/module-name.test.ts`
-3. Export from `src/types.ts` if part of public API
-4. Update tests to mirror new structure
+1. Create the utility in `src/utils/`
+2. Add tests in `test/utils/`
+3. Export from `src/index.ts` if it is public API
+4. Update docs if the function is user-facing
 
-**Fix Security Issue:**
+**Add a CLI command**
 
-1. Add test case in `test/security/` demonstrating vulnerability
-2. Fix in corresponding `src/` module
-3. Verify test passes and no regressions
-4. Document in commit message
-
-**Add CLI Command:**
-
-1. Create handler in `src/cli/commands/`
-2. Add dependency injection parameters
-3. Export from `src/cli.ts`
+1. Create the handler in `src/cli/commands/`
+2. Register it in `src/cli.ts`
+3. Keep side effects behind dependency injection
 4. Add tests in `test/cli/commands/`
-5. Update CLI help text
 
-**Improve Test Coverage:**
+**Fix a regression**
+
+1. Add a failing test first
+2. Fix the implementation in the matching source module
+3. Re-run the smallest relevant test set
+4. Expand to broader tests if the change is cross-cutting
+
+**Improve test coverage**
 
 - Focus on edge cases and error paths
-- Test both happy path and error conditions
-- Use fixtures for complex test data
-- Avoid testing external dependencies (mock if needed)
-- Aim for 80%+ line coverage on utils
+- Test both success and failure cases
+- Use fixtures for complex inputs
+- Avoid relying on live external services unless the test is explicitly an integration smoke test
