@@ -39,9 +39,9 @@ CLI commands currently registered by `src/cli.ts`:
 - `bunki generate`
 - `bunki serve`
 - `bunki css`
-- `bunki images-push`
+- `bunki images:push`
 - `bunki validate`
-- `bunki validate-media`
+- `bunki validate:media`
 
 ## Code Style
 
