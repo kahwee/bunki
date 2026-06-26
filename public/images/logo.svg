@@ -1,1 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" role="img" aria-labelledby="bunki-logo-title">
+  <title id="bunki-logo-title">Bunki</title>
+</svg>
