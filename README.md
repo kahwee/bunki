@@ -465,7 +465,7 @@ Fragments are standard Nunjucks macro files. You can place your own in your site
 
 ### Overview
 
-The `images:push` command uploads local media (images and videos) to Cloudflare R2, AWS S3, or any S3-compatible storage provider. Media files are organized by year in the `images/` directory and uploaded with their full directory structure preserved.
+The `images:push` command uploads local media (images and videos) to Cloudflare R2, AWS S3, or any S3-compatible storage provider. Media files are organized by year in the `assets/` directory and uploaded with their full directory structure preserved.
 
 **Supported formats:**
 
@@ -477,7 +477,7 @@ The `images:push` command uploads local media (images and videos) to Cloudflare 
 Organize images by year and post slug:
 
 ```
-images/
+assets/
 ├── 2023/
 │   ├── post-slug-1/
 │   │   ├── image-1.jpg
@@ -550,7 +550,7 @@ bunki images:push
 
 This command:
 
-1. Scans the `images/` directory recursively
+1. Scans the `assets/` directory recursively by default
 2. Uploads all supported image formats
 3. Preserves the directory structure (year/slug/filename)
 4. Generates public URLs for each image
@@ -559,7 +559,7 @@ This command:
 
 #### `--images <dir>`
 
-Specify a custom images directory (default: `./images`)
+Specify a custom images directory (default: `./assets`)
 
 ```bash
 bunki images:push --images ./assets/images
@@ -610,6 +610,15 @@ This is useful for:
 - Incremental uploads (upload only new images)
 - Testing uploads for specific years
 - Managing large image collections across multiple uploads
+
+#### `--max-year <year>`
+
+Upload only images up to and including the specified year
+
+```bash
+# Upload only 2023 and older images
+bunki images:push --max-year 2023
+```
 
 #### `--content-assets`
 
@@ -846,9 +855,9 @@ Ensure all required environment variables are set. Check `bunki.config.ts` and y
 
 #### "No image files found"
 
-- Verify images exist in `images/` directory
+- Verify images exist in `assets/` directory
 - Check that files have supported extensions (.jpg, .png, .gif, .webp, .svg)
-- Ensure the directory structure is correct (e.g., `images/2024/post-slug/image.jpg`)
+- Ensure the directory structure is correct (e.g., `assets/2024/post-slug/image.jpg`)
 
 #### "Unauthorized" or "Access Denied"
 
@@ -1097,6 +1106,7 @@ bunki new <TITLE> [--tags TAG1,TAG2]          # Create new post
 bunki generate [--config FILE]                # Build static site (full)
 bunki generate --incremental                  # Build with caching (3x faster)
 bunki validate [--config FILE]                # Validate frontmatter
+bunki validate:media [--content-dir DIR]      # Validate media references
 bunki serve [--port 3000]                     # Start dev server
 bunki css [--watch]                           # Process CSS
 bunki images:push [--domain DOMAIN]           # Upload images to cloud

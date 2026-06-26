@@ -92,7 +92,9 @@ describe("Image Uploader", () => {
     test("should output JSON mapping when requested", async () => {
       process.env.BUNKI_DRY_RUN = "true";
 
-      const outputFile = path.join(testBaseDir, "image-urls.json");
+      const outputDir = path.join(testBaseDir, "generated-output");
+      await ensureDir(outputDir);
+      const outputFile = path.join(outputDir, "image-urls.json");
       const _result = await uploadImages({
         images: imagesDir,
         outputJson: outputFile,
@@ -111,7 +113,43 @@ describe("Image Uploader", () => {
 
       delete process.env.BUNKI_DRY_RUN;
       try {
-        await Bun.file(outputFile).rm?.({ recursive: true });
+        await Bun.file(outputDir).rm?.({ recursive: true });
+      } catch {}
+    });
+
+    test("should write output JSON with deterministic sorted keys", async () => {
+      process.env.BUNKI_DRY_RUN = "true";
+
+      const orderingDir = path.join(testBaseDir, "ordering-images");
+      const outputDir = path.join(testBaseDir, "ordering-output");
+      await ensureDir(path.join(orderingDir, "2025/z-last"));
+      await ensureDir(path.join(orderingDir, "2023/a-first"));
+      await ensureDir(path.join(orderingDir, "2024/m-middle"));
+      await ensureDir(outputDir);
+
+      const jpgContent = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+      await Bun.write(path.join(orderingDir, "2025/z-last/z-last.jpg"), jpgContent);
+      await Bun.write(path.join(orderingDir, "2023/a-first/a-first.jpg"), jpgContent);
+      await Bun.write(path.join(orderingDir, "2024/m-middle/m-middle.jpg"), jpgContent);
+
+      const outputFile = path.join(outputDir, "image-urls.json");
+      await uploadImages({
+        images: orderingDir,
+        outputJson: outputFile,
+      });
+
+      const jsonData = JSON.parse(await Bun.file(outputFile).text()) as Record<string, string>;
+      expect(Object.keys(jsonData)).toEqual([
+        "2023/a-first/a-first.jpg",
+        "2024/m-middle/m-middle.jpg",
+        "2025/z-last/z-last.jpg",
+      ]);
+
+      delete process.env.BUNKI_DRY_RUN;
+
+      try {
+        await Bun.file(outputDir).rm?.({ recursive: true });
+        await Bun.file(orderingDir).rm?.({ recursive: true });
       } catch {}
     });
 

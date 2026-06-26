@@ -98,23 +98,27 @@ export async function uploadImages(
       options.maxYear,
     );
 
+    const orderedImageUrlMap = Object.fromEntries(
+      Object.entries(imageUrlMap).sort(([a], [b]) => a.localeCompare(b)),
+    );
+
     // Output URL mapping to JSON if requested
     if (options.outputJson) {
       const outputFile = path.resolve(options.outputJson);
-      await Bun.write(outputFile, JSON.stringify(imageUrlMap, null, 2));
+      await Bun.write(outputFile, JSON.stringify(orderedImageUrlMap, null, 2));
       console.log(`Image URL mapping saved to ${outputFile}`);
     }
 
     // Print usage instructions
-    if (Object.keys(imageUrlMap).length > 0) {
+    if (Object.keys(orderedImageUrlMap).length > 0) {
       console.log("\nUse these image URLs in your markdown files:");
-      for (const [filename, url] of Object.entries(imageUrlMap)) {
+      for (const [filename, url] of Object.entries(orderedImageUrlMap)) {
         console.log(`${filename}: ![Alt text](${url})`);
       }
     }
 
     console.log("\nImage upload completed successfully!");
-    return imageUrlMap;
+    return orderedImageUrlMap;
   } catch (error) {
     console.error("Error uploading images:", error);
     throw error;
