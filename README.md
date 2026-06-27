@@ -54,12 +54,12 @@ export default (): SiteConfig => ({
 
   // Optional: Image upload to Cloudflare R2 or S3
   s3: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
-    bucket: process.env.R2_BUCKET || "",
-    endpoint: process.env.R2_ENDPOINT,
-    region: process.env.R2_REGION || "auto",
-    publicUrl: process.env.R2_PUBLIC_URL || "",
+    accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
+    bucket: process.env.S3_BUCKET || "",
+    endpoint: process.env.S3_ENDPOINT,
+    region: process.env.S3_REGION || "auto",
+    publicUrl: process.env.S3_PUBLIC_URL || "",
   },
 });
 ```
@@ -1105,7 +1105,7 @@ bunki init [--config FILE]                    # Initialize new site
 bunki new <TITLE> [--tags TAG1,TAG2]          # Create new post
 bunki generate [--config FILE]                # Build static site (full)
 bunki generate --incremental                  # Build with caching (3x faster)
-bunki validate [--config FILE]                # Validate frontmatter
+bunki validate [--config FILE]                # Validate markdown files for parsing errors
 bunki validate:media [--content-dir DIR]      # Validate media references
 bunki serve [--port 3000]                     # Start dev server
 bunki css [--watch]                           # Process CSS

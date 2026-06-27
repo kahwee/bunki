@@ -120,7 +120,7 @@ export default function(): SiteConfig {
     s3: {
       accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
       secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
-      bucket: process.env.S3_BUCKET || "", // Defaults to domain name with dots replaced by hyphens if not set
+      bucket: process.env.S3_BUCKET || "",
       endpoint: process.env.S3_ENDPOINT,   // Custom endpoint for S3 service (optional)
       region: process.env.S3_REGION || "auto"
     }
