@@ -1104,9 +1104,9 @@ Current implementation (v0.18.0) optimizes parsing and CSS processing. Future ve
 bunki init [--config FILE]                    # Initialize new site
 bunki new <TITLE> [--tags TAG1,TAG2]          # Create new post
 bunki generate [--config FILE]                # Build static site (full)
-bunki generate --incremental                  # Build with caching (3x faster)
+bunki generate --incremental                  # Enable incremental builds
 bunki validate [--config FILE]                # Validate markdown files for parsing errors
-bunki validate:media [--content-dir DIR]      # Validate media references
+bunki validate:media [--content-dir DIR]      # Validate media files
 bunki serve [--port 3000]                     # Start dev server
 bunki css [--watch]                           # Process CSS
 bunki images:push [--domain DOMAIN]           # Upload images to cloud

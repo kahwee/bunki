@@ -164,7 +164,8 @@ describe("SiteGenerator", () => {
       "robots.txt": "User-agent: *\nAllow: /",
       "humans.txt": "We are people.",
       ".well-known/security.txt": "Contact: mailto:security@example.com",
-      "images/logo.svg": '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"></svg>',
+      "images/logo.svg":
+        '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10">\n  <title>Bunki logo</title>\n</svg>',
       CNAME: "example.com",
     };
 
