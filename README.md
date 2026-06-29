@@ -1092,7 +1092,7 @@ Version 2.0.0 cache structure:
 
 ### Future Optimizations
 
-Current implementation (v0.18.0) optimizes parsing and CSS processing. Future versions may add:
+Current implementation (v0.21.0) optimizes parsing and CSS processing. Future versions may add:
 
 - Selective page regeneration (only rebuild changed posts)
 - Incremental sitemap/RSS updates
@@ -1101,15 +1101,17 @@ Current implementation (v0.18.0) optimizes parsing and CSS processing. Future ve
 ## CLI Commands
 
 ```bash
-bunki init [--config FILE]                    # Initialize new site
-bunki new <TITLE> [--tags TAG1,TAG2]          # Create new post
-bunki generate [--config FILE]                # Build static site (full)
-bunki generate --incremental                  # Enable incremental builds
-bunki validate [--config FILE]                # Validate markdown files for parsing errors
-bunki validate:media [--content-dir DIR]      # Validate media files
-bunki serve [--port 3000]                     # Start dev server
-bunki css [--watch]                           # Process CSS
-bunki images:push [--domain DOMAIN]           # Upload images to cloud
+bunki init [--config FILE]                                              # Initialize new site
+bunki new <TITLE> [--tags TAG1,TAG2]                                    # Create new post
+bunki generate [--config FILE] [--content DIR] [--output DIR] [--templates DIR]
+bunki generate --incremental                                            # Enable incremental builds
+bunki validate [--config FILE] [--dir DIR]                              # Validate markdown files for parsing errors
+bunki validate:media [--content-dir DIR] [--fix]                        # Validate media files
+bunki serve [--output DIR] [--port 3000]                                # Start dev server
+bunki css [--config FILE] [--output DIR] [--watch]                      # Process CSS
+bunki images:push [--domain DOMAIN] [--images DIR] [--output-json FILE]
+  [--min-year YEAR] [--max-year YEAR] [--content-assets] [--content-assets-dir DIR]
+                                                                        # Upload images to S3-compatible storage
 ```
 
 ## Output Structure

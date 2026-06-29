@@ -34,14 +34,14 @@ bun run clean          # Remove build artifacts
 
 CLI commands currently registered by `src/cli.ts`:
 
-- `bunki init`
-- `bunki new <title> --tags a,b`
-- `bunki generate`
-- `bunki serve`
-- `bunki css`
-- `bunki images:push`
-- `bunki validate`
-- `bunki validate:media`
+- `bunki init [--config FILE]`
+- `bunki new <title> [--tags a,b]`
+- `bunki generate [--config FILE] [--content DIR] [--output DIR] [--templates DIR] [--incremental]`
+- `bunki serve [--output DIR] [--port 3000]`
+- `bunki css [--config FILE] [--output DIR] [--watch]`
+- `bunki images:push [--domain DOMAIN] [--images DIR] [--output-json FILE] [--min-year YEAR] [--max-year YEAR] [--content-assets] [--content-assets-dir DIR]`
+- `bunki validate [--config FILE] [--dir DIR]`
+- `bunki validate:media [--content-dir DIR] [--fix]`
 
 ## Code Style
 
