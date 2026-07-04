@@ -1213,7 +1213,7 @@ site-generator.ts (orchestrator)
 - **JSON-LD Structured Data**: Automatic Schema.org markup (BlogPosting, WebSite, Organization, BreadcrumbList)
 - **Pagination**: Configurable posts per page with reusable pagination utilities
 - **Archives**: Year-based and tag-based organization
-- **Modular Architecture**: Single responsibility modules with comprehensive test coverage (424 tests)
+- **Modular Architecture**: Single responsibility modules with comprehensive test coverage
 
 ## Development
 
@@ -1228,6 +1228,18 @@ bun test:coverage          # Test coverage report
 bun run typecheck          # TypeScript validation
 bun run format             # Biome formatting
 ```
+
+## Continuous Integration
+
+GitHub Actions runs the same Bun-first workflow used locally:
+
+- **CI**: typecheck, Biome linting, coverage tests, build, and an example site generation smoke test.
+- **Compatibility Tests**: verifies the minimum supported Bun version (`1.3.14`) and `latest`.
+- **Coverage**: generates LCOV coverage and uploads it to Coveralls.
+- **PR Coverage Comment**: posts LCOV coverage feedback on pull requests.
+- **Publish to npm**: runs tests and builds first, then publishes on version tags, `[publish]` commits, or manual dispatch with `force-publish`.
+
+Shared workflow setup lives in `.github/actions/setup-bun/action.yml`, which installs Bun, restores the Bun package cache, and runs `bun install --frozen-lockfile`.
 
 ## Project Structure
 
@@ -1258,7 +1270,7 @@ bunki/
 │       ├── json-ld.ts         # JSON-LD schema generation
 │       ├── image-uploader.ts  # Image upload logic
 │       └── s3-uploader.ts     # S3/R2 client
-├── test/                       # Test suite (424 tests, mirrors src/)
+├── test/                       # Test suite (mirrors src/)
 │   ├── utils/
 │   │   ├── markdown/          # Modular tests (NEW)
 │   │   │   ├── constants.test.ts   (25 tests)

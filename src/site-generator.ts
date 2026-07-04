@@ -324,6 +324,7 @@ export class SiteGenerator {
 
     if (configChanged) {
       console.log("Config changed, full rebuild required");
+      this.incrementalMode = false;
       return this.parseContent(); // Force full rebuild
     }
 

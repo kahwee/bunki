@@ -3,7 +3,9 @@ import path from "node:path";
 import { Glob } from "bun";
 import { loadConfig } from "../src/config";
 import { SiteGenerator } from "../src/site-generator";
-import { ensureDir } from "../src/utils/file-utils";
+import type { Post } from "../src/types";
+import { type BuildCache, createEmptyCache, updateCacheEntry } from "../src/utils/build-cache";
+import { ensureDir, findFilesByPattern } from "../src/utils/file-utils";
 
 const FIXTURES_DIR = path.join(import.meta.dir, "../fixtures");
 // Use a temporary directory within test/ to ensure it's ignored by git
@@ -212,6 +214,48 @@ describe("SiteGenerator", () => {
     if (allTags.length > maxTags) {
       expect(limited.length).toBe(maxTags);
     }
+  });
+
+  test("incremental mode performs a full content parse when config changes", async () => {
+    const config = await loadConfig(CONFIG_PATH);
+    const incrementalGenerator = new SiteGenerator({
+      contentDir: CONTENT_DIR,
+      outputDir: OUTPUT_DIR,
+      templatesDir: TEMPLATES_DIR,
+      config,
+    });
+    incrementalGenerator.enableIncrementalMode();
+
+    const allFiles = await findFilesByPattern("**/*.md", CONTENT_DIR, true);
+    const cache = createEmptyCache();
+    cache.configHash = "stale-config-hash";
+
+    const stalePost: Post = {
+      title: "Cached stale post",
+      date: "2020-01-01T00:00:00",
+      tags: ["cached"],
+      tagSlugs: {},
+      content: "cached",
+      slug: "cached-stale-post",
+      url: "/cached-stale-post/",
+      excerpt: "cached",
+      html: "<p>cached</p>",
+    };
+
+    for (const filePath of allFiles) {
+      await updateCacheEntry(filePath, cache, { post: stalePost });
+    }
+
+    const privateGenerator = incrementalGenerator as unknown as {
+      cache: BuildCache;
+      parseContent(): Promise<Post[]>;
+    };
+    privateGenerator.cache = cache;
+
+    const posts = await privateGenerator.parseContent();
+
+    expect(posts.length).toBeGreaterThan(0);
+    expect(posts.every((post) => post.title !== stalePost.title)).toBe(true);
   });
 
   // ============================================

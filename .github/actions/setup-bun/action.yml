@@ -1,0 +1,46 @@
+name: Setup Bun project
+description: Install Bun, restore the Bun package cache, and optionally install dependencies.
+
+inputs:
+  bun-version:
+    description: Bun version to install.
+    required: false
+    default: latest
+  install:
+    description: Run bun install --frozen-lockfile after setup.
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2.2.0
+      with:
+        bun-version: ${{ inputs.bun-version }}
+
+    - name: Hash Bun lockfile
+      id: lockfile
+      shell: bash
+      run: |
+        if [ -f bun.lock ]; then
+          echo "hash=$(sha256sum bun.lock | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+        elif [ -f bun.lockb ]; then
+          echo "hash=$(sha256sum bun.lockb | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+        else
+          echo "hash=no-lockfile" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Cache Bun dependencies
+      uses: actions/cache@v6.1.0
+      with:
+        path: ~/.bun/install/cache
+        key: ${{ runner.os }}-bun-${{ inputs.bun-version }}-${{ steps.lockfile.outputs.hash }}
+        restore-keys: |
+          ${{ runner.os }}-bun-${{ inputs.bun-version }}-
+          ${{ runner.os }}-bun-
+
+    - name: Install dependencies
+      if: inputs.install == 'true'
+      shell: bash
+      run: bun install --frozen-lockfile
