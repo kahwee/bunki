@@ -41,7 +41,7 @@ CLI commands currently registered by `src/cli.ts`:
 - `bunki css [--config FILE] [--output DIR] [--watch]`
 - `bunki images:push [--domain DOMAIN] [--images DIR] [--output-json FILE] [--min-year YEAR] [--max-year YEAR] [--content-assets] [--content-assets-dir DIR]`
 - `bunki validate [--config FILE] [--dir DIR]`
-- `bunki validate:media [--content-dir DIR] [--fix]`
+- `bunki validate:media [--content-dir DIR]`
 
 ## Code Style
 

@@ -1106,7 +1106,7 @@ bunki new <TITLE> [--tags TAG1,TAG2]                                    # Create
 bunki generate [--config FILE] [--content DIR] [--output DIR] [--templates DIR]
 bunki generate --incremental                                            # Enable incremental builds
 bunki validate [--config FILE] [--dir DIR]                              # Validate markdown files for parsing errors
-bunki validate:media [--content-dir DIR] [--fix]                        # Validate media files
+bunki validate:media [--content-dir DIR]                                # Validate media files
 bunki serve [--output DIR] [--port 3000]                                # Start dev server
 bunki css [--config FILE] [--output DIR] [--watch]                      # Process CSS
 bunki images:push [--domain DOMAIN] [--images DIR] [--output-json FILE]

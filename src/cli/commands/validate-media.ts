@@ -36,7 +36,6 @@ const mediaExtensions = [...imageExtensions, ...videoExtensions];
 export async function handleValidateMediaCommand(
   options: {
     contentDir?: string;
-    fix?: boolean;
   },
   deps = { logger: console, exit: (code: number) => process.exit(code) },
 ): Promise<void> {
@@ -282,7 +281,6 @@ export function registerValidateMediaCommand(program: Command): Command {
     .command("validate:media")
     .description("Validate media files (check for missing and unused files)")
     .option("-c, --content-dir <dir>", "Content directory path (default: ./content)")
-    .option("--fix", "Attempt to fix issues automatically")
     .action(async (options) => {
       await handleValidateMediaCommand(options);
     });
