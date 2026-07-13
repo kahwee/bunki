@@ -66,7 +66,10 @@ export default (): SiteConfig => ({
 
 ## Content & Frontmatter
 
-Create Markdown files in `content/YYYY/` using either pattern:
+Create Markdown files anywhere under `content/` using either pattern:
+
+- Year folders are a good fit for organizing posts and colocated assets.
+- The published URL year comes from the post date in frontmatter, not the file path.
 
 **Option 1: Single file** (traditional)
 
