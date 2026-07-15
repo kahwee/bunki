@@ -32,7 +32,7 @@ describe("images:push CLI Command", () => {
       registerImagesPushCommand(program);
 
       const command = program.commands.find((c) => c.name() === "images:push");
-      expect(command?.description()).toBe("Upload images to S3-compatible storage");
+      expect(command?.description()).toBe("Upload media to S3-compatible storage");
     });
 
     test("should support --domain option", () => {

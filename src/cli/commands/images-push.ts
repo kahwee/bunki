@@ -44,7 +44,7 @@ export async function handleImagesPushCommand(
 export function registerImagesPushCommand(program: Command): Command {
   return program
     .command("images:push")
-    .description("Upload images to S3-compatible storage")
+    .description("Upload media to S3-compatible storage")
     .option(
       "-d, --domain <domain>",
       "Domain name for bucket identification (defaults to domain in bunki.config.ts)",

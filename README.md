@@ -473,7 +473,7 @@ The `images:push` command uploads local media (images and videos) to Cloudflare 
 **Supported formats:**
 
 - **Images:** JPG, JPEG, PNG, GIF, WebP, SVG
-- **Video:** MP4
+- **Video:** MP4, WebM, MOV
 
 ### Directory Structure
 
@@ -786,7 +786,7 @@ Check out the making of the vlog:
 **Video Upload Example:**
 
 ```bash
-# Upload all images and videos (including MP4 files)
+# Upload all images and videos (including MP4, WebM, and MOV files)
 bunki images:push
 
 # Upload only 2024 videos and images
@@ -1114,7 +1114,7 @@ bunki serve [--output DIR] [--port 3000]                                # Start 
 bunki css [--config FILE] [--output DIR] [--watch]                      # Process CSS
 bunki images:push [--domain DOMAIN] [--images DIR] [--output-json FILE]
   [--min-year YEAR] [--max-year YEAR] [--content-assets] [--content-assets-dir DIR]
-                                                                        # Upload images to S3-compatible storage
+                                                                        # Upload media to S3-compatible storage
 ```
 
 ## Output Structure
