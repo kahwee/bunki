@@ -472,7 +472,7 @@ The `images:push` command uploads local media (images and videos) to Cloudflare 
 
 **Supported formats:**
 
-- **Images:** JPG, JPEG, PNG, GIF, WebP, SVG
+- **Images:** JPG, JPEG, PNG, GIF, WebP
 - **Video:** MP4, WebM, MOV
 
 ### Directory Structure
@@ -859,7 +859,7 @@ Ensure all required environment variables are set. Check `bunki.config.ts` and y
 #### "No image files found"
 
 - Verify images exist in `assets/` directory
-- Check that files have supported extensions (.jpg, .png, .gif, .webp, .svg)
+- Check that files have supported extensions (.jpg, .jpeg, .png, .gif, .webp)
 - Ensure the directory structure is correct (e.g., `assets/2024/post-slug/image.jpg`)
 
 #### "Unauthorized" or "Access Denied"
@@ -977,7 +977,7 @@ export S3_PUBLIC_URL="https://img.example.com"
 4. **Use modern formats** (WebP) for better compression:
    - JPG/PNG for screenshots
    - WebP for photos
-   - SVG for icons/graphics
+   - SVG for icons/graphics in site assets
 
 ## Incremental Builds
 
