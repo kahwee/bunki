@@ -189,7 +189,7 @@ Use Bun file helpers for existence checks, metadata, text reads, and binary read
 **Images**
 
 - S3/R2-compatible storage is used for uploads
-- Support JPG, JPEG, PNG, GIF, and WebP for uploads; videos are supported separately
+- Support JPG, JPEG, PNG, GIF, WebP, and SVG for uploads; videos are supported separately
 - Keep public uploads and local site generation separate
 
 ## Important fixes

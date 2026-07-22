@@ -29,7 +29,7 @@ interface ValidationResult {
   unusedMediaSize: number;
 }
 
-const imageExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+const imageExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"];
 const videoExtensions = [".mp4", ".webm", ".mov"];
 const mediaExtensions = [...imageExtensions, ...videoExtensions];
 

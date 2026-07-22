@@ -468,11 +468,11 @@ Fragments are standard Nunjucks macro files. You can place your own in your site
 
 ### Overview
 
-The `images:push` command uploads local media (images and videos) to Cloudflare R2, AWS S3, or any S3-compatible storage provider. Media files are organized by year in the `assets/` directory and uploaded with their full directory structure preserved.
+The `images:push` command uploads local media (images, SVG, and videos) to Cloudflare R2, AWS S3, or any S3-compatible storage provider. Media files are organized by year in the `assets/` directory and uploaded with their full directory structure preserved.
 
 **Supported formats:**
 
-- **Images:** JPG, JPEG, PNG, GIF, WebP
+- **Images:** JPG, JPEG, PNG, GIF, WebP, SVG
 - **Video:** MP4, WebM, MOV
 
 ### Directory Structure
