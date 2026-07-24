@@ -2,7 +2,7 @@
  * RSS feed and sitemap generation
  */
 
-import { CACHE, PAGINATION } from "../constants";
+import { CACHE, PAGINATION, SEO } from "../constants";
 import type { Site, SiteConfig } from "../types";
 import { toPacificTime } from "../utils/date-utils";
 import { buildRSSItem, buildSitemapUrl, calculateFreshnessPriority } from "../utils/xml-builder";
@@ -147,7 +147,13 @@ export function generateSitemap(site: Site, config: SiteConfig, _pageSize: numbe
   sitemapContent += buildSitemapUrl(`${config.baseUrl}/map/`, currentDate, "weekly", 0.6);
 
   // Individual tag pages with pagination
+  // Tags at or below the thin-content threshold are noindexed by tag.njk, so
+  // they're left out of the sitemap to avoid submitting noindexed URLs to Google.
   for (const [, tagData] of Object.entries(site.tags)) {
+    if (tagData.count <= SEO.THIN_TAG_MAX_POSTS) {
+      continue;
+    }
+
     const tagUrl = `${config.baseUrl}/tags/${tagData.slug}/`;
 
     // Calculate tag priority based on most recent post

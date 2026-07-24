@@ -33,6 +33,8 @@ export const FILES = {
 export const SEO = {
   /** Add noindex meta tag to pagination pages beyond this number */
   NOINDEX_AFTER_PAGE: 2,
+  /** Tag pages with this many posts or fewer are noindexed (see tag.njk) and excluded from the sitemap */
+  THIN_TAG_MAX_POSTS: 2,
 } as const;
 
 /**
