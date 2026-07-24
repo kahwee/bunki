@@ -24,6 +24,10 @@ test/temp-dir/
 test/temp-config.json
 fixtures/test-output/
 fixtures/dist/
+test/utils/test-image-uploader/generated-output/
+test/utils/test-image-uploader/ordering-images/
+test/utils/test-image-uploader/ordering-output/
+test/utils/test-image-uploader/non-existent-images/
 .DS_Store
 *.log
 *.swp
