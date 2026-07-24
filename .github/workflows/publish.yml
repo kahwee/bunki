@@ -22,7 +22,7 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
 
       - uses: ./.github/actions/setup-bun
 
@@ -66,7 +66,7 @@ jobs:
     # Skip this job if a PR (not needed for PRs)
     if: ${{ (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || contains(github.event.head_commit.message, '[publish]'))) || github.event.inputs.force-publish == 'true' }}
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7.0.1
 
       - uses: ./.github/actions/setup-bun
         with:
@@ -125,7 +125,7 @@ jobs:
       # Create GitHub Release for tags
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v3.0.1
+        uses: softprops/action-gh-release@v3.0.2
         with:
           name: Release ${{ steps.check.outputs.package_version }}
           body: |

@@ -8,7 +8,13 @@ Fast static site generator for blogs and documentation built with Bun. Supports 
 
 ## Install
 
-Requires **Bun v1.3.14+**. Bun is the supported runtime for installing, building, testing, and running Bunki.
+Requires **Bun v1.3.14+**. Bun v1.3.14 is the latest stable Bun release currently supported by this project. Bun is the supported runtime for installing, building, testing, and running Bunki.
+
+Check your runtime before working on Bunki:
+
+```bash
+bun --version  # should report 1.3.14 or newer
+```
 
 ```bash
 # Install in your project
@@ -1237,7 +1243,7 @@ bun run format             # Biome formatting
 GitHub Actions runs the same Bun-first workflow used locally:
 
 - **CI**: typecheck, Biome linting, coverage tests, build, and an example site generation smoke test.
-- **Compatibility Tests**: verifies the minimum supported Bun version (`1.3.14`) and `latest`.
+- **Compatibility Tests**: verifies the minimum supported Bun version (`1.3.14`) and the latest Bun release.
 - **Coverage**: generates LCOV coverage and uploads it to Coveralls.
 - **PR Coverage Comment**: posts LCOV coverage feedback on pull requests.
 - **Publish to npm**: runs tests and builds first, then publishes on version tags, `[publish]` commits, or manual dispatch with `force-publish`.
