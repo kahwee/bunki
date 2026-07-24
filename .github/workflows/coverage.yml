@@ -30,7 +30,7 @@ jobs:
 
       # Run tests with coverage
       - name: Generate coverage report
-        run: bun test:coverage
+        run: bun run test:coverage
 
       # Verify coverage report exists and contains source file references
       - name: Verify coverage report
