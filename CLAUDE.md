@@ -21,9 +21,9 @@ Use the scripts defined in `package.json`:
 ```bash
 bun run build          # Build distribution
 bun run dev            # Development mode with watch
-bun test               # Run test suite
-bun test:coverage      # Coverage report
-bun test:watch         # Watch mode for tests
+bun run test           # Run test suite
+bun run test:coverage  # Coverage report
+bun run test:watch     # Watch mode for tests
 bun run typecheck      # TypeScript validation
 bun run format         # Biome formatting
 bun run format:check   # Check formatting without changes
@@ -93,8 +93,8 @@ Bunki uses Bun's native test runner with Jest-compatible assertions.
 **Run tests**
 
 ```bash
-bun test
-bun test:coverage
+bun run test
+bun run test:coverage
 bun test test/utils/parser.test.ts
 ```
 

@@ -1232,8 +1232,8 @@ cd bunki
 bun install
 
 bun run build              # Build distribution
-bun test                   # Run test suite
-bun test:coverage          # Test coverage report
+bun run test               # Run test suite
+bun run test:coverage      # Test coverage report
 bun run typecheck          # TypeScript validation
 bun run format             # Biome formatting
 ```
