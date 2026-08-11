@@ -59,7 +59,7 @@ jobs:
 
       # Upload coverage to Coveralls with proper source file mapping
       - name: Upload coverage to Coveralls
-        uses: coverallsapp/github-action@v2.3.7
+        uses: coverallsapp/github-action@v2.3.8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           format: lcov
