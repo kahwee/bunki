@@ -50,7 +50,7 @@
   "dependencies": {
     "commander": "^15.0.0",
     "gray-matter": "^4.0.3",
-    "highlight.js": "^11.11.1",
+    "highlight.js": "^11.11.2",
     "marked": "^18.0.9",
     "marked-alert": "^2.1.2",
     "marked-highlight": "^2.2.4",
@@ -61,7 +61,7 @@
     "slugify": "^1.6.9"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.7",
+    "@biomejs/biome": "^2.5.8",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/nunjucks": "^3.2.6",
     "@types/sanitize-html": "^2.16.1",
