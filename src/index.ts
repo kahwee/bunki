@@ -4,10 +4,12 @@
 export {
   configExists,
   createDefaultConfig,
+  createProjectPaths,
   DEFAULT_CONFIG_FILE,
   DEFAULT_CONTENT_DIR,
   DEFAULT_OUTPUT_DIR,
   DEFAULT_TEMPLATES_DIR,
+  defineConfig,
   loadConfig,
   saveConfig,
 } from "./config";
@@ -19,6 +21,7 @@ export { CACHE, DATE, FILES, PAGINATION, SEO } from "./constants";
 export { parseMarkdownDirectory } from "./parser";
 export { startServer } from "./server";
 export { SiteGenerator } from "./site-generator";
+export { createSiteModel, groupPostsByYear } from "./site-model";
 export * from "./types";
 
 // Export utility functions

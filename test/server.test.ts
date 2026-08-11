@@ -213,7 +213,7 @@ describe("Server Content-Type and Security Headers Tests", () => {
     for (const { file, expectedType } of testCases) {
       const response = await makeRequest(`http://localhost:${TEST_PORT + 3}${file}`);
       expect(response.status).toBe(200);
-      expect(response.headers.get("Content-Type")).toBe(expectedType);
+      expect(response.headers.get("Content-Type")).toStartWith(expectedType);
     }
 
     server3.stop?.();

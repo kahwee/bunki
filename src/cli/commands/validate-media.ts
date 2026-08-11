@@ -1,25 +1,26 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
+import { basename, dirname, extname, join, relative, resolve } from "node:path";
+import { Glob } from "bun";
 import type { Command } from "commander";
+import { isDirectory } from "../../utils/file-utils";
 
-interface MediaReference {
+type MediaReference = {
   file: string;
   line: number;
   mediaPath: string;
   resolvedPath: string;
   exists: boolean;
   type: "image" | "video";
-}
+};
 
-interface MediaFile {
+type MediaFile = {
   path: string;
   filename: string;
   year: string;
   size: number;
   location: "content/_assets" | "assets";
-}
+};
 
-interface ValidationResult {
+type ValidationResult = {
   totalMarkdownFiles: number;
   totalMediaReferences: number;
   missingReferences: MediaReference[];
@@ -27,31 +28,28 @@ interface ValidationResult {
   referencedMediaCount: number;
   unusedMedia: MediaFile[];
   unusedMediaSize: number;
-}
+};
 
-const imageExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"];
-const videoExtensions = [".mp4", ".webm", ".mov"];
-const mediaExtensions = [...imageExtensions, ...videoExtensions];
+const imageExtensions = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg"]);
+const videoExtensions = new Set([".mp4", ".webm", ".mov"]);
+const mediaExtensions = new Set([...imageExtensions, ...videoExtensions]);
 
 export async function handleValidateMediaCommand(
-  options: {
-    contentDir?: string;
-  },
+  options: { contentDir?: string },
   deps = { logger: console, exit: (code: number) => process.exit(code) },
 ): Promise<void> {
   const contentDir = options.contentDir || join(process.cwd(), "content");
   const assetsDir = join(process.cwd(), "assets");
 
-  if (!existsSync(contentDir)) {
+  if (!(await isDirectory(contentDir))) {
     deps.logger.error(`Content directory not found: ${contentDir}`);
     deps.exit(1);
+    return;
   }
 
   deps.logger.log("🔍 Validating media files...\n");
+  const result = await validateMedia(contentDir, assetsDir);
 
-  const result = validateMedia(contentDir, assetsDir);
-
-  // Report results
   deps.logger.log("📊 Validation Results:");
   deps.logger.log(`   Total markdown files: ${result.totalMarkdownFiles}`);
   deps.logger.log(`   Total media references: ${result.totalMediaReferences}`);
@@ -73,7 +71,7 @@ export async function handleValidateMediaCommand(
 
   if (result.unusedMedia.length > 0) {
     deps.logger.log("\n⚠️  Unused Media Files:\n");
-    const byLocation: Record<string, MediaFile[]> = {
+    const byLocation: Record<MediaFile["location"], MediaFile[]> = {
       "content/_assets": [],
       assets: [],
     };
@@ -83,7 +81,7 @@ export async function handleValidateMediaCommand(
 
     for (const [location, files] of Object.entries(byLocation)) {
       if (files.length === 0) continue;
-      const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+      const totalSize = files.reduce((sum, file) => sum + file.size, 0);
       deps.logger.log(
         `${location} (${files.length} files, ${(totalSize / 1024 / 1024).toFixed(2)} MB):`,
       );
@@ -100,77 +98,57 @@ export async function handleValidateMediaCommand(
   if (result.missingReferences.length === 0 && result.unusedMedia.length === 0) {
     deps.logger.log("\n✅ All media files validated successfully!");
     deps.exit(0);
-  } else {
-    deps.exit(1);
+    return;
   }
+
+  deps.exit(1);
 }
 
-function validateMedia(contentDir: string, assetsDir: string): ValidationResult {
+async function validateMedia(contentDir: string, assetsDir: string): Promise<ValidationResult> {
+  const [contentMedia, assetMedia] = await Promise.all([
+    getAllMediaFromContentAssets(contentDir),
+    getAllMediaFromAssets(assetsDir),
+  ]);
+  const allMediaFiles = [...contentMedia, ...assetMedia];
+  const referencedMedia = new Set<string>();
+  const missingReferences: MediaReference[] = [];
   let totalMarkdownFiles = 0;
   let totalMediaReferences = 0;
-  const missingReferences: MediaReference[] = [];
 
-  // Get all media files
-  const allMediaFiles = [
-    ...getAllMediaFromContentAssets(contentDir),
-    ...getAllMediaFromAssets(assetsDir),
-  ];
+  const markdownGlob = new Glob("*/*.md");
+  for await (const filePath of markdownGlob.scan({ cwd: contentDir, absolute: true })) {
+    const year = basename(dirname(filePath));
+    if (!/^\d{4}$/.test(year)) continue;
 
-  // Get all referenced media
-  const referencedMedia = new Set<string>();
+    totalMarkdownFiles += 1;
+    const lines = (await Bun.file(filePath).text()).split("\n");
 
-  // Scan markdown files
-  const years = readdirSync(contentDir).filter((f) => {
-    const fullPath = join(contentDir, f);
-    return statSync(fullPath).isDirectory() && /^\d{4}$/.test(f);
-  });
+    for (const [index, line] of lines.entries()) {
+      const lineNumber = index + 1;
 
-  for (const year of years) {
-    const yearDir = join(contentDir, year);
-    const files = readdirSync(yearDir).filter((f) => f.endsWith(".md"));
-
-    for (const file of files) {
-      totalMarkdownFiles++;
-      const filePath = join(yearDir, file);
-      const content = readFileSync(filePath, "utf8");
-      const lines = content.split("\n");
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const lineNumber = i + 1;
-
-        // Check markdown images: ![alt](path)
-        const imageMatches = line.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g);
-        for (const match of imageMatches) {
-          const mediaPath = match[2];
-          if (mediaPath.startsWith("http")) continue;
-
-          const ext = mediaPath.substring(mediaPath.lastIndexOf(".")).toLowerCase();
-          if (!imageExtensions.includes(ext)) continue;
-
-          totalMediaReferences++;
-          referencedMedia.add(basename(mediaPath));
-          checkMediaReference(filePath, lineNumber, mediaPath, "image", missingReferences);
+      for (const match of line.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g)) {
+        const mediaPath = match[2];
+        if (isRemoteMedia(mediaPath) || !imageExtensions.has(extname(mediaPath).toLowerCase())) {
+          continue;
         }
 
-        // Check video tags: <video src="path"
-        const videoMatches = line.matchAll(/<video[^>]+src="([^"]+)"/g);
-        for (const match of videoMatches) {
-          const mediaPath = match[1];
-          if (mediaPath.startsWith("http")) continue;
+        totalMediaReferences += 1;
+        referencedMedia.add(basename(mediaPath));
+        await checkMediaReference(filePath, lineNumber, mediaPath, "image", missingReferences);
+      }
 
-          totalMediaReferences++;
-          referencedMedia.add(basename(mediaPath));
-          checkMediaReference(filePath, lineNumber, mediaPath, "video", missingReferences);
-        }
+      for (const match of line.matchAll(/<video[^>]+src="([^"]+)"/g)) {
+        const mediaPath = match[1];
+        if (isRemoteMedia(mediaPath)) continue;
+
+        totalMediaReferences += 1;
+        referencedMedia.add(basename(mediaPath));
+        await checkMediaReference(filePath, lineNumber, mediaPath, "video", missingReferences);
       }
     }
   }
 
-  // Find unused media
   const unusedMedia = allMediaFiles.filter((media) => !referencedMedia.has(media.filename));
-  const unusedMediaSize = unusedMedia.reduce((sum, file) => sum + file.size, 0);
-
   return {
     totalMarkdownFiles,
     totalMediaReferences,
@@ -178,102 +156,82 @@ function validateMedia(contentDir: string, assetsDir: string): ValidationResult 
     totalMediaFiles: allMediaFiles.length,
     referencedMediaCount: referencedMedia.size,
     unusedMedia,
-    unusedMediaSize,
+    unusedMediaSize: unusedMedia.reduce((sum, file) => sum + file.size, 0),
   };
 }
 
-function getAllMediaFromContentAssets(contentDir: string): MediaFile[] {
-  const mediaFiles: MediaFile[] = [];
+async function getAllMediaFromContentAssets(contentDir: string): Promise<MediaFile[]> {
+  if (!(await isDirectory(contentDir))) return [];
 
-  if (!existsSync(contentDir)) return [];
+  const files: MediaFile[] = [];
+  const glob = new Glob("*/_assets/*");
+  for await (const filePath of glob.scan({ cwd: contentDir, absolute: true })) {
+    const filename = basename(filePath);
+    if (!mediaExtensions.has(extname(filename).toLowerCase())) continue;
 
-  const years = readdirSync(contentDir).filter((f) => {
-    const fullPath = join(contentDir, f);
-    return statSync(fullPath).isDirectory() && /^\d{4}$/.test(f);
-  });
+    const year = basename(dirname(dirname(filePath)));
+    if (!/^\d{4}$/.test(year)) continue;
 
-  for (const year of years) {
-    const assetsDir = join(contentDir, year, "_assets");
-    if (!existsSync(assetsDir)) continue;
-
-    const files = readdirSync(assetsDir);
-    for (const file of files) {
-      const ext = file.substring(file.lastIndexOf(".")).toLowerCase();
-      if (!mediaExtensions.includes(ext)) continue;
-
-      const filePath = join(assetsDir, file);
-      const stats = statSync(filePath);
-
-      mediaFiles.push({
-        path: filePath,
-        filename: file,
-        year,
-        size: stats.size,
-        location: "content/_assets",
-      });
-    }
-  }
-
-  return mediaFiles;
-}
-
-function getAllMediaFromAssets(assetsDir: string): MediaFile[] {
-  const mediaFiles: MediaFile[] = [];
-
-  if (!existsSync(assetsDir)) return [];
-
-  const years = readdirSync(assetsDir).filter((f) => {
-    const fullPath = join(assetsDir, f);
-    return statSync(fullPath).isDirectory() && /^\d{4}$/.test(f);
-  });
-
-  for (const year of years) {
-    const yearDir = join(assetsDir, year);
-    const files = readdirSync(yearDir).filter((f) => {
-      const fullPath = join(yearDir, f);
-      return statSync(fullPath).isFile();
+    const file = Bun.file(filePath);
+    files.push({
+      path: filePath,
+      filename,
+      year,
+      size: file.size,
+      location: "content/_assets",
     });
-
-    for (const file of files) {
-      const ext = file.substring(file.lastIndexOf(".")).toLowerCase();
-      if (!mediaExtensions.includes(ext)) continue;
-
-      const filePath = join(yearDir, file);
-      const stats = statSync(filePath);
-
-      mediaFiles.push({
-        path: filePath,
-        filename: file,
-        year,
-        size: stats.size,
-        location: "assets",
-      });
-    }
   }
-
-  return mediaFiles;
+  return files;
 }
 
-function checkMediaReference(
+async function getAllMediaFromAssets(assetsDir: string): Promise<MediaFile[]> {
+  if (!(await isDirectory(assetsDir))) return [];
+
+  const files: MediaFile[] = [];
+  const glob = new Glob("*/*");
+  for await (const filePath of glob.scan({ cwd: assetsDir, absolute: true })) {
+    const filename = basename(filePath);
+    if (!mediaExtensions.has(extname(filename).toLowerCase())) continue;
+
+    const year = basename(dirname(filePath));
+    if (!/^\d{4}$/.test(year)) continue;
+
+    const file = Bun.file(filePath);
+    const stat = await file.stat();
+    if (!stat?.isFile()) continue;
+    files.push({
+      path: filePath,
+      filename,
+      year,
+      size: stat.size,
+      location: "assets",
+    });
+  }
+  return files;
+}
+
+async function checkMediaReference(
   markdownFile: string,
   lineNumber: number,
   mediaPath: string,
-  type: "image" | "video",
+  type: MediaReference["type"],
   missingReferences: MediaReference[],
-): void {
-  const markdownDir = dirname(markdownFile);
-  const resolvedPath = resolve(markdownDir, mediaPath);
+): Promise<void> {
+  const resolvedPath = resolve(dirname(markdownFile), mediaPath);
+  if (await Bun.file(resolvedPath).exists()) return;
 
-  if (!existsSync(resolvedPath)) {
-    missingReferences.push({
-      file: markdownFile.replace(`${process.cwd()}/`, ""),
-      line: lineNumber,
-      mediaPath,
-      resolvedPath: resolvedPath.replace(`${process.cwd()}/`, ""),
-      exists: false,
-      type,
-    });
-  }
+  missingReferences.push({
+    file: relative(process.cwd(), markdownFile),
+    line: lineNumber,
+    mediaPath,
+    resolvedPath: relative(process.cwd(), resolvedPath),
+    exists: false,
+    type,
+  });
+}
+
+function isRemoteMedia(mediaPath: string): boolean {
+  return /^(?:https?:)?\/\//i.test(mediaPath) || mediaPath.startsWith("data:");
 }
 
 export function registerValidateMediaCommand(program: Command): Command {

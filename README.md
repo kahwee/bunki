@@ -42,9 +42,9 @@ This creates a fully functional site with Markdown content, responsive templates
 Create `bunki.config.ts` in your project root:
 
 ```typescript
-import { SiteConfig } from "bunki";
+import { defineConfig } from "bunki";
 
-export default (): SiteConfig => ({
+export default defineConfig({
   title: "My Blog",
   description: "My thoughts and ideas",
   baseUrl: "https://example.com",
@@ -333,9 +333,9 @@ All pages include breadcrumb navigation for better site hierarchy understanding:
 Enhance your JSON-LD output by providing complete author and site information in `bunki.config.ts`:
 
 ```typescript
-import { SiteConfig } from "bunki";
+import { defineConfig } from "bunki";
 
-export default (): SiteConfig => ({
+export default defineConfig({
   title: "My Blog",
   description: "My thoughts and ideas on web development",
   baseUrl: "https://example.com",
@@ -512,9 +512,9 @@ The directory structure is preserved when uploading to cloud storage.
 Add S3/R2 configuration to `bunki.config.ts`:
 
 ```typescript
-import { SiteConfig } from "bunki";
+import { defineConfig } from "bunki";
 
-export default (): SiteConfig => ({
+export default defineConfig({
   title: "My Blog",
   // ... other config
 
@@ -887,9 +887,9 @@ Ensure all required environment variables are set. Check `bunki.config.ts` and y
 Configure co-located content assets in `bunki.config.ts`:
 
 ```typescript
-import { SiteConfig } from "bunki";
+import { defineConfig } from "bunki";
 
-export default (): SiteConfig => ({
+export default defineConfig({
   title: "My Blog",
   baseUrl: "https://example.com",
   domain: "example.com",

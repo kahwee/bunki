@@ -217,6 +217,8 @@ export interface SiteConfig {
  * Options for initializing the site generator
  */
 export interface GeneratorOptions {
+  /** Project root used for config, cache, and project-relative assets */
+  rootDir?: string;
   /** Directory containing markdown content */
   contentDir: string;
   /** Directory where generated files will be output */

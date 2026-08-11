@@ -4,7 +4,6 @@
  */
 
 import path from "node:path";
-import slugify from "slugify";
 import { FILES, PAGINATION } from "./constants";
 import { copyStaticAssets, generateStylesheet } from "./generators/assets";
 import {
@@ -23,7 +22,8 @@ import {
   generateYearArchives,
 } from "./generators/pages";
 import { parseMarkdownDirectory, parseMarkdownFiles } from "./parser";
-import type { GeneratorOptions, Post, Site, TagData } from "./types";
+import { createSiteModel } from "./site-model";
+import type { GeneratorOptions, Post, Site } from "./types";
 import {
   type BuildCache,
   hasConfigChanged,
@@ -35,9 +35,7 @@ import {
 } from "./utils/build-cache";
 import { displayMetrics, MetricsCollector } from "./utils/build-metrics";
 import { detectChanges, estimateTimeSaved } from "./utils/change-detector";
-import { getPacificYear } from "./utils/date-utils";
-import { ensureDir, findFilesByPattern } from "./utils/file-utils";
-import { extractFirstImageUrl, generatePostPageSchemas, schemasToHtml } from "./utils/json-ld";
+import { ensureDir, findFilesByPattern, isDirectory } from "./utils/file-utils";
 import { setNoFollowExceptions } from "./utils/markdown/parser";
 import { createTemplateEngine } from "./utils/template-engine";
 
@@ -46,7 +44,7 @@ export class SiteGenerator {
   private site: Site;
   private metrics: MetricsCollector;
   private cache: BuildCache | null = null;
-  private incrementalMode: boolean = false;
+  private incrementalMode = false;
 
   constructor(options: GeneratorOptions) {
     this.options = options;
@@ -78,20 +76,14 @@ export class SiteGenerator {
 
     // Fail immediately if images are placed in content/_assets/ directly.
     // Images must live in content/{year}/_assets/ — never at the content root.
-    const flatAssetsDir = path.join(process.cwd(), "content", "_assets");
-    try {
-      const stat = await import("node:fs/promises").then((m) => m.stat(flatAssetsDir));
-      if (stat.isDirectory()) {
-        throw new Error(
-          `Build error: content/_assets/ must not exist.\n` +
-            `Images must be placed in content/{year}/_assets/ (e.g. content/2025/_assets/).\n` +
-            `Move any files from content/_assets/ into the correct year folder and retry.`,
-        );
-      }
-    } catch (err: unknown) {
-      const code = err instanceof Error ? (err as NodeJS.ErrnoException).code : undefined;
-      if (code !== "ENOENT") throw err;
-      // ENOENT = directory doesn't exist, which is correct — continue
+    const projectRoot = this.options.rootDir ?? process.cwd();
+    const flatAssetsDir = path.join(this.options.contentDir, "_assets");
+    if (await isDirectory(flatAssetsDir)) {
+      throw new Error(
+        `Build error: content/_assets/ must not exist.\n` +
+          `Images must be placed in content/{year}/_assets/ (e.g. content/2025/_assets/).\n` +
+          `Move any files from content/_assets/ into the correct year folder and retry.`,
+      );
     }
 
     await ensureDir(this.options.outputDir);
@@ -103,20 +95,21 @@ export class SiteGenerator {
 
     // Load tag descriptions from tags.toml if available
     let tagDescriptions: Record<string, string> = {};
-    const tagsTomlPath = path.join(process.cwd(), "src", "tags.toml");
+    const tagsTomlPath = path.join(projectRoot, "src", "tags.toml");
 
     const tagsTomlFile = Bun.file(tagsTomlPath);
     if (await tagsTomlFile.exists()) {
       try {
-        const raw = require(tagsTomlPath);
+        const raw = Bun.TOML.parse(await tagsTomlFile.text()) as Record<string, unknown>;
         // Support both flat { tag: "desc" } and nested { tags: { tag: "desc" } } structures
         if (raw.tags && typeof raw.tags === "object" && Object.keys(raw).length === 1) {
           console.warn(
-            "tags.toml uses a [tags] section header — descriptions loaded, but consider removing the [tags] header for cleaner structure.",
+            "tags.toml uses a [tags] section header — descriptions loaded, " +
+              "but consider removing the [tags] header for cleaner structure.",
           );
           tagDescriptions = raw.tags as Record<string, string>;
         } else {
-          tagDescriptions = raw;
+          tagDescriptions = raw as Record<string, string>;
         }
         console.log(
           `Loaded ${Object.keys(tagDescriptions).length} tag descriptions from tags.toml`,
@@ -128,69 +121,13 @@ export class SiteGenerator {
 
     // Load cache for incremental builds
     if (this.incrementalMode) {
-      this.cache = await loadCache(process.cwd());
+      this.cache = await loadCache(projectRoot);
     }
 
     // Parse markdown files (full or incremental)
     const posts = await this.parseContent();
 
-    // Build tags and process posts (continued below...)
-
-    // Build tags and process posts
-    const tags: Record<string, TagData> = {};
-
-    posts.forEach((post) => {
-      post.tagSlugs = {};
-
-      // Extract first image URL from post content for thumbnail/social sharing
-      const imageUrl = extractFirstImageUrl(post.html, this.options.config.baseUrl);
-      if (imageUrl) {
-        post.image = imageUrl;
-      }
-
-      // Calculate word count for reading time and schema.org
-      if (post.content) {
-        post.wordCount = post.content.split(/\s+/).length;
-      }
-
-      // Generate and cache JSON-LD schemas
-      const schemas = generatePostPageSchemas({
-        post,
-        site: this.options.config,
-        imageUrl: post.image,
-      });
-      post.jsonLd = schemasToHtml(schemas);
-
-      post.tags.forEach((tagName) => {
-        const tagSlug = slugify(tagName, { lower: true, strict: true });
-        post.tagSlugs[tagName] = tagSlug;
-
-        if (!tags[tagName]) {
-          const tagData: TagData = {
-            name: tagName,
-            slug: tagSlug,
-            count: 0,
-            posts: [],
-          };
-
-          if (tagDescriptions[tagName.toLowerCase()]) {
-            tagData.description = tagDescriptions[tagName.toLowerCase()];
-          }
-
-          tags[tagName] = tagData;
-        }
-
-        tags[tagName].count += 1;
-        tags[tagName].posts.push(post);
-      });
-    });
-
-    this.site = {
-      name: this.options.config.domain,
-      posts,
-      tags,
-      postsByYear: this.groupPostsByYear(posts),
-    };
+    this.site = createSiteModel(posts, this.options.config, tagDescriptions);
   }
 
   /**
@@ -207,7 +144,10 @@ export class SiteGenerator {
     // Check if CSS needs rebuilding
     let cssChanged = true;
     if (this.cache && this.incrementalMode && this.options.config.css) {
-      const cssInputPath = path.resolve(process.cwd(), this.options.config.css.input);
+      const cssInputPath = path.resolve(
+        this.options.rootDir ?? process.cwd(),
+        this.options.config.css.input,
+      );
       const cssOutputPath = path.join(this.options.outputDir, this.options.config.css.output);
 
       const cssOutputExists = await Bun.file(cssOutputPath).exists();
@@ -250,7 +190,7 @@ export class SiteGenerator {
 
     // Save cache for incremental builds
     if (this.cache) {
-      await saveCache(process.cwd(), this.cache);
+      await saveCache(this.options.rootDir ?? process.cwd(), this.cache);
     }
   }
 
@@ -258,33 +198,38 @@ export class SiteGenerator {
    * Generate all feed files (RSS, sitemap, robots.txt)
    */
   private async generateFeeds(): Promise<void> {
-    // Generate RSS feed
     const rssContent = generateRSSFeed(this.site, this.options.config);
-    await Bun.write(path.join(this.options.outputDir, "feed.xml"), rssContent);
-
-    // Generate sitemap
     const sitemapContent = generateSitemap(
       this.site,
       this.options.config,
       PAGINATION.DEFAULT_PAGE_SIZE,
     );
-    await Bun.write(path.join(this.options.outputDir, "sitemap.xml"), sitemapContent);
-    console.log("Generated sitemap.xml");
+    const robotsTxtContent = generateRobotsTxt(this.options.config);
+    const urlCount = this.site.posts.length + Object.keys(this.site.tags).length + 10;
+    const needsSitemapIndex =
+      urlCount > FILES.MAX_SITEMAP_URLS || sitemapContent.length > FILES.MAX_SITEMAP_SIZE;
 
-    // Generate sitemap index if content is large
-    const urlCount = this.site.posts.length + Object.keys(this.site.tags).length + 10; // rough estimate
-    const sitemapSize = sitemapContent.length;
+    const writes: Promise<number>[] = [
+      Bun.write(path.join(this.options.outputDir, "feed.xml"), rssContent),
+      Bun.write(path.join(this.options.outputDir, "sitemap.xml"), sitemapContent),
+      Bun.write(path.join(this.options.outputDir, "robots.txt"), robotsTxtContent),
+    ];
 
-    if (urlCount > FILES.MAX_SITEMAP_URLS || sitemapSize > FILES.MAX_SITEMAP_SIZE) {
-      const sitemapIndexContent = generateSitemapIndex(this.options.config);
-      await Bun.write(path.join(this.options.outputDir, "sitemap_index.xml"), sitemapIndexContent);
-      console.log("Generated sitemap_index.xml");
+    if (needsSitemapIndex) {
+      writes.push(
+        Bun.write(
+          path.join(this.options.outputDir, "sitemap_index.xml"),
+          generateSitemapIndex(this.options.config),
+        ),
+      );
     }
 
-    // Generate robots.txt
-    const robotsTxtContent = generateRobotsTxt(this.options.config);
-    await Bun.write(path.join(this.options.outputDir, "robots.txt"), robotsTxtContent);
+    await Promise.all(writes);
+    console.log("Generated sitemap.xml");
     console.log("Generated robots.txt");
+    if (needsSitemapIndex) {
+      console.log("Generated sitemap_index.xml");
+    }
   }
 
   /**
@@ -319,7 +264,7 @@ export class SiteGenerator {
     // Incremental build - detect changes
     const allFiles = await findFilesByPattern("**/*.md", this.options.contentDir, true);
 
-    const configPath = path.join(process.cwd(), "bunki.config.ts");
+    const configPath = path.join(this.options.rootDir ?? process.cwd(), "bunki.config.ts");
     const configChanged = await hasConfigChanged(configPath, this.cache);
 
     if (configChanged) {
@@ -349,7 +294,8 @@ export class SiteGenerator {
     // Incremental build - parse only changed files
     const timeSaved = estimateTimeSaved(allFiles.length, changes.changedPosts.length);
     console.log(
-      `📦 Incremental build: ${changes.changedPosts.length}/${allFiles.length} files changed (~${timeSaved}ms saved)`,
+      `📦 Incremental build: ${changes.changedPosts.length}/${allFiles.length} files changed ` +
+        `(~${timeSaved}ms saved)`,
     );
 
     // Parse only changed files
@@ -359,11 +305,13 @@ export class SiteGenerator {
     );
 
     // Load cached posts for unchanged files
-    const unchangedFiles = allFiles.filter((f) => !changes.changedPosts.includes(f));
+    const changedFiles = new Set(changes.changedPosts);
+    const unchangedFiles = allFiles.filter((file) => !changedFiles.has(file));
     const cachedPosts = loadCachedPosts(this.cache, unchangedFiles);
 
     console.log(
-      `   Parsed: ${changedPostsWithPaths.length} new/changed, loaded: ${cachedPosts.length} from cache`,
+      `   Parsed: ${changedPostsWithPaths.length} new/changed, ` +
+        `loaded: ${cachedPosts.length} from cache`,
     );
 
     // Extract posts from the changed posts
@@ -380,27 +328,6 @@ export class SiteGenerator {
     }
 
     return allPosts;
-  }
-
-  /**
-   * Group posts by year (Pacific timezone)
-   * @param posts - Array of posts
-   * @returns Posts grouped by year
-   */
-  private groupPostsByYear(posts: Post[]): Record<string, Post[]> {
-    const postsByYear: Record<string, Post[]> = {};
-
-    for (const post of posts) {
-      const year = getPacificYear(post.date).toString();
-
-      if (!postsByYear[year]) {
-        postsByYear[year] = [];
-      }
-
-      postsByYear[year].push(post);
-    }
-
-    return postsByYear;
   }
 
   /**

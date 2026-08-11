@@ -1,8 +1,6 @@
 #!/usr/bin/env bun
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { Command } from "commander";
+import packageJson from "../package.json";
 import { registerCssCommand } from "./cli/commands/css";
 import { registerGenerateCommand } from "./cli/commands/generate";
 import { registerImagesPushCommand } from "./cli/commands/images-push";
@@ -12,14 +10,8 @@ import { registerServeCommand } from "./cli/commands/serve";
 import { registerValidateCommand } from "./cli/commands/validate";
 import { registerValidateMediaCommand } from "./cli/commands/validate-media";
 
-// Read version from package.json
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const packageJson = JSON.parse(readFileSync(join(__dirname, "../package.json"), "utf-8"));
-const VERSION = packageJson.version;
-
 const program = new Command();
 
-// Register modular commands
 registerInitCommand(program);
 registerNewCommand(program);
 registerGenerateCommand(program);
@@ -32,13 +24,10 @@ registerValidateMediaCommand(program);
 program
   .name("bunki")
   .description("An opinionated static site generator built with Bun")
-  .version(VERSION);
+  .version(packageJson.version);
 
-// When called directly (not imported)
-// This ensures it works both as ESM import and when executed directly
-// Handle both file:// URLs and plain paths for Bun compatibility
-const currentFile = import.meta.url.replace("file://", "");
-const mainFile = Bun.main;
-if (currentFile === mainFile || currentFile.endsWith(mainFile)) {
+if (import.meta.main) {
   program.parse(Bun.argv);
 }
+
+export { program };

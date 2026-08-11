@@ -191,7 +191,7 @@ describe("Configuration - Default Config Creation", () => {
     const funcConfigPath = path.join(testConfigDir, "func-config.js");
     await Bun.write(
       funcConfigPath,
-      `export default function() { return { title: "Function Config", description: "Test", baseUrl: "https://test.com", domain: "test" }; }`,
+      `export default defineConfig() { return { title: "Function Config", description: "Test", baseUrl: "https://test.com", domain: "test" }; }`,
     );
 
     const config = await loadConfig(funcConfigPath);
@@ -277,7 +277,7 @@ describe("Configuration - Save Config", () => {
 
     // Read and verify content
     const content = await Bun.file(testSavePath).text();
-    expect(content).toInclude("export default function");
+    expect(content).toInclude("export default defineConfig");
     expect(content).toInclude("TypeScript Config");
 
     // Cleanup

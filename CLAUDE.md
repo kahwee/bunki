@@ -196,12 +196,10 @@ Use Bun file helpers for existence checks, metadata, text reads, and binary read
 
 **CLI entry detection**
 
-`src/cli.ts` compares the current file with `Bun.main` and normalizes the `file://` prefix:
+`src/cli.ts` uses Bun's native entrypoint check:
 
 ```typescript
-const currentFile = import.meta.url.replace("file://", "");
-const mainFile = Bun.main;
-if (currentFile === mainFile || currentFile.endsWith(mainFile)) {
+if (import.meta.main) {
   program.parse(Bun.argv);
 }
 ```
