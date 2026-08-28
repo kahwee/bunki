@@ -2,7 +2,7 @@
 
 ## Environment Setup
 
-Bunki requires **Bun v1.3.14+**. Bun is the supported runtime for installing, building, testing, and running this repo.
+Bunki requires **Bun v1.4.0+**. Bun is the supported runtime for installing, building, testing, and running this repo.
 
 ```bash
 # Install Bun

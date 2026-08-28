@@ -8,12 +8,12 @@ Fast static site generator for blogs and documentation built with Bun. Supports 
 
 ## Install
 
-Requires **Bun v1.3.14+**. Bun v1.3.14 is the latest stable Bun release currently supported by this project. Bun is the supported runtime for installing, building, testing, and running Bunki.
+Requires **Bun v1.4.0+**. Bun v1.4.0 is the latest stable Bun release currently supported by this project. Bun is the supported runtime for installing, building, testing, and running Bunki.
 
 Check your runtime before working on Bunki:
 
 ```bash
-bun --version  # should report 1.3.14 or newer
+bun --version  # should report 1.4.0 or newer
 ```
 
 ```bash
