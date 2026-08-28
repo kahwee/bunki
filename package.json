@@ -61,7 +61,7 @@
     "slugify": "^1.6.9"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.10",
+    "@biomejs/biome": "^2.5.11",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/nunjucks": "^3.2.6",
     "@types/sanitize-html": "^2.16.1",
@@ -69,7 +69,7 @@
     "bun-types": "^1.4.0",
     "husky": "^9.1.7",
     "tailwindcss": "^4.3.3",
-    "typescript": "^7.0.2"
+    "typescript": "7.0.2"
   },
   "peerDependencies": {
     "postcss": "^8.0.0"
