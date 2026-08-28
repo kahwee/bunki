@@ -7,7 +7,7 @@ Bunki requires **Bun v1.4.0+**. Bun is the supported runtime for installing, bui
 ```bash
 # Install Bun
 curl -fsSL https://bun.sh/install | bash
-bun upgrade --version 1.3.14
+bun upgrade --version 1.4.0
 
 # Clone and set up
 cd bunki

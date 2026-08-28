@@ -1243,7 +1243,7 @@ bun run format             # Biome formatting
 GitHub Actions runs the same Bun-first workflow used locally:
 
 - **CI**: typecheck, Biome linting, coverage tests, build, and an example site generation smoke test.
-- **Compatibility Tests**: verifies the minimum supported Bun version (`1.3.14`) and the latest Bun release.
+- **Compatibility Tests**: verifies the minimum supported Bun version (`1.4.0`) and the latest Bun release.
 - **Coverage**: generates LCOV coverage and uploads it to Coveralls.
 - **PR Coverage Comment**: posts LCOV coverage feedback on pull requests.
 - **Publish to npm**: runs tests and builds first, then publishes on version tags, `[publish]` commits, or manual dispatch with `force-publish`.
