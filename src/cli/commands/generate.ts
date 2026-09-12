@@ -53,6 +53,7 @@ export async function handleGenerateCommand(
       deps.logger.log(`- Incremental mode: enabled`);
     }
     const generator = deps.createGenerator({
+      configFile: configPath,
       rootDir: process.cwd(),
       contentDir,
       outputDir,

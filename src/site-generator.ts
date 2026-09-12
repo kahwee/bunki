@@ -21,7 +21,7 @@ import {
   generateTagPages,
   generateYearArchives,
 } from "./generators/pages";
-import { parseMarkdownDirectory, parseMarkdownFiles } from "./parser";
+import { parseMarkdownCollection } from "./parser";
 import { createSiteModel } from "./site-model";
 import type { GeneratorOptions, Post, Site } from "./types";
 import {
@@ -29,12 +29,12 @@ import {
   hasConfigChanged,
   hasFileChanged,
   loadCache,
-  loadCachedPosts,
   saveCache,
   updateCacheEntry,
 } from "./utils/build-cache";
 import { displayMetrics, MetricsCollector } from "./utils/build-metrics";
-import { detectChanges, estimateTimeSaved } from "./utils/change-detector";
+import { detectChanges } from "./utils/change-detector";
+import { mapConcurrent } from "./utils/concurrency";
 import { ensureDir, findFilesByPattern, isDirectory } from "./utils/file-utils";
 import { setNoFollowExceptions } from "./utils/markdown/parser";
 import { createTemplateEngine } from "./utils/template-engine";
@@ -45,6 +45,8 @@ export class SiteGenerator {
   private metrics: MetricsCollector;
   private cache: BuildCache | null = null;
   private incrementalMode = false;
+  private stylesheetInvalidated = true;
+  private readonly templateEngine: ReturnType<typeof createTemplateEngine>;
 
   constructor(options: GeneratorOptions) {
     this.options = options;
@@ -57,7 +59,7 @@ export class SiteGenerator {
     this.metrics = new MetricsCollector();
 
     // Configure template engine with custom filters
-    createTemplateEngine(this.options.templatesDir);
+    this.templateEngine = createTemplateEngine(this.options.templatesDir);
   }
 
   /**
@@ -89,9 +91,7 @@ export class SiteGenerator {
     await ensureDir(this.options.outputDir);
 
     // Set up nofollow exceptions if configured
-    if (this.options.config.noFollowExceptions) {
-      setNoFollowExceptions(this.options.config.noFollowExceptions);
-    }
+    setNoFollowExceptions(this.options.config.noFollowExceptions ?? []);
 
     // Load tag descriptions from tags.toml if available
     let tagDescriptions: Record<string, string> = {};
@@ -142,8 +142,7 @@ export class SiteGenerator {
     this.metrics.startStage("cssProcessing");
 
     // Check if CSS needs rebuilding
-    let cssChanged = true;
-    if (this.cache && this.incrementalMode && this.options.config.css) {
+    if (this.cache && this.incrementalMode && this.options.config.css?.enabled) {
       const cssInputPath = path.resolve(
         this.options.rootDir ?? process.cwd(),
         this.options.config.css.input,
@@ -151,33 +150,57 @@ export class SiteGenerator {
       const cssOutputPath = path.join(this.options.outputDir, this.options.config.css.output);
 
       const cssOutputExists = await Bun.file(cssOutputPath).exists();
-      cssChanged = await hasFileChanged(cssInputPath, this.cache);
+      const cssChanged =
+        this.stylesheetInvalidated || (await hasFileChanged(cssInputPath, this.cache));
 
       if (!cssChanged && cssOutputExists) {
         console.log("⏭️  Skipping CSS (unchanged)");
       } else {
-        await generateStylesheet(this.options.config, this.options.outputDir);
+        await generateStylesheet(this.options.config, this.options.outputDir, this.options.rootDir);
         await updateCacheEntry(cssInputPath, this.cache);
       }
     } else {
-      await generateStylesheet(this.options.config, this.options.outputDir);
+      await generateStylesheet(this.options.config, this.options.outputDir, this.options.rootDir);
     }
 
     // Parallelize independent page generation tasks for better performance
     this.metrics.startStage("pageGeneration");
     await Promise.all([
-      generateIndexPages(this.site, this.options.config, this.options.outputDir),
-      generatePostPages(this.site, this.options.config, this.options.outputDir),
-      generateTagPages(this.site, this.options.config, this.options.outputDir),
-      generateYearArchives(this.site, this.options.config, this.options.outputDir),
-      generateMapPage(this.site, this.options.config, this.options.outputDir),
-      generate404Page(this.options.config, this.options.outputDir),
-      generatePrivacyPage(this.options.config, this.options.outputDir),
+      generateIndexPages(
+        this.site,
+        this.options.config,
+        this.options.outputDir,
+        undefined,
+        this.templateEngine,
+      ),
+      generatePostPages(
+        this.site,
+        this.options.config,
+        this.options.outputDir,
+        this.templateEngine,
+      ),
+      generateTagPages(
+        this.site,
+        this.options.config,
+        this.options.outputDir,
+        undefined,
+        this.templateEngine,
+      ),
+      generateYearArchives(
+        this.site,
+        this.options.config,
+        this.options.outputDir,
+        undefined,
+        this.templateEngine,
+      ),
+      generateMapPage(this.site, this.options.config, this.options.outputDir, this.templateEngine),
+      generate404Page(this.options.config, this.options.outputDir, this.templateEngine),
+      generatePrivacyPage(this.options.config, this.options.outputDir, this.templateEngine),
     ]);
 
     // Copy static assets
     this.metrics.startStage("assetCopying");
-    await copyStaticAssets(this.options.templatesDir, this.options.outputDir);
+    await copyStaticAssets(this.options.templatesDir, this.options.outputDir, this.options.rootDir);
 
     // Generate feeds (RSS, sitemap, robots.txt)
     this.metrics.startStage("feedGeneration");
@@ -236,98 +259,49 @@ export class SiteGenerator {
    * Parse content (full or incremental)
    */
   private async parseContent(): Promise<Post[]> {
-    const strictMode = this.options.config.strictMode ?? false;
-
-    // Full rebuild if not in incremental mode or no cache
-    if (!this.incrementalMode || !this.cache) {
-      const posts = await parseMarkdownDirectory(
-        this.options.contentDir,
-        strictMode,
-        this.options.config.cdn,
-      );
-
-      // Update cache for all files with post data
-      if (this.cache) {
-        const allFiles = await findFilesByPattern("**/*.md", this.options.contentDir, true);
-        // Use parseMarkdownFiles to get correct filePath→post pairs.
-        // posts[] is date-sorted; allFiles[] is alphabetical — index pairing
-        // would map the wrong post to each file.
-        const postsWithPaths = await parseMarkdownFiles(allFiles, this.options.config.cdn);
-        for (const { post, filePath } of postsWithPaths) {
-          await updateCacheEntry(filePath, this.cache, { post });
+    const allFiles = await findFilesByPattern("**/*.md", this.options.contentDir, true);
+    const reusablePosts = new Map<string, Post>();
+    if (this.incrementalMode && this.cache) {
+      const configPath =
+        this.options.configFile ??
+        path.join(this.options.rootDir ?? process.cwd(), "bunki.config.ts");
+      const configChanged = await hasConfigChanged(configPath, this.cache);
+      const optionsHash = Bun.hash(JSON.stringify(this.options.config)).toString(36);
+      const optionsChanged = this.cache.optionsHash !== optionsHash;
+      this.cache.optionsHash = optionsHash;
+      this.stylesheetInvalidated = configChanged || optionsChanged;
+      if (!configChanged && !optionsChanged) {
+        const changes = await detectChanges(allFiles, this.cache);
+        this.stylesheetInvalidated =
+          changes.changedPosts.length > 0 || changes.deletedPosts.length > 0;
+        const changedFiles = new Set(changes.changedPosts);
+        for (const filePath of allFiles) {
+          const post = this.cache.files[filePath]?.post;
+          if (!changedFiles.has(filePath) && post) reusablePosts.set(filePath, post);
         }
       }
-
-      return posts;
+      console.log(`Reusing ${reusablePosts.size}/${allFiles.length} cached posts`);
     }
 
-    // Incremental build - detect changes
-    const allFiles = await findFilesByPattern("**/*.md", this.options.contentDir, true);
-
-    const configPath = path.join(this.options.rootDir ?? process.cwd(), "bunki.config.ts");
-    const configChanged = await hasConfigChanged(configPath, this.cache);
-
-    if (configChanged) {
-      console.log("Config changed, full rebuild required");
-      this.incrementalMode = false;
-      return this.parseContent(); // Force full rebuild
-    }
-
-    const changes = await detectChanges(allFiles, this.cache);
-
-    // Full rebuild if needed
-    if (changes.fullRebuild) {
-      console.log("Full rebuild required");
-      this.incrementalMode = false; // Disable incremental for this build
-      return this.parseContent();
-    }
-
-    // No changes detected
-    if (changes.changedPosts.length === 0) {
-      console.log("No content changes detected, using cached posts");
-      // Load all posts from cache
-      const cachedPosts = loadCachedPosts(this.cache, allFiles);
-      console.log(`✨ Loaded ${cachedPosts.length} posts from cache (0ms parsing)`);
-      return cachedPosts;
-    }
-
-    // Incremental build - parse only changed files
-    const timeSaved = estimateTimeSaved(allFiles.length, changes.changedPosts.length);
-    console.log(
-      `📦 Incremental build: ${changes.changedPosts.length}/${allFiles.length} files changed ` +
-        `(~${timeSaved}ms saved)`,
-    );
-
-    // Parse only changed files
-    const changedPostsWithPaths = await parseMarkdownFiles(
-      changes.changedPosts,
+    const parsed = await parseMarkdownCollection(
+      allFiles,
+      this.options.config.strictMode ?? false,
       this.options.config.cdn,
+      reusablePosts,
     );
 
-    // Load cached posts for unchanged files
-    const changedFiles = new Set(changes.changedPosts);
-    const unchangedFiles = allFiles.filter((file) => !changedFiles.has(file));
-    const cachedPosts = loadCachedPosts(this.cache, unchangedFiles);
-
-    console.log(
-      `   Parsed: ${changedPostsWithPaths.length} new/changed, ` +
-        `loaded: ${cachedPosts.length} from cache`,
-    );
-
-    // Extract posts from the changed posts
-    const changedPosts = changedPostsWithPaths.map((p) => p.post);
-
-    // Merge and sort all posts by date
-    const allPosts = [...changedPosts, ...cachedPosts].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
-
-    // Update cache for changed files with post data
-    for (const { post, filePath } of changedPostsWithPaths) {
-      await updateCacheEntry(filePath, this.cache, { post });
+    if (this.cache) {
+      const cache = this.cache;
+      const validFiles = new Set(parsed.map(({ filePath }) => filePath));
+      for (const filePath of Object.keys(cache.files)) {
+        if (filePath.endsWith(".md") && !validFiles.has(filePath)) delete cache.files[filePath];
+      }
+      await mapConcurrent(
+        parsed.filter(({ filePath }) => !reusablePosts.has(filePath)),
+        ({ post, filePath }) => updateCacheEntry(filePath, cache, { post }),
+      );
     }
-
-    return allPosts;
+    return parsed.map(({ post }) => post);
   }
 
   /**
@@ -339,24 +313,18 @@ export class SiteGenerator {
     totalSize: number;
   }> {
     const outputDir = this.options.outputDir;
-    let totalSize = 0;
-    let pageCount = 0;
+    let sizes: number[] = [];
 
     try {
       // Use Bun.Glob to find all HTML files
       const { Glob } = await import("bun");
       const glob = new Glob("**/*.html");
 
-      for await (const filePath of glob.scan({
-        cwd: outputDir,
-        absolute: true,
-      })) {
-        pageCount++;
-        const stat = await Bun.file(filePath).stat();
-        if (stat) {
-          totalSize += stat.size;
-        }
-      }
+      const files = Array.from(glob.scanSync({ cwd: outputDir, absolute: true, onlyFiles: true }));
+      sizes = await mapConcurrent(
+        files,
+        async (filePath) => (await Bun.file(filePath).stat()).size,
+      );
     } catch (error) {
       // If output directory doesn't exist yet, return zeros
       console.warn("Could not calculate output stats:", error);
@@ -364,8 +332,8 @@ export class SiteGenerator {
 
     return {
       posts: this.site.posts.length,
-      pages: pageCount,
-      totalSize,
+      pages: sizes.length,
+      totalSize: sizes.reduce((total, size) => total + size, 0),
     };
   }
 }

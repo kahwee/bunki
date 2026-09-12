@@ -8,6 +8,7 @@
       "*.md",
       "*.css",
       "src/**",
+      "scripts/**",
       "test/**/*.test.ts",
       "test/**/*.test.js",
       "fixtures/**",

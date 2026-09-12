@@ -12,6 +12,7 @@
     "test": "bun test",
     "test:coverage": "bun test --coverage --coverage-reporter=lcov",
     "test:watch": "bun test --watch",
+    "benchmark": "bun scripts/benchmark-build.ts",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "lint": "biome check .",

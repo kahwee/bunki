@@ -6,6 +6,7 @@
 import type { Post } from "../types";
 import type { BuildCache } from "./build-cache";
 import { hasFileChanged } from "./build-cache";
+import { mapConcurrent } from "./concurrency";
 
 export interface ChangeSet {
   /** Posts that were added or modified */
@@ -77,17 +78,14 @@ export async function detectChanges(
   }
 
   // Check for changed posts
-  for (const filePath of currentFiles) {
-    const changed = await hasFileChanged(filePath, cache);
-    if (changed) {
-      changes.changedPosts.push(filePath);
-    }
-  }
+  const changed = await mapConcurrent(currentFiles, (filePath) => hasFileChanged(filePath, cache));
+  changes.changedPosts = currentFiles.filter((_, index) => changed[index]);
 
   // Check for deleted posts (only check markdown files)
   const cachedFiles = Object.keys(cache.files).filter((f) => f.endsWith(".md"));
+  const currentFileSet = new Set(currentFiles);
   for (const cachedFile of cachedFiles) {
-    if (!currentFiles.includes(cachedFile)) {
+    if (!currentFileSet.has(cachedFile)) {
       // File was in cache but not in current files = deleted
       changes.deletedPosts.push(cachedFile);
     }

@@ -1,5 +1,6 @@
 import path from "node:path";
 import type { CDNConfig, Post } from "./types";
+import { mapConcurrent } from "./utils/concurrency";
 import { findFilesByPattern, getBaseFilename } from "./utils/file-utils";
 import { type ParseError, parseMarkdownFile } from "./utils/markdown-utils";
 
@@ -14,7 +15,7 @@ interface MarkdownParseAttempt {
 }
 
 interface MarkdownParseBatch {
-  posts: Post[];
+  posts: ParsedMarkdownFile[];
   errors: ParseError[];
 }
 
@@ -58,7 +59,9 @@ function detectFileConflicts(files: string[]): ParseError[] {
   for (const filePath of files) {
     const slug = getBaseFilename(filePath);
     const dir = path.dirname(filePath);
-    const year = path.basename(dir);
+    const year = path.basename(
+      path.basename(filePath).toLowerCase() === "readme.md" ? path.dirname(dir) : dir,
+    );
     const key = `${year}/${slug}`;
 
     if (!slugMap.has(key)) {
@@ -86,12 +89,12 @@ function buildParseBatch(
   attempts: MarkdownParseAttempt[],
   conflictErrors: ParseError[] = [],
 ): MarkdownParseBatch {
-  const posts: Post[] = [];
+  const posts: ParsedMarkdownFile[] = [];
   const errors: ParseError[] = [...conflictErrors];
 
-  for (const { result } of attempts) {
+  for (const { result, filePath } of attempts) {
     if (result.post) {
-      posts.push(result.post);
+      posts.push({ post: result.post, filePath });
     } else if (result.error) {
       errors.push(result.error);
     }
@@ -108,34 +111,21 @@ export async function parseMarkdownFiles(
   filePaths: string[],
   cdnConfig?: CDNConfig,
 ): Promise<ParsedMarkdownFile[]> {
-  const attempts = await Promise.all(
-    filePaths.map(async (filePath) => ({
-      filePath,
-      result: await parseMarkdownFile(filePath, cdnConfig),
-    })),
-  );
-
-  const postsWithPaths: ParsedMarkdownFile[] = [];
-  for (const { result, filePath } of attempts) {
-    if (result.post) {
-      postsWithPaths.push({ post: result.post, filePath });
-    }
-  }
-
-  return postsWithPaths;
+  return (await parseMarkdownBatch(filePaths, cdnConfig)).posts;
 }
 
 async function parseMarkdownBatch(
   filePaths: string[],
   cdnConfig?: CDNConfig,
   conflictErrors: ParseError[] = [],
+  cachedPosts: ReadonlyMap<string, Post> = new Map(),
 ): Promise<MarkdownParseBatch> {
-  const attempts = await Promise.all(
-    filePaths.map(async (filePath) => ({
-      filePath,
-      result: await parseMarkdownFile(filePath, cdnConfig),
-    })),
-  );
+  const attempts = await mapConcurrent(filePaths, async (filePath) => ({
+    filePath,
+    result: cachedPosts.has(filePath)
+      ? { post: cachedPosts.get(filePath) ?? null, error: null }
+      : await parseMarkdownFile(filePath, cdnConfig),
+  }));
 
   return buildParseBatch(attempts, conflictErrors);
 }
@@ -145,8 +135,18 @@ export async function parseMarkdownDirectory(
   strictMode: boolean = false,
   cdnConfig?: CDNConfig,
 ): Promise<Post[]> {
+  const files = await findFilesByPattern("**/*.md", contentDir, true);
+  return (await parseMarkdownCollection(files, strictMode, cdnConfig)).map(({ post }) => post);
+}
+
+/** Validate the whole collection while parsing only files without reusable posts. */
+export async function parseMarkdownCollection(
+  markdownFiles: string[],
+  strictMode = false,
+  cdnConfig?: CDNConfig,
+  cachedPosts: ReadonlyMap<string, Post> = new Map(),
+): Promise<ParsedMarkdownFile[]> {
   try {
-    const markdownFiles = await findFilesByPattern("**/*.md", contentDir, true);
     console.log(`Found ${markdownFiles.length} markdown files`);
 
     // Check for file conflicts first
@@ -166,7 +166,12 @@ export async function parseMarkdownDirectory(
       }
     }
 
-    const { posts, errors } = await parseMarkdownBatch(markdownFiles, cdnConfig, conflictErrors);
+    const { posts, errors } = await parseMarkdownBatch(
+      markdownFiles,
+      cdnConfig,
+      conflictErrors,
+      cachedPosts,
+    );
 
     // Display error summary if there are errors
     if (errors.length > 0) {
@@ -225,7 +230,8 @@ export async function parseMarkdownDirectory(
     }
 
     const sortedPosts = posts.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      (a, b) =>
+        Date.parse(b.post.date) - Date.parse(a.post.date) || a.filePath.localeCompare(b.filePath),
     );
 
     console.log(`Parsed ${sortedPosts.length} posts`);

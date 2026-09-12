@@ -115,7 +115,7 @@ describe("parseMarkdownFiles", () => {
 });
 
 describe("parseMarkdownDirectory - file conflicts", () => {
-  test("skips (non-strict) when both .md and README.md exist for same slug", async () => {
+  test("rejects conflicting .md and README.md paths even outside strict mode", async () => {
     const dir = path.join(TMP_PARSER, "conflict");
     await writeMd(
       dir,
@@ -129,10 +129,7 @@ describe("parseMarkdownDirectory - file conflicts", () => {
       `---\ntitle: Nested\ndate: 2025-01-02T00:00:00Z\ntags: [t]\n---\nB`,
     );
 
-    // Non-strict: should not throw, but logs the conflict
-    const posts = await parseMarkdownDirectory(dir, false);
-    // Only one post per slug should be kept (or none if both conflict)
-    expect(Array.isArray(posts)).toBe(true);
+    await expect(parseMarkdownDirectory(dir, false)).rejects.toThrow("validation error");
   });
 
   test("throws in strict mode when YAML errors exist", async () => {

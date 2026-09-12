@@ -1,6 +1,7 @@
 import path from "node:path";
 import { S3Client } from "bun";
 import type { ImageUploader, S3Config, SiteConfig, Uploader } from "../types";
+import { mapConcurrent } from "./concurrency";
 
 interface S3FileLike {
   write(file: Bun.BunFile): Promise<number>;
@@ -100,43 +101,6 @@ export class S3Uploader implements Uploader, ImageUploader {
     }
   }
 
-  /**
-   * Execute async tasks with concurrency limit
-   * @param tasks Array of task functions that return promises
-   * @param concurrency Maximum number of concurrent tasks
-   */
-  private async executeWithConcurrency<T>(
-    tasks: (() => Promise<T>)[],
-    concurrency: number,
-  ): Promise<T[]> {
-    const results: T[] = [];
-    const executing: Promise<void>[] = [];
-
-    for (const task of tasks) {
-      const promise = task()
-        .then((result) => {
-          results.push(result);
-          // Remove from executing when done
-          const index = executing.indexOf(promise);
-          if (index > -1) executing.splice(index, 1);
-        })
-        .catch((_error) => {
-          // Still remove from executing on error
-          const index = executing.indexOf(promise);
-          if (index > -1) executing.splice(index, 1);
-        });
-
-      executing.push(promise);
-
-      if (executing.length >= concurrency) {
-        await Promise.race(executing);
-      }
-    }
-
-    await Promise.all(executing);
-    return results;
-  }
-
   async uploadImages(
     imagesDir: string,
     minYear?: number,
@@ -202,40 +166,41 @@ export class S3Uploader implements Uploader, ImageUploader {
       let uploadedCount = 0;
       let failedCount = 0;
 
-      const uploadTasks = imageFiles.map((imageFile) => async () => {
-        try {
-          const imagePath = path.join(imagesDir, imageFile);
+      await mapConcurrent(
+        imageFiles,
+        async (imageFile) => {
+          try {
+            const imagePath = path.join(imagesDir, imageFile);
 
-          // Apply key transform if provided (e.g. strip _assets/ for content-assets mode)
-          const s3Key = keyTransform ? keyTransform(imageFile) : imageFile;
+            // Apply key transform if provided (e.g. strip _assets/ for content-assets mode)
+            const s3Key = keyTransform ? keyTransform(imageFile) : imageFile;
 
-          const file = Bun.file(imagePath);
+            const file = Bun.file(imagePath);
 
-          if (process.env.BUNKI_DRY_RUN === "true") {
-            // Dry run: just simulate
-          } else {
-            const s3File = this.client.file(s3Key);
-            await s3File.write(file);
+            if (process.env.BUNKI_DRY_RUN === "true") {
+              // Dry run: just simulate
+            } else {
+              const s3File = this.client.file(s3Key);
+              await s3File.write(file);
+            }
+
+            const imageUrl = this.getPublicUrl(s3Key);
+            imageUrls[s3Key] = imageUrl;
+            uploadedCount++;
+
+            if (uploadedCount % 10 === 0) {
+              console.log(`[S3] Progress: ${uploadedCount}/${imageFiles.length} images uploaded`);
+            }
+
+            return { success: true, file: s3Key };
+          } catch (error) {
+            failedCount++;
+            console.error(`[S3] Error uploading ${imageFile}:`, error);
+            return { success: false, file: imageFile };
           }
-
-          const imageUrl = this.getPublicUrl(s3Key);
-          imageUrls[s3Key] = imageUrl;
-          uploadedCount++;
-
-          if (uploadedCount % 10 === 0) {
-            console.log(`[S3] Progress: ${uploadedCount}/${imageFiles.length} images uploaded`);
-          }
-
-          return { success: true, file: s3Key };
-        } catch (error) {
-          failedCount++;
-          console.error(`[S3] Error uploading ${imageFile}:`, error);
-          return { success: false, file: imageFile };
-        }
-      });
-
-      // Execute uploads with concurrency limit
-      await this.executeWithConcurrency(uploadTasks, concurrencyLimit);
+        },
+        concurrencyLimit,
+      );
 
       console.log(
         `[S3] Upload complete: ${uploadedCount} succeeded, ${failedCount} failed out of ${imageFiles.length} images`,

@@ -26,11 +26,13 @@ export interface BuildCache {
   files: Record<string, CacheEntry>;
   /** Config file hash */
   configHash?: string;
+  /** Resolved configuration, including environment-derived and programmatic values */
+  optionsHash?: string;
   /** Last full build timestamp */
   lastFullBuild?: number;
 }
 
-const CACHE_VERSION = "2.0.0";
+const CACHE_VERSION = "3.0.0";
 const CACHE_FILENAME = ".bunki-cache.json";
 
 /**
@@ -90,7 +92,7 @@ export async function saveCache(cwd: string, cache: BuildCache): Promise<void> {
   const cachePath = path.join(cwd, CACHE_FILENAME);
 
   try {
-    await Bun.write(cachePath, JSON.stringify(cache, null, 2));
+    await Bun.write(cachePath, JSON.stringify(cache));
   } catch (error) {
     console.warn("Error saving cache:", error);
   }
@@ -122,6 +124,7 @@ export async function hasFileChanged(filePath: string, cache: BuildCache): Promi
   if (currentMtime !== cached.mtime) {
     // mtime changed, verify with hash
     const currentHash = await hashFile(filePath);
+    if (currentHash === cached.hash) cached.mtime = currentMtime;
     return currentHash !== cached.hash;
   }
 
@@ -164,7 +167,7 @@ export function removeCacheEntry(filePath: string, cache: BuildCache): void {
 export async function hasConfigChanged(configPath: string, cache: BuildCache): Promise<boolean> {
   const currentHash = await hashFile(configPath);
 
-  if (!cache.configHash) {
+  if (cache.configHash === undefined) {
     cache.configHash = currentHash;
     return true;
   }

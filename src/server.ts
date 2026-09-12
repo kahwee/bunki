@@ -80,10 +80,13 @@ export async function startServer(outputDir: string = DEFAULT_OUTPUT_DIR, port: 
 
         if (!file) {
           console.log(`404 Not Found: ${pathname}`);
-          return new Response(`<h1>404 Not Found</h1><p>Could not find ${pathname}</p>`, {
-            status: 404,
-            headers: { "Content-Type": "text/html" },
-          });
+          return new Response(
+            `<h1>404 Not Found</h1><p>Could not find ${Bun.escapeHTML(pathname)}</p>`,
+            {
+              status: 404,
+              headers: { "Content-Type": "text/html" },
+            },
+          );
         }
 
         console.log(`Serving file: ${file.name ?? pathname}`);
@@ -91,10 +94,13 @@ export async function startServer(outputDir: string = DEFAULT_OUTPUT_DIR, port: 
         return new Response(file);
       } catch (error) {
         console.error("Server error:", error);
-        return new Response(`<h1>500 Server Error</h1><pre>${error}</pre>`, {
-          status: 500,
-          headers: { "Content-Type": "text/html" },
-        });
+        return new Response(
+          `<h1>500 Server Error</h1><pre>${Bun.escapeHTML(String(error))}</pre>`,
+          {
+            status: 500,
+            headers: { "Content-Type": "text/html" },
+          },
+        );
       }
     },
   });

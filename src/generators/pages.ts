@@ -11,6 +11,10 @@ import { generateHomePageSchemas, schemasToHtml } from "../utils/json-ld";
 import { createPagination, getPaginatedItems, getTotalPages } from "../utils/pagination";
 import { generateCollectionSchemas } from "../utils/schema-factory";
 
+interface PageRenderer {
+  render(name: string, context: TemplateObject): string;
+}
+
 /**
  * Get sorted tags (by post count)
  * @param tags - Record of tag data
@@ -49,9 +53,10 @@ async function generateOptionalPage(
   outputDir: string,
   outputPath: string,
   label: string,
+  renderer: PageRenderer,
 ): Promise<void> {
   try {
-    const html = nunjucks.render(templateName, context);
+    const html = renderer.render(templateName, context);
     await writeHtmlFile(outputDir, outputPath, html);
     console.log(`Generated ${label}`);
   } catch (error) {
@@ -75,8 +80,10 @@ export async function generateIndexPages(
   config: SiteConfig,
   outputDir: string,
   pageSize: number = PAGINATION.DEFAULT_PAGE_SIZE,
+  renderer: PageRenderer = nunjucks,
 ): Promise<void> {
   const totalPages = getTotalPages(site.posts.length, pageSize);
+  const tags = getSortedTags(site.tags, config.maxTagsOnHomepage);
 
   for (let page = 1; page <= totalPages; page++) {
     const paginatedPosts = getPaginatedItems(site.posts, page, pageSize);
@@ -89,10 +96,10 @@ export async function generateIndexPages(
       jsonLd = schemasToHtml(schemas);
     }
 
-    const pageHtml = nunjucks.render("index.njk", {
+    const pageHtml = renderer.render("index.njk", {
       site: config,
       posts: paginatedPosts,
-      tags: getSortedTags(site.tags, config.maxTagsOnHomepage),
+      tags,
       pagination,
       jsonLd,
       noindex: page > SEO.NOINDEX_AFTER_PAGE,
@@ -113,6 +120,7 @@ export async function generatePostPages(
   site: Site,
   config: SiteConfig,
   outputDir: string,
+  renderer: PageRenderer = nunjucks,
 ): Promise<void> {
   // Process posts in batches for better performance
   for (let i = 0; i < site.posts.length; i += PAGINATION.BATCH_SIZE) {
@@ -122,7 +130,7 @@ export async function generatePostPages(
       batch.map(async (post) => {
         const postPath = post.url.substring(1); // Remove leading /
 
-        const postHtml = nunjucks.render("post.njk", {
+        const postHtml = renderer.render("post.njk", {
           site: config,
           post,
           jsonLd: post.jsonLd || "",
@@ -146,9 +154,11 @@ export async function generateTagPages(
   config: SiteConfig,
   outputDir: string,
   pageSize: number = PAGINATION.DEFAULT_PAGE_SIZE,
+  renderer: PageRenderer = nunjucks,
 ): Promise<void> {
+  const tags = Object.values(site.tags);
   // Generate tags index page
-  const tagIndexHtml = nunjucks.render("tags.njk", {
+  const tagIndexHtml = renderer.render("tags.njk", {
     site: config,
     tags: getSortedTags(site.tags),
   });
@@ -186,10 +196,10 @@ export async function generateTagPages(
             })
           : "";
 
-      const tagPageHtml = nunjucks.render("tag.njk", {
+      const tagPageHtml = renderer.render("tag.njk", {
         site: config,
         tag: paginatedTagData,
-        tags: Object.values(site.tags),
+        tags,
         pagination,
         noindex: page > SEO.NOINDEX_AFTER_PAGE,
         jsonLd,
@@ -217,7 +227,9 @@ export async function generateYearArchives(
   config: SiteConfig,
   outputDir: string,
   pageSize: number = PAGINATION.DEFAULT_PAGE_SIZE,
+  renderer: PageRenderer = nunjucks,
 ): Promise<void> {
+  const tags = getSortedTags(site.tags, config.maxTagsOnHomepage);
   for (const [year, yearPosts] of Object.entries(site.postsByYear)) {
     const totalPages = getTotalPages(yearPosts.length, pageSize);
 
@@ -240,10 +252,10 @@ export async function generateYearArchives(
             })
           : "";
 
-      const yearPageHtml = nunjucks.render("archive.njk", {
+      const yearPageHtml = renderer.render("archive.njk", {
         site: config,
         posts: paginatedPosts,
-        tags: getSortedTags(site.tags, config.maxTagsOnHomepage),
+        tags,
         year: year,
         pagination,
         noindex: page > SEO.NOINDEX_AFTER_PAGE,
@@ -262,8 +274,19 @@ export async function generateYearArchives(
  * @param config - Site configuration
  * @param outputDir - Output directory
  */
-export async function generate404Page(config: SiteConfig, outputDir: string): Promise<void> {
-  await generateOptionalPage("404.njk", { site: config }, outputDir, "404.html", "404.html");
+export async function generate404Page(
+  config: SiteConfig,
+  outputDir: string,
+  renderer: PageRenderer = nunjucks,
+): Promise<void> {
+  await generateOptionalPage(
+    "404.njk",
+    { site: config },
+    outputDir,
+    "404.html",
+    "404.html",
+    renderer,
+  );
 }
 
 /**
@@ -276,6 +299,7 @@ export async function generateMapPage(
   site: Site,
   config: SiteConfig,
   outputDir: string,
+  renderer: PageRenderer = nunjucks,
 ): Promise<void> {
   await generateOptionalPage(
     "map.njk",
@@ -283,6 +307,7 @@ export async function generateMapPage(
     outputDir,
     "map/index.html",
     "map page",
+    renderer,
   );
 }
 
@@ -291,12 +316,17 @@ export async function generateMapPage(
  * @param config - Site configuration
  * @param outputDir - Output directory
  */
-export async function generatePrivacyPage(config: SiteConfig, outputDir: string): Promise<void> {
+export async function generatePrivacyPage(
+  config: SiteConfig,
+  outputDir: string,
+  renderer: PageRenderer = nunjucks,
+): Promise<void> {
   await generateOptionalPage(
     "privacy.njk",
     { site: config },
     outputDir,
     "privacy/index.html",
     "privacy page",
+    renderer,
   );
 }

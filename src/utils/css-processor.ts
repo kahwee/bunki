@@ -1,4 +1,3 @@
-import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { hash } from "bun";
@@ -101,41 +100,30 @@ export async function processCSS(options: CSSProcessorOptions): Promise<CSSProce
  * Run PostCSS process
  * Throws on error - config issues will be caught
  */
-function runPostCSS(
+async function runPostCSS(
   inputPath: string,
   outputPath: string,
   configPath: string,
   projectRoot: string,
   verbose: boolean,
 ): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const args = ["x", "postcss", inputPath, "-o", outputPath, "--config", configPath];
-
-    const postcss = spawn("bun", args, {
-      stdio: verbose ? "inherit" : ["ignore", "pipe", "pipe"],
+  const subprocess = Bun.spawn(
+    [process.execPath, "x", "postcss", inputPath, "-o", outputPath, "--config", configPath],
+    {
       cwd: projectRoot,
-    });
-
-    let errorOutput = "";
-    if (!verbose) {
-      postcss.stderr?.on("data", (data) => {
-        errorOutput += data.toString();
-      });
-    }
-
-    postcss.on("close", (code) => {
-      if (code === 0) {
-        if (verbose) console.log("✅ CSS build completed successfully!");
-        return resolve();
-      }
-
-      reject(new Error(`PostCSS failed with exit code ${code}: ${errorOutput.trim()}`));
-    });
-
-    postcss.on("error", (err) => {
-      reject(new Error(`Failed to start PostCSS: ${err.message}`));
-    });
-  });
+      stdin: "ignore",
+      stdout: verbose ? "inherit" : "ignore",
+      stderr: verbose ? "inherit" : "pipe",
+    },
+  );
+  const [code, errorOutput] = await Promise.all([
+    subprocess.exited,
+    subprocess.stderr ? new Response(subprocess.stderr).text() : Promise.resolve(""),
+  ]);
+  if (code !== 0) {
+    throw new Error(`PostCSS failed with exit code ${code}: ${errorOutput.trim()}`);
+  }
+  if (verbose) console.log("✅ CSS build completed successfully!");
 }
 
 /**

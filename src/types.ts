@@ -217,6 +217,8 @@ export interface SiteConfig {
  * Options for initializing the site generator
  */
 export interface GeneratorOptions {
+  /** Config file used by the caller, for incremental cache invalidation */
+  configFile?: string;
   /** Project root used for config, cache, and project-relative assets */
   rootDir?: string;
   /** Directory containing markdown content */

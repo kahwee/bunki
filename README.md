@@ -175,7 +175,7 @@ Run `bunx bunki <command> --help` for all options.
 
 `generate` accepts `--config`, `--content`, `--output`, and `--templates` to override paths.
 
-Incremental builds store parsed posts and file checks in `.bunki-cache.json`; HTML pages are still regenerated. Add the cache to `.gitignore`. Delete that cache file to reset it, or omit `--incremental` for a full build.
+Incremental builds store parsed posts and file checks in `.bunki-cache.json`; HTML pages are still regenerated. Full and incremental builds use the same validation and date ordering. Config changes invalidate cached posts; content changes also rebuild CSS. Add the cache to `.gitignore`. Delete that cache file to reset it, or omit `--incremental` for a full build.
 
 ## Development
 
@@ -187,11 +187,14 @@ bun run test
 bun run typecheck
 bun run lint
 bun run build
+bun run benchmark -- 1000  # Measure cold, cached, and single-post-edit builds
 ```
 
 Source lives in `src/`, tests in `test/`, and test data in `fixtures/`. See [AGENTS.md](AGENTS.md) for contributor guidance and [package.json](package.json) for additional scripts.
 
 GitHub Actions runs typechecking, linting, coverage tests, a build, and a site-generation smoke test. Compatibility checks cover the minimum supported Bun version and the latest release.
+
+The benchmark creates and removes a temporary site, runs each scenario three times, and reports median wall-clock times. It uses synthetic Markdown and minimal templates with CSS disabled, so it measures parsing, caching, and site generation rather than PostCSS or network uploads.
 
 ## License
 
