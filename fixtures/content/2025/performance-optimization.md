@@ -2,79 +2,42 @@
 title: "Performance Optimization in Bunki"
 date: 2025-02-10T10:30:00-07:00
 tags: [performance, web-development, bun]
-excerpt: Exploring the performance optimization techniques used in Bunki to achieve lightning-fast static site generation. Learn how Bun's native APIs and efficient algorithms make Bunki one of the fastest static site generators available.
+excerpt: How Bunki reduces repeated parsing and filesystem work, and how to measure build performance.
 ---
 
 # Performance Optimization in Bunki
 
-When developing [Bunki](/tags/web-development/), performance was a primary consideration from day one. By leveraging [Bun's](https://bun.sh) native APIs and implementing efficient algorithms, we've created one of the fastest static site generators available.
+This sample post demonstrates Markdown rendering while describing Bunki's build pipeline. It is not a comparison benchmark against other generators.
 
-## Bun's Native File APIs
+## File handling
 
-One key area where Bunki shines is file handling. Traditional Node.js-based static site generators often struggle with I/O operations, but Bunki takes advantage of Bun's optimized file system APIs:
+Bunki uses Bun's file APIs to read content and write generated output:
 
-```javascript
-// Using Bun's file API for ultra-fast reading
-const file = Bun.file(filePath);
-const content = await file.text();
-
-// Fast file writing
+```typescript
+const content = await Bun.file(filePath).text();
 await Bun.write(outputPath, renderedContent);
 ```
 
-These simple changes lead to dramatic performance improvements compared to using Node.js `fs` module.
+Passing a `BunFile` directly to `Bun.write` also avoids materializing a JavaScript string when copying an asset.
 
-## Parallel Processing
+## Bounded concurrency
 
-Bunki processes files in parallel whenever possible:
+Parsing and file operations use bounded concurrency. This overlaps I/O without starting an unlimited number of operations. Async concurrency does not by itself run JavaScript parsing on multiple CPU cores.
 
-```javascript
-// Parse all markdown files in parallel
-const postsPromises = markdownFiles.map((filePath) =>
-  parseMarkdownFile(filePath),
-);
+## Reusing work
 
-const posts = await Promise.all(postsPromises);
+Incremental builds cache parsed posts and check file metadata before parsing again. Full and incremental builds share validation and ordering. Nunjucks caches compiled templates in its environment, and each site generator retains its own environment.
+
+HTML pages are still rendered on every build. PostCSS and large asset collections can therefore dominate a real site's build time even when Markdown parsing is cached.
+
+## Measuring a change
+
+From a Bunki source checkout, run:
+
+```bash
+bun run benchmark -- 1000
 ```
 
-This makes full use of all available CPU cores, significantly reducing the time needed to parse and process large numbers of content files.
+The benchmark reports three samples and a median for cold-cache, warm-cache, and single-post-edit builds. It uses a synthetic site with minimal templates and CSS disabled. Compare the same workload on the same machine, then measure your own site before drawing conclusions.
 
-## Optimized Template Rendering
-
-Template rendering is often a bottleneck in static site generators. Bunki uses an optimized version of Nunjucks with a custom caching layer:
-
-```javascript
-// Pre-compile templates on initialization
-const env = nunjucks.configure(templatesDir, {
-  autoescape: true,
-  watch: false, // Disable watching for production builds
-  noCache: false, // Enable template caching
-});
-
-// Custom template loader with memory cache
-class OptimizedLoader extends nunjucks.Loader {
-  // Implementation details...
-}
-```
-
-## Benchmark Results
-
-Here are some benchmark results comparing Bunki to other popular static site generators:
-
-| Operation          | Bunki | Hugo  | Gatsby | Jekyll |
-| ------------------ | ----- | ----- | ------ | ------ |
-| Parse 100 MD files | 0.12s | 0.27s | 1.20s  | 0.98s  |
-| Render 100 pages   | 0.18s | 0.43s | 2.30s  | 2.75s  |
-| Generate site      | 0.45s | 0.92s | 5.20s  | 4.50s  |
-| Memory peak        | 32MB  | 67MB  | 512MB  | 128MB  |
-
-## Future Optimizations
-
-We're always looking to improve performance further. Some planned optimizations include:
-
-1. Incremental builds to only process changed files
-2. Better caching of intermediate results
-3. Optimized image processing pipeline
-4. Custom markdown parser optimized for Bun
-
-If you have suggestions for performance improvements, please [contribute to the project](https://github.com/kahwee/bunki)!
+See the [contribution guide](https://github.com/kahwee/bunki/blob/main/CONTRIBUTING.md) for the benchmark workflow.

@@ -13,7 +13,7 @@ Use your judgment on implementation and verification. Follow nearby code and the
 - `src/cli.ts` registers commands; `src/cli/commands/` implements them.
 - `src/config.ts` owns configuration; `src/parser.ts` and `src/utils/markdown/` handle content parsing.
 - `src/generators/` produces site output; `templates/` contains Nunjucks templates and styles.
-- `test/` and `fixtures/` cover behavior; `README.md` documents usage.
+- `test/` and `fixtures/` cover behavior; `README.md` covers quick start, `docs/reference.md` explains behavior, and `CONTRIBUTING.md` covers development.
 
 Read the relevant implementation before changing behavior or documenting it.
 

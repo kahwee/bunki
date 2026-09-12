@@ -83,7 +83,7 @@ export function registerGenerateCommand(program: Command): Command {
     .option("-d, --content <dir>", "Content directory", DEFAULT_CONTENT_DIR)
     .option("-o, --output <dir>", "Output directory", DEFAULT_OUTPUT_DIR)
     .option("-t, --templates <dir>", "Templates directory", DEFAULT_TEMPLATES_DIR)
-    .option("-i, --incremental", "Enable incremental builds (only rebuild changed files)")
+    .option("-i, --incremental", "Reuse unchanged parsed posts and CSS; render all HTML pages")
     .action(async (options) => {
       await handleGenerateCommand(options);
     });

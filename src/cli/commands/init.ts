@@ -668,7 +668,8 @@ function hello() {
 1. Edit the site configuration in \`bunki.config.ts\`
 2. Create your own templates in the \`templates\` directory
 3. Add more blog posts in the \`content\` directory
-4. Run \`bunki generate\` to build your site
-5. Run \`bunki serve\` to preview your site locally
+4. Run \`bunx bunki validate\` to check your content
+5. Run \`bunx bunki generate\` to build your site in \`dist/\`
+6. Run \`bunx bunki serve\` to preview your site locally
 `;
 }

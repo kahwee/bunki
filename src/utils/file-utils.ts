@@ -197,10 +197,8 @@ export async function ensureDir(dirPath: string): Promise<void> {
 }
 
 /**
- * Copy a file from source to target using Bun's zero-copy file-to-file operation
- *
- * This uses Bun.write(target, BunFile) which performs a zero-copy operation at the kernel level.
- * Similar to `cat source > target` but much faster than reading into memory and writing back.
+ * Copy a file with Bun.write without reading its contents into a JavaScript string.
+ * Bun selects the underlying copy mechanism for the platform and file types.
  *
  * @param sourcePath - Source file path
  * @param targetPath - Target file path
@@ -290,7 +288,7 @@ export async function listDir(dirPath: string, recursive: boolean = false): Prom
  * Useful for streaming writes or building large files incrementally without loading
  * everything into memory. Uses a buffered sink with configurable watermark.
  *
- * Zero-copy streaming to disk with backpressure handling.
+ * Call flush() or end() to finish writing buffered data.
  *
  * @param filePath - Path to file
  * @param highWaterMark - Buffer size in bytes (default: 1MB)
@@ -315,10 +313,7 @@ export function createFileWriter(
 }
 
 /**
- * Write a file to stdout using zero-copy streaming
- *
- * Similar to `cat file.txt` command. Uses Bun's zero-copy mechanism to stream
- * the file content directly to stdout without loading into memory.
+ * Write a BunFile directly to stdout without creating a JavaScript string.
  *
  * @param filePath - Path to file to output
  * @returns Promise that resolves when file is written to stdout
@@ -335,7 +330,7 @@ export async function writeToStdout(filePath: string): Promise<void> {
     if (!(await file.exists())) {
       throw new Error(`File not found: ${filePath}`);
     }
-    // Zero-copy to stdout: no data is loaded into application memory
+    // Let Bun handle the transfer to stdout.
     await Bun.write(Bun.stdout, file);
   } catch (error) {
     console.error(`Error writing file to stdout: ${filePath}:`, error);

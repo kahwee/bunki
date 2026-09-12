@@ -21,7 +21,7 @@ const pacificYear = new Intl.DateTimeFormat("en-US", {
  * This is used consistently across the codebase for date handling
  *
  * @param date - Date string or Date object to convert
- * @returns Date object in Pacific timezone
+ * @returns Date whose local fields represent Pacific wall-clock time, not the original instant
  */
 export function toPacificTime(date: string | Date): Date {
   const value = new Date(date);

@@ -169,7 +169,7 @@ export interface SiteConfig {
   domain: string;
   /** Optional author name used by config templates and feeds */
   author?: string;
-  /** Optional content directory override */
+  /** Content directory used by validate; generate uses its --content option */
   contentDir?: string;
   /** Optional templates directory override */
   templatesDir?: string;
@@ -183,7 +183,7 @@ export interface SiteConfig {
   cdn?: CDNConfig;
   /** Optional number of tags to display on homepage (sorted by count). If not set, all tags are shown */
   maxTagsOnHomepage?: number;
-  /** Optional list of domains to exclude from nofollow attribute. Links to these domains will have follow attribute. */
+  /** Domains whose links should omit nofollow; no explicit follow attribute is added */
   noFollowExceptions?: string[];
   /** RSS feed language code (default: en-US) */
   rssLanguage?: string;

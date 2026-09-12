@@ -1,4 +1,7 @@
-/** Map filesystem work with bounded concurrency, preserving input order. */
+/**
+ * Map async work with bounded concurrency, preserving input order.
+ * On failure, stop scheduling and drain active work before rejecting.
+ */
 export async function mapConcurrent<T, R>(
   items: readonly T[],
   transform: (item: T, index: number) => Promise<R>,

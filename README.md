@@ -44,6 +44,8 @@ export default defineConfig({
 
 See [configuration types](src/types.ts) for available options and [configuration defaults](src/config.ts) for loading behavior.
 
+The [reference](docs/reference.md) covers path overrides, template data, validation, and cache limitations.
+
 ## Content
 
 Posts live under `content/`. Use either `content/2026/my-post.md` or `content/2026/my-post/README.md`, but avoid both for the same slug.
@@ -61,7 +63,7 @@ Your content here with **Markdown** support.
 ![A photo](/images/photo.jpg)
 ```
 
-The example generates `/2026/my-post/`. The URL year comes from the frontmatter date, not the directory name. Use timezone-aware dates and hyphenated tag slugs such as `web-development`.
+Saved as `my-post.md`, the example generates `/2026/my-post/`. The URL year comes from the frontmatter date in Pacific time, not the directory name. Use timezone-aware dates and hyphenated tag slugs such as `web-development`.
 
 Relative Markdown links such as `../2025/earlier-post.md` become site links such as `/2025/earlier-post/`. Optional tag descriptions go in `src/tags.toml`:
 
@@ -190,7 +192,7 @@ bun run build
 bun run benchmark -- 1000  # Measure cold, cached, and single-post-edit builds
 ```
 
-Source lives in `src/`, tests in `test/`, and test data in `fixtures/`. See [AGENTS.md](AGENTS.md) for contributor guidance and [package.json](package.json) for additional scripts.
+Source lives in `src/`, tests in `test/`, and test data in `fixtures/`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and [package.json](package.json) for additional scripts.
 
 GitHub Actions runs typechecking, linting, coverage tests, a build, and a site-generation smoke test. Compatibility checks cover the minimum supported Bun version and the latest release.
 

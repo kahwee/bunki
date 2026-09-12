@@ -45,7 +45,7 @@ async function writeHtmlFile(
 
 /**
  * Generate an optional page from a template that may not exist.
- * Skips silently if the template is missing; warns on other errors.
+ * Logs a skip for errors mentioning the template name; warns on other errors.
  */
 async function generateOptionalPage(
   templateName: string,

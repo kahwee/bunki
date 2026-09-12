@@ -26,7 +26,7 @@ const BUNKI_FRAGMENTS_DIR = existsSync(_distFragments) ? _distFragments : _srcFr
  * @example
  * ```typescript
  * const env = createTemplateEngine("./templates");
- * const html = nunjucks.render("index.njk", { site, posts });
+ * const html = env.render("index.njk", { site, posts });
  * ```
  */
 export function createTemplateEngine(
