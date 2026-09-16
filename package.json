@@ -2,7 +2,7 @@
   "name": "bunki",
   "version": "0.21.1",
   "packageManager": "bun@1.4.2",
-  "description": "An opinionated static site generator built with Bun featuring PostCSS integration and modern web development workflows",
+  "description": "Your words, on your own site. A Bun-powered static site generator for Markdown blogs, notes, and documentation.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -82,6 +82,7 @@
   },
   "files": [
     "dist",
+    "docs/assets",
     "LICENSE",
     "README.md"
   ],

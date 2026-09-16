@@ -1,10 +1,25 @@
 # Bunki
 
+![Bunki — Your words, on your own site.](docs/assets/bunki-banner.svg)
+
 [![CI](https://github.com/kahwee/bunki/actions/workflows/ci.yml/badge.svg)](https://github.com/kahwee/bunki/actions/workflows/ci.yml)
 [![Coverage Status](https://coveralls.io/repos/github/kahwee/bunki/badge.svg?branch=main)](https://coveralls.io/github/kahwee/bunki?branch=main)
 [![npm version](https://badge.fury.io/js/bunki.svg)](https://badge.fury.io/js/bunki)
 
-A static site generator for blogs and documentation, built with [Bun](https://bun.sh). Write Markdown, customize Nunjucks templates, and publish static files. Bunki includes tags, yearly archives, pagination, RSS, sitemaps, syntax highlighting, HTML sanitization, and structured data. PostCSS and S3-compatible media uploads are optional.
+**Your words, on your own site.**
+
+Bunki turns Markdown into a blog, a collection of notes, or a documentation site. Built with [Bun](https://bun.sh), it pairs editable Nunjucks templates with static HTML you can host wherever you like.
+
+[Get started](#quick-start) · [Read the reference](docs/reference.md) · [Contribute](CONTRIBUTING.md)
+
+## Made for publishing
+
+- **Write in files.** Markdown and frontmatter keep your content easy to edit, version, and move.
+- **Give readers a way around.** Tags, yearly archives, pagination, RSS, and sitemaps come built in.
+- **Make it yours.** Edit the templates and CSS; add PostCSS or S3-compatible media uploads when you need them.
+- **Publish static output.** Generate HTML and assets in `dist/`, ready for your static host.
+
+Syntax highlighting, HTML sanitization, and structured data support are included. Bunki fits content-led sites; it does not render React or MDX components.
 
 ## Quick start
 
@@ -24,6 +39,15 @@ bunx bunki serve --port 3000
 
 Open <http://localhost:3000>. Edit `bunki.config.ts` for your site details, `content/` for posts, and `templates/` for layout. Files in `public/` are copied into the generated site in `dist/`, which you can deploy to a static host.
 
+```text
+my-blog/
+├── bunki.config.ts   Site settings
+├── content/          Your Markdown posts
+├── templates/        Layouts and styles
+├── public/           Files to copy as-is
+└── dist/             Generated site
+```
+
 For a global CLI, use `bun add -g bunki` and run `bunki` in place of `bunx bunki`.
 
 ## Configuration
@@ -32,8 +56,8 @@ For a global CLI, use `bun add -g bunki` and run `bunki` in place of `bunx bunki
 import { defineConfig } from "bunki";
 
 export default defineConfig({
-  title: "My Blog",
-  description: "My thoughts and ideas",
+  title: "Field Notes",
+  description: "Things I build, places I go, and what I learn.",
   baseUrl: "https://example.com",
   domain: "example.com",
   authorName: "Your Name",
@@ -46,19 +70,19 @@ See [configuration types](src/types.ts) for available options and [configuration
 
 The [reference](docs/reference.md) covers path overrides, template data, validation, and cache limitations.
 
-## Content
+## Write a post
 
 Posts live under `content/`. Use either `content/2026/my-post.md` or `content/2026/my-post/README.md`, but avoid both for the same slug.
 
 ```markdown
 ---
-title: "My First Post"
+title: "A place for small discoveries"
 date: 2026-09-11T09:00:00-07:00
 tags: [web-development, notes]
-excerpt: "An optional summary for listings."
+excerpt: "Notes worth keeping, one post at a time."
 ---
 
-Your content here with **Markdown** support.
+Today I started keeping a few **field notes**.
 
 ![A photo](/images/photo.jpg)
 ```
@@ -84,7 +108,7 @@ business:
 
 Use `business`, `lat`, and `lng`; the older `location`, `latitude`, and `longitude` fields fail validation. Check content with `bunx bunki validate` and media with `bunx bunki validate:media`.
 
-## Templates and styles
+## Make it yours
 
 Bunki uses Nunjucks templates in `templates/`. The defaults include social metadata and JSON-LD. Site and author configuration, post excerpts, tags, and the first content image supply metadata.
 
@@ -180,6 +204,8 @@ Run `bunx bunki <command> --help` for all options.
 Incremental builds store parsed posts and file checks in `.bunki-cache.json`; HTML pages are still regenerated. Full and incremental builds use the same validation and date ordering. Config changes invalidate cached posts; content changes also rebuild CSS. Add the cache to `.gitignore`. Delete that cache file to reset it, or omit `--incremental` for a full build.
 
 ## Development
+
+Bug reports, documentation improvements, and focused contributions are welcome. Start with the [contribution guide](CONTRIBUTING.md) or [open an issue](https://github.com/kahwee/bunki/issues).
 
 ```bash
 git clone https://github.com/kahwee/bunki.git

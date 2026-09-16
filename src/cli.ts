@@ -23,7 +23,7 @@ registerValidateMediaCommand(program);
 
 program
   .name("bunki")
-  .description("An opinionated static site generator built with Bun")
+  .description("Your words, on your own site. Static sites from Markdown, powered by Bun.")
   .version(packageJson.version);
 
 if (import.meta.main) {
