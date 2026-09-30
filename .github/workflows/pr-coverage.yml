@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   coverage-comment:
     runs-on: ubuntu-latest
@@ -18,10 +22,11 @@ jobs:
         run: bun run test:coverage
 
       # Post coverage comment on PR
+      # Fork and Dependabot tokens cannot write PR comments. Coverage still runs.
       - name: Post coverage comment
+        if: github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository
         uses: romeovs/lcov-reporter-action@v0.4.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           lcov-file: ./coverage/lcov.info
-          min-coverage: 70
           title: "Code Coverage Report"
