@@ -64,4 +64,79 @@ Uploads are explicit: `generate` never calls `images:push`. Use `BUNKI_DRY_RUN=t
 
 `--min-year` and `--max-year` are inclusive directory-year filters. They do not compare file hashes or modification times with remote storage. Matching media is uploaded again on repeated runs.
 
-`--content-assets` removes the configured asset-directory segment from storage keys. For example, `content/2026/_assets/photo.jpg` becomes `2026/photo.jpg`. Use public URLs in content when the files should be served from remote storage. Upload configuration and environment-variable examples are in the [README](../README.md#media-uploads).
+`--content-assets` removes the configured asset-directory segment from storage keys. For example, `content/2026/_assets/photo.jpg` becomes `2026/photo.jpg`. Use public URLs in content when the files should be served from remote storage. Upload configuration and environment-variable examples are in the [upload setup](#upload-configuration).
+
+## Make it yours
+
+Bunki uses Nunjucks templates in `templates/`. The defaults include social metadata and JSON-LD. Site and author configuration, post excerpts, tags, and the first content image supply metadata.
+
+Built-in fragments can be imported into your templates. A local file with the same name overrides the built-in fragment.
+
+| Fragment | Macros |
+| --- | --- |
+| `og-image.njk` | `og_image(post, site)`, `twitter_image(post, site)` |
+| `json-ld.njk` | `blog_posting_schema(post, site)`, `local_business_schema(post, site)` |
+| `share-buttons.njk` | `share_buttons(post, site)` |
+| `pagination.njk` | `pagination_nav(pagination)` |
+
+```nunjucks
+{% from "pagination.njk" import pagination_nav %}
+{{ pagination_nav(pagination) }}
+```
+
+The share and pagination fragments use Tailwind utility classes. See the [example templates](../templates) for layout.
+
+To enable CSS processing, add this to `defineConfig({...})`:
+
+```typescript
+css: {
+  input: "templates/styles/main.css",
+  output: "css/style.css",
+  postcssConfig: "postcss.config.js",
+  enabled: true,
+},
+```
+
+CSS runs during generation, with a fallback if PostCSS is unavailable or fails. For a Tailwind setup, see this repo's [PostCSS config](../postcss.config.js) and [stylesheet](../templates/styles/main.css).
+
+## Upload configuration
+
+`images:push` uploads JPG, JPEG, PNG, GIF, WebP, SVG, MP4, WebM, and MOV files to S3-compatible storage. Uploads are separate from site generation.
+
+Add this to `defineConfig({...})`, with credentials in your environment or an uncommitted `.env` file:
+
+```typescript
+s3: {
+  accessKeyId: process.env.S3_ACCESS_KEY_ID || "",
+  secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || "",
+  bucket: process.env.S3_BUCKET || "",
+  endpoint: process.env.S3_ENDPOINT,
+  region: process.env.S3_REGION || "auto",
+  publicUrl: process.env.S3_PUBLIC_URL || "",
+},
+```
+
+By default, media comes from `assets/`, preserving paths such as `2026/my-post/photo.jpg`.
+
+```bash
+# Preview without uploading
+BUNKI_DRY_RUN=true bunx bunki images:push
+
+# Upload one year and save the public URL mapping
+bunx bunki images:push --min-year 2026 --max-year 2026 --output-json media-urls.json
+
+# Upload from content/2026/_assets/ instead
+bunx bunki images:push --content-assets
+```
+
+With `--content-assets`, `content/2026/_assets/photo.jpg` uses the storage key `2026/photo.jpg`. Set `contentAssets.assetsDir` or pass `--content-assets-dir` for another folder name; `contentAssets.s3` can specify a separate bucket. Use `--images` to override the source directory and `--domain` for bucket identification.
+
+Reference uploaded media by its public URL:
+
+```html
+<video controls>
+  <source src="https://cdn.example.com/2026/my-post/video.mp4" type="video/mp4">
+</video>
+```
+
+For upload failures, check the configured source directory, supported file extensions, bucket, endpoint, and credential permissions.
