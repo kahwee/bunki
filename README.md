@@ -147,3 +147,7 @@ The benchmark creates and removes a temporary site, runs each scenario three tim
 ## License
 
 [MIT](LICENSE) © [KahWee Teng](https://github.com/kahwee)
+
+## CI maintenance
+
+[GitHub Actions maintenance](.github/ACTIONS.md) covers workflows, parallel checks, action versions, and weekly updates.
