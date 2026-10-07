@@ -15,18 +15,19 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      # Verify TypeScript compilation
-      - name: TypeScript check
-        run: bun run typecheck
+      # Source checks complete before the build and generated-site smoke tests.
+      - parallel:
+          # Verify TypeScript compilation
+          - name: TypeScript check
+            run: bun run typecheck
 
-      # Verify code style and formatting
-      - name: Check code style
-        run: bun run lint
+          # Verify code style and formatting
+          - name: Check code style
+            run: bun run lint
 
-      # Run tests with coverage
-      - name: Run tests with coverage
-        run: bun run test:coverage
-
+          # Run tests with coverage
+          - name: Run tests with coverage
+            run: bun run test:coverage
       # Build the project
       - name: Build
         run: bun run build
