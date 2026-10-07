@@ -62,7 +62,7 @@
     "slugify": "^1.6.9"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.14",
+    "@biomejs/biome": "^2.5.15",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/nunjucks": "^3.2.6",
     "@types/sanitize-html": "^2.16.2",
