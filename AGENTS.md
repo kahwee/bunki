@@ -1,6 +1,6 @@
 # Bunki
 
-Bunki is a TypeScript static site generator built with Bun. Use Bun 1.4.2+ for dependency installation, development, builds, and tests.
+Bunki is a TypeScript static site generator built with Bun. Use Bun 1.4.3+ for dependency installation, development, builds, and tests.
 
 ## Working here
 

@@ -12,7 +12,7 @@ Bunki turns Markdown into a blog, a collection of notes, or a documentation site
 
 ## Quick start
 
-Requires Bun 1.4.2 or newer. Run `bun upgrade` to update an existing Bun installation.
+Requires Bun 1.4.3 or newer. Run `bun upgrade` to update an existing Bun installation.
 
 ```bash
 mkdir my-blog
