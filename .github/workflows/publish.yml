@@ -84,7 +84,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          node --test scripts/release-check.test.mjs
+          node --test scripts/check-release-guard.mjs
           node scripts/release-check.mjs "$RELEASE_TAG" --registry
 
       # Setup npm authentication
