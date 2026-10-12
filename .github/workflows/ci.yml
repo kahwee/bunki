@@ -13,6 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
+      - name: Test release metadata guard
+        run: node --test scripts/release-check.test.mjs
+
       - uses: ./.github/actions/setup-bun
 
       # Source checks complete before the build and generated-site smoke tests.
