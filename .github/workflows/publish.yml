@@ -2,20 +2,12 @@ name: Publish to npm
 
 on:
   push:
-    branches:
-      - main
-    # Only trigger if package.json changes or version tag is pushed
-    paths:
-      - "package.json"
     tags:
       - "v*"
-  # Allow manual trigger
-  workflow_dispatch:
-    inputs:
-      force-publish:
-        description: "Force publish to npm"
-        required: false
-        default: "false"
+
+concurrency:
+  group: npm-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   # First run tests and build
@@ -71,7 +63,7 @@ jobs:
     needs: test-and-build
     runs-on: ubuntu-latest
     # Skip this job if a PR (not needed for PRs)
-    if: ${{ (github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/v') || contains(github.event.head_commit.message, '[publish]'))) || github.event.inputs.force-publish == 'true' }}
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     steps:
       - uses: actions/checkout@v7.0.1
 
@@ -86,30 +78,19 @@ jobs:
           name: dist
           path: dist/
 
-      # Verify package version
-      - name: Check version
+      - name: Set up Node for release metadata checks
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 26
+
+      # A rerun cannot overwrite an existing version; errors stop publication.
+      - name: Check version and registry state
         id: check
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          PACKAGE_VERSION=$(node -p "require('./package.json').version")
-          echo "Package version: $PACKAGE_VERSION"
-          echo "package_version=$PACKAGE_VERSION" >> $GITHUB_OUTPUT
-
-          # Check if this version already exists on npm
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://registry.npmjs.org/bunki/$PACKAGE_VERSION)
-
-          if [ "$HTTP_STATUS" == "200" ]; then
-            echo "Version $PACKAGE_VERSION already exists on npm"
-            echo "should_publish=false" >> $GITHUB_OUTPUT
-          else
-            echo "Version $PACKAGE_VERSION is new"
-            echo "should_publish=true" >> $GITHUB_OUTPUT
-          fi
-
-          # Always publish for manual trigger with force-publish=true
-          if [ "${{ github.event.inputs.force-publish }}" == "true" ]; then
-            echo "Force publish enabled, will publish anyway"
-            echo "should_publish=true" >> $GITHUB_OUTPUT
-          fi
+          node --test scripts/check-release-guard.mjs
+          node scripts/release-check.mjs "$RELEASE_TAG" --registry
 
       # Setup npm authentication
       - name: Setup npm authentication

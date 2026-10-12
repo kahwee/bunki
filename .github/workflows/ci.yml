@@ -13,6 +13,11 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
+      - name: Test immutable release asset recovery
+        run: python3 scripts/test_release_assets.py -v
+      - name: Test release metadata guard
+        run: node --test scripts/check-release-guard.mjs
+
       - uses: ./.github/actions/setup-bun
 
       # Source checks complete before the build and generated-site smoke tests.
