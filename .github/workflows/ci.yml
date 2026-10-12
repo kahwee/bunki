@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Test immutable release asset recovery
-        run: python3 scripts/test_release_assets.py -v
       - uses: actions/checkout@v7.0.1
 
+      - name: Test immutable release asset recovery
+        run: python3 scripts/test_release_assets.py -v
       - name: Test release metadata guard
         run: node --test scripts/check-release-guard.mjs
 
