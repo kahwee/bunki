@@ -168,3 +168,5 @@ On the session’s Linux executor, the median of three project-check runs was
 These include command startup and describe this checkout, not a CI speed guarantee.
 Declaration emission measured 0.640s with `--noCheck` versus
 0.728s with checking; generated `.d.ts` contents matched.
+
+PostCSS runs through `bun x --bun postcss`, using Bun for the CLI and configured plugins. CSS processing failures retain the existing raw-CSS fallback during site generation. A local five-run smoke benchmark with a small CSS file and no plugins measured median subprocess times of 392 ms with Node and 165 ms with Bun, with identical CSS output. This measures CLI startup and processing for that fixture, not full-site or Tailwind build performance.

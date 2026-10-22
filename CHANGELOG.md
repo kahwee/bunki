@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Run the PostCSS CLI with Bun to avoid starting Node for each CSS build.
+
 - Simplify Actions caching around the committed text lockfile; remove the binary-lockfile fallback and shell hashing step.
 
 - Run independent source checks in parallel with Bun; keep build and package validation after successful checks.

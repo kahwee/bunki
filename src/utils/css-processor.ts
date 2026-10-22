@@ -108,7 +108,17 @@ async function runPostCSS(
   verbose: boolean,
 ): Promise<void> {
   const subprocess = Bun.spawn(
-    [process.execPath, "x", "postcss", inputPath, "-o", outputPath, "--config", configPath],
+    [
+      process.execPath,
+      "x",
+      "--bun",
+      "postcss",
+      inputPath,
+      "-o",
+      outputPath,
+      "--config",
+      configPath,
+    ],
     {
       cwd: projectRoot,
       stdin: "ignore",
