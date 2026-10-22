@@ -4,14 +4,14 @@ Use the Bun version declared in [package.json](package.json) or newer. Install d
 
 ## Find the implementation
 
-| Area | Entry points |
-| --- | --- |
-| CLI and config | `src/cli.ts`, `src/cli/commands/`, `src/config.ts` |
-| Content parsing and validation | `src/parser.ts`, `src/utils/markdown-utils.ts`, `src/utils/markdown/` |
-| Derived site data | `src/site-model.ts` |
-| Rendering and output | `src/site-generator.ts`, `src/generators/`, `src/utils/template-engine.ts` |
-| Cache and change detection | `src/utils/build-cache.ts`, `src/utils/change-detector.ts` |
-| CSS and uploads | `src/utils/css-processor.ts`, `src/utils/image-uploader.ts`, `src/utils/s3-uploader.ts` |
+| Area                           | Entry points                                                                            |
+| ------------------------------ | --------------------------------------------------------------------------------------- |
+| CLI and config                 | `src/cli.ts`, `src/cli/commands/`, `src/config.ts`                                      |
+| Content parsing and validation | `src/parser.ts`, `src/utils/markdown-utils.ts`, `src/utils/markdown/`                   |
+| Derived site data              | `src/site-model.ts`                                                                     |
+| Rendering and output           | `src/site-generator.ts`, `src/generators/`, `src/utils/template-engine.ts`              |
+| Cache and change detection     | `src/utils/build-cache.ts`, `src/utils/change-detector.ts`                              |
+| CSS and uploads                | `src/utils/css-processor.ts`, `src/utils/image-uploader.ts`, `src/utils/s3-uploader.ts` |
 
 The public package exports are in `src/index.ts`. Builds emit `dist/index.js`, TypeScript declarations, `dist/cli.js`, and template fragments. Edit the source rather than generated files in `dist/`.
 
@@ -20,11 +20,11 @@ The public package exports are in `src/index.ts`. Builds emit `dist/index.js`, T
 ```bash
 bun test test/parser.test.ts  # Example of a focused test
 bun run typecheck
-bun run lint
+bun run format:check
 bun run build
 ```
 
-Run `bun test` for cross-cutting changes. `bun run test:coverage` produces LCOV output. `bun run format` writes formatting changes; `bun run lint` checks without editing. CI also verifies package artifacts and builds a starter site.
+Run `bun test` for cross-cutting changes. `bun run test:coverage` produces LCOV output. `bun run format` writes formatting changes; `bun run format:check` checks without editing. CI also verifies package artifacts and builds a starter site.
 
 Use temporary directories for tests that create files, and remove them in teardown. Sample content in `fixtures/` exercises rendering; it is not a source of measured performance claims. Keep regression tests focused on observable behavior, including full/incremental equivalence when changing the cache.
 

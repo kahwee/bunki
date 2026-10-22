@@ -7,7 +7,7 @@ inputs:
     required: false
     default: "1.4.4"
   install:
-    description: Run bun install --frozen-lockfile after setup.
+    description: Run bun ci after setup.
     required: false
     default: "true"
 
@@ -15,7 +15,7 @@ runs:
   using: composite
   steps:
     - name: Setup Bun
-      uses: oven-sh/setup-bun@v2.2.0
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
       with:
         bun-version: ${{ inputs.bun-version }}
 
@@ -32,7 +32,7 @@ runs:
         fi
 
     - name: Cache Bun dependencies
-      uses: actions/cache@v6.1.0
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/install/cache
         key: ${{ runner.os }}-bun-${{ inputs.bun-version }}-${{ steps.lockfile.outputs.hash }}
@@ -43,4 +43,4 @@ runs:
     - name: Install dependencies
       if: inputs.install == 'true'
       shell: bash
-      run: bun install --frozen-lockfile
+      run: bun ci

@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: ./.github/actions/setup-bun
 
@@ -25,7 +25,7 @@ jobs:
       # Fork and Dependabot tokens cannot write PR comments. Coverage still runs.
       - name: Post coverage comment
         if: github.actor != 'dependabot[bot]' && github.event.pull_request.head.repo.full_name == github.repository
-        uses: romeovs/lcov-reporter-action@v0.4.0
+        uses: romeovs/lcov-reporter-action@87a815f34ec27a5826abba44ce09bbc688da58fd # v0.4.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           lcov-file: ./coverage/lcov.info

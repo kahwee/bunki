@@ -13,12 +13,10 @@
     "test:coverage": "bun test --coverage --coverage-reporter=lcov",
     "test:watch": "bun test --watch",
     "benchmark": "bun scripts/benchmark-build.ts",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
-    "lint": "biome check .",
-    "lint:fix": "biome check --write .",
+    "format": "bun fmt .",
+    "format:check": "bun fmt --check .",
     "prepare": "husky",
-    "typecheck": "bun tsc --noEmit",
+    "typecheck": "bun --check --tsconfig-override=tsconfig.json",
     "clean": "rm -rf dist coverage",
     "prepack": "bun run clean && bun run build",
     "prepublishOnly": "bun run clean && bun run build && bun run test && bun run typecheck"
@@ -62,7 +60,6 @@
     "slugify": "^1.6.9"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.15",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/nunjucks": "^3.2.6",
     "@types/sanitize-html": "^2.16.2",

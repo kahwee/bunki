@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Test immutable release asset recovery
         run: python3 scripts/test_release_assets.py -v
@@ -28,7 +28,7 @@ jobs:
 
           # Verify code style and formatting
           - name: Check code style
-            run: bun run lint
+            run: bun run format:check
 
           # Run tests with coverage
           - name: Run tests with coverage

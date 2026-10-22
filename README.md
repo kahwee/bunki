@@ -12,7 +12,7 @@ Bunki turns Markdown into a blog, a collection of notes, or a documentation site
 
 ## Quick start
 
-Requires Bun 1.4.3 or newer. Run `bun upgrade` to update an existing Bun installation.
+Requires Bun 1.4.4 or newer. Run `bun upgrade` to update an existing Bun installation.
 
 ```bash
 mkdir my-blog
@@ -107,17 +107,17 @@ Uploads run separately from site generation.
 
 Run `bunx bunki <command> --help` for all options.
 
-| Command | Purpose |
-| --- | --- |
-| `init` | Create configuration, templates, and sample content |
-| `new <title> --tags web,notes` | Create a Markdown post |
-| `generate` | Build the site in `dist/` |
-| `generate --incremental` | Reuse cached posts and unchanged CSS |
-| `serve --port 3000` | Preview generated files locally |
-| `css --watch` | Process CSS and watch for changes |
-| `validate` | Check Markdown and frontmatter |
-| `validate:media` | Check media files |
-| `images:push` | Upload media to S3-compatible storage |
+| Command                        | Purpose                                             |
+| ------------------------------ | --------------------------------------------------- |
+| `init`                         | Create configuration, templates, and sample content |
+| `new <title> --tags web,notes` | Create a Markdown post                              |
+| `generate`                     | Build the site in `dist/`                           |
+| `generate --incremental`       | Reuse cached posts and unchanged CSS                |
+| `serve --port 3000`            | Preview generated files locally                     |
+| `css --watch`                  | Process CSS and watch for changes                   |
+| `validate`                     | Check Markdown and frontmatter                      |
+| `validate:media`               | Check media files                                   |
+| `images:push`                  | Upload media to S3-compatible storage               |
 
 `generate` accepts `--config`, `--content`, `--output`, and `--templates` to override paths.
 
@@ -133,14 +133,14 @@ cd bunki
 bun install --frozen-lockfile
 bun run test
 bun run typecheck
-bun run lint
+bun run format:check
 bun run build
 bun run benchmark -- 1000  # Measure cold, cached, and single-post-edit builds
 ```
 
 Source lives in `src/`, tests in `test/`, and test data in `fixtures/`. See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and [package.json](package.json) for additional scripts.
 
-GitHub Actions runs typechecking, linting, coverage tests, a build, and a site-generation smoke test. Compatibility checks cover the minimum supported Bun version and the latest release.
+GitHub Actions runs typechecking, formatting, coverage tests, a build, and a site-generation smoke test. Compatibility checks cover the minimum supported Bun version and the latest release.
 
 The benchmark creates and removes a temporary site, runs each scenario three times, and reports median wall-clock times. It uses synthetic Markdown and minimal templates with CSS disabled, so it measures parsing, caching, and site generation rather than PostCSS or network uploads.
 
@@ -151,3 +151,8 @@ The benchmark creates and removes a temporary site, runs each scenario three tim
 ## CI maintenance
 
 [GitHub Actions maintenance](.github/ACTIONS.md) covers workflows, parallel checks, action versions, and weekly updates.
+
+Bun 1.4.4 owns formatting (`bun run format`, `bun run format:check`) and type checking
+(`bun run typecheck`). Biome has been removed. Bun formatting is not a replacement
+for Biome’s semantic lint rules; tests, strict type checks, and package builds remain
+the verification gates. TypeScript remains installed for declaration generation.

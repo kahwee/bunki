@@ -20,12 +20,12 @@ Post URLs use the filename slug and the date's year in `America/Los_Angeles`. Fo
 
 `business` accepts an object or array. Use a supported place type, `name`, `lat`, and `lng`; include `address` for complete location metadata. The parser validates each array entry but currently stores the first business on the rendered post. Deprecated location fields and tags containing spaces fail generation even without strict mode.
 
-| Check | Behavior |
-| --- | --- |
-| `generate` | Reports parsing problems; skips malformed YAML and missing required fields unless strict mode is enabled |
-| `strictMode: true` | Fails generation on any parsing error |
-| `validate --dir content` | Parses in strict mode without generating a site |
-| `validate:media --content-dir content` | Reports missing local references and unused media; exits unsuccessfully if either is found |
+| Check                                  | Behavior                                                                                                 |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `generate`                             | Reports parsing problems; skips malformed YAML and missing required fields unless strict mode is enabled |
+| `strictMode: true`                     | Fails generation on any parsing error                                                                    |
+| `validate --dir content`               | Parses in strict mode without generating a site                                                          |
+| `validate:media --content-dir content` | Reports missing local references and unused media; exits unsuccessfully if either is found               |
 
 The media checker currently reads `content/{year}/*.md`, scans media in `content/{year}/_assets/` and `assets/`, and skips remote URLs. It is not a complete recursive audit of nested `README.md` posts or every HTML media embedding pattern. See the [implementation](../src/cli/commands/validate-media.ts) before relying on it for another layout.
 
@@ -33,16 +33,16 @@ The media checker currently reads `content/{year}/*.md`, scans media in `content
 
 Required page templates are `index.njk`, `post.njk`, `tags.njk`, `tag.njk`, and `archive.njk`. Optional templates are `404.njk`, `map.njk`, and `privacy.njk`. `base.njk` is the layout used by the starter templates.
 
-| Value | Available in |
-| --- | --- |
-| `site` | All page templates; the resolved site configuration |
-| `post` | `post.njk`; parsed content, rendered HTML, URL, tags, and derived metadata |
-| `posts` | Index and archive pages (paginated), and the map page (all posts) |
-| `tag` | `tag.njk`; tag metadata and the current page's posts |
-| `tags` | Index, tag, tag-index, and archive pages |
-| `pagination` | Index, tag, and archive pages |
-| `year` | Archive pages |
-| `jsonLd` | Post and collection pages; structured data to include in your template |
+| Value        | Available in                                                               |
+| ------------ | -------------------------------------------------------------------------- |
+| `site`       | All page templates; the resolved site configuration                        |
+| `post`       | `post.njk`; parsed content, rendered HTML, URL, tags, and derived metadata |
+| `posts`      | Index and archive pages (paginated), and the map page (all posts)          |
+| `tag`        | `tag.njk`; tag metadata and the current page's posts                       |
+| `tags`       | Index, tag, tag-index, and archive pages                                   |
+| `pagination` | Index, tag, and archive pages                                              |
+| `year`       | Archive pages                                                              |
+| `jsonLd`     | Post and collection pages; structured data to include in your template     |
 
 Nunjucks escapes values by default. Use `{{ post.html | safe }}` for the HTML produced by Bunki's Markdown sanitization. JSON-LD must also be included by the template; generating the data does not inject it into arbitrary custom HTML.
 
@@ -72,12 +72,12 @@ Bunki uses Nunjucks templates in `templates/`. The defaults include social metad
 
 Built-in fragments can be imported into your templates. A local file with the same name overrides the built-in fragment.
 
-| Fragment | Macros |
-| --- | --- |
-| `og-image.njk` | `og_image(post, site)`, `twitter_image(post, site)` |
-| `json-ld.njk` | `blog_posting_schema(post, site)`, `local_business_schema(post, site)` |
-| `share-buttons.njk` | `share_buttons(post, site)` |
-| `pagination.njk` | `pagination_nav(pagination)` |
+| Fragment            | Macros                                                                 |
+| ------------------- | ---------------------------------------------------------------------- |
+| `og-image.njk`      | `og_image(post, site)`, `twitter_image(post, site)`                    |
+| `json-ld.njk`       | `blog_posting_schema(post, site)`, `local_business_schema(post, site)` |
+| `share-buttons.njk` | `share_buttons(post, site)`                                            |
+| `pagination.njk`    | `pagination_nav(pagination)`                                           |
 
 ```nunjucks
 {% from "pagination.njk" import pagination_nav %}

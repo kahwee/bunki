@@ -16,3 +16,11 @@ node_modules/
 
 # Lock files
 bun.lockb
+
+# Dependency locks and generated outputs
+bun.lock
+bun.lockb
+node_modules/
+dist/
+coverage/
+storybook-static/
