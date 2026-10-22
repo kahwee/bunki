@@ -61,7 +61,7 @@ export async function handleCssCommand(
 export function registerCssCommand(program: Command): Command {
   return program
     .command("css")
-    .description("Process CSS using PostCSS")
+    .description("Bundle CSS with Bun or configured PostCSS plugins")
     .option("-c, --config <file>", "Config file path", "bunki.config.ts")
     .option("-o, --output <dir>", "Output directory", DEFAULT_OUTPUT_DIR)
     .option("-w, --watch", "Watch for changes and rebuild")

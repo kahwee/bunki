@@ -74,3 +74,5 @@ The setup action now hashes the committed `bun.lock` with GitHub’s `hashFiles`
 It no longer shells out to hash files or falls back to the old binary `bun.lockb`
 format. Cache restoration still precedes `bun ci`; it never replaces frozen
 installation. The new key format can cause a one-time cold cache.
+
+The generated starter-site smoke test verifies that plain CSS uses Bun’s native bundler and does not fall back to copying raw CSS. Plugin-based PostCSS compatibility is covered by the CSS processor tests.

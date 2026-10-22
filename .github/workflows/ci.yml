@@ -47,10 +47,16 @@ jobs:
       # Create and test example site
       - name: Create example site
         run: |
+          set -o pipefail
           mkdir -p test-site
           cd test-site
           ../dist/cli.js init
-          ../dist/cli.js generate
+          ../dist/cli.js generate | tee generation.log
+          grep -q "Building CSS with Bun" generation.log
+          if grep -q "Falling back to simple CSS" generation.log; then
+            echo "The starter site must build CSS natively without a fallback"
+            exit 1
+          fi
 
       # Verify site generation succeeded
       - name: Verify site generation

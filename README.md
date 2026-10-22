@@ -169,4 +169,19 @@ These include command startup and describe this checkout, not a CI speed guarant
 Declaration emission measured 0.640s with `--noCheck` versus
 0.728s with checking; generated `.d.ts` contents matched.
 
-PostCSS runs through `bun x --bun postcss`, using Bun for the CLI and configured plugins. CSS processing failures retain the existing raw-CSS fallback during site generation. A local five-run smoke benchmark with a small CSS file and no plugins measured median subprocess times of 392 ms with Node and 165 ms with Bun, with identical CSS output. This measures CLI startup and processing for that fixture, not full-site or Tailwind build performance.
+Plain CSS uses Bun’s native bundler with no PostCSS subprocess. Local `@import` rules
+are bundled and referenced assets may be embedded as data URLs. CSS is transformed,
+so output is not byte-for-byte identical to the input. Existing project PostCSS
+configs or an explicit `postcssConfig` continue to select PostCSS automatically.
+Set `css.processor` to `"bun"` or `"postcss"` to select an engine explicitly.
+
+Bun does not compile Tailwind directives or run arbitrary PostCSS plugins. Those
+projects still need PostCSS and their own plugins; see [CSS configuration](docs/reference.md#css-configuration).
+The repository’s unused Tailwind and Autoprefixer development setup has been removed.
+PostCSS and its CLI remain installed for existing plugin-based sites. Both engines
+retain content hashing and the site generator’s raw-CSS fallback on failure.
+
+A local Bun 1.4.4 benchmark using `templates/styles/main.css` measured median CSS-phase
+times of 10.2 ms with native Bun and 204.6 ms with the Bun-hosted PostCSS CLI and no
+plugins (one warm-up per engine, then five alternating samples). Native CSS output
+is transformed; this is not an output-identity comparison or a full-site speedup.

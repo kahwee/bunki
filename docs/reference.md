@@ -54,7 +54,7 @@ An incremental build reuses parsed posts with unchanged file metadata. It checks
 
 HTML pages, feeds, and static assets are regenerated or copied on every build. Incremental mode does not mean only changed output files are written. Deleted posts are removed from the content cache and listings, but generation does not prune old output files. Use a fresh output directory for deployments that must exclude removed pages.
 
-CSS is processed through PostCSS, with plain-file copying as the site generator's fallback. The standalone `css` command reports processing failures instead of applying that fallback. Unchanged CSS can be skipped in incremental mode; content and config changes invalidate it. The CSS cache does not track a complete dependency graph: use a full build after changing imported styles, PostCSS dependencies, or template utility classes. A fallback copy does not compile Tailwind directives.
+Plain CSS is bundled with Bun by default; existing PostCSS configurations select the plugin engine automatically. Plain-file copying remains the site generator's fallback. The standalone `css` command reports processing failures instead of applying that fallback. Unchanged CSS can be skipped in incremental mode; content and config changes invalidate it. The CSS cache does not track a complete dependency graph: use a full build after changing imported styles, referenced assets, PostCSS config files or dependencies, or template utility classes. A fallback copy does not compile Tailwind directives.
 
 `.bunki-cache.json` is disposable local state. Ignore it in Git. Delete that file to reset incremental parsing, or omit `--incremental` for a full parse. A full parse still does not clean the output directory.
 
@@ -86,18 +86,46 @@ Built-in fragments can be imported into your templates. A local file with the sa
 
 The share and pagination fragments use Tailwind utility classes. See the [example templates](../templates) for layout.
 
+### CSS configuration
+
 To enable CSS processing, add this to `defineConfig({...})`:
 
 ```typescript
 css: {
   input: "templates/styles/main.css",
   output: "css/style.css",
-  postcssConfig: "postcss.config.js",
   enabled: true,
 },
 ```
 
-CSS runs during generation, with a fallback if PostCSS is unavailable or fails. For a Tailwind setup, see this repo's [PostCSS config](../postcss.config.js) and [stylesheet](../templates/styles/main.css).
+Bun bundles local imports and transforms CSS, including embedding supported `url()` assets
+as data URLs. It does not run PostCSS plugins or expand Tailwind directives.
+`processor: "bun"` forces native bundling even when a PostCSS config exists.
+
+For existing plugin-based sites, `postcssConfig` or a root `postcss.config.*`,
+`.postcssrc*`, or `package.json` `postcss` field selects PostCSS automatically.
+`processor: "postcss"` forces the plugin engine. The CLI runs under Bun.
+Processing failures are reported by `bunki css`;
+site generation instead falls back to copying the input CSS. That fallback does
+not bundle imports or compile Tailwind.
+
+For Tailwind v4, install your plugins in the site project:
+
+```sh
+bun add -d tailwindcss @tailwindcss/postcss
+```
+
+Create `postcss.config.js`:
+
+```js
+import tailwind from "@tailwindcss/postcss";
+export default { plugins: [tailwind()] };
+```
+
+Start the stylesheet with `@import "tailwindcss";` and set
+`css.postcssConfig: "postcss.config.js"`. Tailwind v4 handles vendor prefixing itself;
+Autoprefixer is not needed for that setup. Add custom plugins only when the site needs them.
+The bundled example stylesheet is plain CSS and needs none of these packages.
 
 ## Upload configuration
 

@@ -133,7 +133,9 @@ export interface CSSConfig {
   input: string;
   /** Output CSS file path (relative to output directory) */
   output: string;
-  /** PostCSS config file path (relative to project root) */
+  /** CSS engine; defaults to Bun unless a PostCSS config is supplied or detected. */
+  processor?: "bun" | "postcss";
+  /** PostCSS config file path (relative to project root); selects PostCSS in auto mode. */
   postcssConfig?: string;
   /** Whether to enable CSS processing */
   enabled: boolean;

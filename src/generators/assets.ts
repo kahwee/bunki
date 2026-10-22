@@ -10,7 +10,7 @@ import { getDefaultCSSConfig, processCSS } from "../utils/css-processor";
 import { copyFile, ensureDir, isDirectory } from "../utils/file-utils";
 
 /**
- * Generate stylesheet using PostCSS or fallback to direct copy
+ * Generate stylesheet using Bun or PostCSS, with fallback to direct copy
  * @param config - Site configuration
  * @param outputDir - Output directory
  */
@@ -37,7 +37,7 @@ export async function generateStylesheet(
   } catch (error) {
     console.error("Error processing CSS:", error);
 
-    // Fallback to simple file copying if PostCSS fails
+    // Fallback to simple file copying if CSS processing fails
     console.log("Falling back to simple CSS file copying...");
     await fallbackCSSGeneration(cssConfig, outputDir, projectRoot);
   }

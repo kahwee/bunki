@@ -25,7 +25,7 @@ export interface CSSProcessResult {
 }
 
 /**
- * Process CSS using PostCSS directly
+ * Process CSS with Bun, or PostCSS for projects with a plugin configuration
  * Throws on error - no fallback
  * Returns output path (with hash if hashing enabled)
  */
@@ -45,6 +45,24 @@ export async function processCSS(options: CSSProcessorOptions): Promise<CSSProce
     ? path.resolve(projectRoot, css.postcssConfig)
     : path.resolve(projectRoot, "postcss.config.js");
 
+  const configNames = [
+    ...["js", "cjs", "mjs", "ts", "cts", "mts"].map((ext) => `postcss.config.${ext}`),
+    ".postcssrc",
+    ...["json", "yaml", "yml", "js", "cjs", "mjs", "ts", "cts", "mts"].map(
+      (ext) => `.postcssrc.${ext}`,
+    ),
+  ];
+  const hasPostCSSConfig = configNames.some((name) => fs.existsSync(path.join(projectRoot, name)));
+  const packageFile = Bun.file(path.join(projectRoot, "package.json"));
+  const hasPackageConfig =
+    (await packageFile.exists()) && Boolean((await packageFile.json()).postcss);
+
+  // Preserve existing plugin configurations; plain CSS needs no subprocess.
+  const usePostCSS =
+    css.processor === "postcss" ||
+    (css.processor !== "bun" &&
+      (Boolean(css.postcssConfig) || hasPostCSSConfig || hasPackageConfig));
+
   // Validate input file exists
   const inputFile = Bun.file(inputPath);
   if (!(await inputFile.exists())) {
@@ -56,14 +74,28 @@ export async function processCSS(options: CSSProcessorOptions): Promise<CSSProce
   await ensureDir(outputDirPath);
 
   if (verbose) {
-    console.log("🎨 Building CSS with PostCSS...");
+    console.log(`🎨 Building CSS with ${usePostCSS ? "PostCSS" : "Bun"}...`);
     console.log(`Input: ${inputPath}`);
     console.log(`Output: ${tempOutputPath}`);
-    console.log(`Config: ${postcssConfigPath}`);
+    if (usePostCSS) console.log(`Config: ${postcssConfigPath}`);
   }
 
-  // Process CSS with PostCSS
-  await runPostCSS(inputPath, tempOutputPath, postcssConfigPath, projectRoot, verbose);
+  if (usePostCSS) {
+    await runPostCSS(inputPath, tempOutputPath, postcssConfigPath, projectRoot, verbose);
+  } else {
+    const result = await Bun.build({
+      entrypoints: [inputPath],
+      outdir: outputDirPath,
+      target: "browser",
+      naming: {
+        entry: path.basename(tempOutputPath),
+        asset: "[name]-[hash].[ext]",
+      },
+    });
+    if (!result.success) {
+      throw new Error(`Bun CSS build failed: ${result.logs.join("\n")}`);
+    }
+  }
 
   // Apply content hashing if enabled
   if (enableHashing) {
@@ -184,7 +216,6 @@ export function getDefaultCSSConfig(): CSSConfig {
   return {
     input: "templates/styles/main.css",
     output: "css/style.css",
-    postcssConfig: "postcss.config.js",
     enabled: true,
     watch: false,
   };
