@@ -9,9 +9,18 @@ export function createSiteModel(
   tagDescriptions: Readonly<Record<string, string>> = {},
 ): Site {
   const tags: Record<string, TagData> = {};
+  // Repeated tags share a slug for this model; release the cache after the build.
+  const slugsByTag = new Map<string, string>();
   const enrichedPosts = posts.map((post) => {
     const tagSlugs = Object.fromEntries(
-      post.tags.map((tagName) => [tagName, slugify(tagName, { lower: true, strict: true })]),
+      post.tags.map((tagName) => {
+        let slug = slugsByTag.get(tagName);
+        if (slug === undefined) {
+          slug = slugify(tagName, { lower: true, strict: true });
+          slugsByTag.set(tagName, slug);
+        }
+        return [tagName, slug];
+      }),
     );
     const image = extractFirstImageUrl(post.html, config.baseUrl) ?? post.image;
     const wordCount = post.content ? post.content.trim().split(/\s+/).filter(Boolean).length : 0;

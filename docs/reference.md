@@ -168,3 +168,9 @@ Reference uploaded media by its public URL:
 ```
 
 For upload failures, check the configured source directory, supported file extensions, bucket, endpoint, and credential permissions.
+
+## Cloudflare hosting
+
+See [Cloudflare Workers and Bun](cloudflare.md) for serving generated files with
+Workers Static Assets. Bunki runs at build time; its Bun APIs do not run inside
+Worker request handlers.

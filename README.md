@@ -142,7 +142,20 @@ Source lives in `src/`, tests in `test/`, and test data in `fixtures/`. See [CON
 
 GitHub Actions runs typechecking, formatting, coverage tests, a build, and a site-generation smoke test. Compatibility checks cover the minimum supported Bun version and the latest release.
 
-The benchmark creates and removes a temporary site, runs each scenario three times, and reports median wall-clock times. It uses synthetic Markdown and minimal templates with CSS disabled, so it measures parsing, caching, and site generation rather than PostCSS or network uploads.
+The benchmark creates and removes a temporary site, runs each scenario three times, and reports median wall-clock times. It uses synthetic Markdown and minimal templates with CSS disabled, so it measures parsing, caching, and site generation rather than PostCSS or network uploads. The report includes the Bun version, platform,
+HTML page count, and an SHA-256 fingerprint of final HTML paths and contents for
+before/after output comparisons. Fingerprinting runs outside the timed builds.
+Repeated tag names are normalized once per site model; the cache is discarded after
+that model is created. In a local 1,000-post fixture with 21 distinct tags, this
+reduced slug normalization calls from 2,000 to 21 and preserved all 1,404 HTML files.
+This reduces repeated CPU work; whole-build timings also depend on parsing,
+rendering, filesystem performance, and other workloads.
+
+## Cloudflare hosting
+
+Build the site with Bun, then serve the generated files with Workers Static Assets.
+See [Cloudflare Workers and Bun](docs/cloudflare.md) for runtime compatibility,
+deployment configuration, routing, and caching guidance.
 
 ## License
 

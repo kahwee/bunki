@@ -8,6 +8,8 @@ const count = Number(process.argv[2] ?? 1000);
 if (!Number.isInteger(count) || count < 1) throw new Error("Post count must be a positive integer");
 const root = await mkdtemp(path.join(tmpdir(), "bunki-benchmark-"));
 const log = console.log;
+let htmlOutputSha256 = "";
+let htmlPages = 0;
 const samples: Record<string, number[]> = { cold: [], warm: [], edited: [] };
 const options: GeneratorOptions = {
   rootDir: root,
@@ -53,6 +55,17 @@ try {
       samples[mode].push(performance.now() - start);
     }
   }
+  // Fingerprint final HTML outside the timed region for before/after comparisons.
+  const hasher = new Bun.CryptoHasher("sha256");
+  const files = Array.from(
+    new Bun.Glob("**/*.html").scanSync({ cwd: options.outputDir, onlyFiles: true }),
+  ).sort();
+  htmlPages = files.length;
+  for (const file of files) {
+    hasher.update(`${file}\0`);
+    hasher.update(await Bun.file(path.join(options.outputDir, file)).arrayBuffer());
+  }
+  htmlOutputSha256 = hasher.digest("hex");
 } finally {
   console.log = log;
   await rm(root, { recursive: true, force: true });
@@ -60,7 +73,10 @@ try {
 log(
   JSON.stringify(
     {
+      runtime: { bun: Bun.version, platform: process.platform, arch: process.arch },
       posts: count,
+      htmlPages,
+      htmlOutputSha256,
       milliseconds: Object.fromEntries(
         Object.entries(samples).map(([mode, values]) => [
           mode,

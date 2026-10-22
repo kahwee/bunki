@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Reuse tag slugs within each site model instead of repeating normalization for every post; keep the cache scoped to one build.
+- Include runtime details and final HTML fingerprints in the build benchmark; document Cloudflare Static Assets deployment and Bun/Workers runtime boundaries.
+
 - Patch sanitize-html to 2.18.1 to resolve GHSA-c9rx-x947-fp3h; the dependency audit reports no vulnerabilities.
 
 - Bundle plain CSS with Bun in-process, including local imports and referenced assets; preserve PostCSS configuration auto-detection and explicit engine selection for plugin-based sites.
