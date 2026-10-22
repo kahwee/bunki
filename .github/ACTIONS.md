@@ -67,3 +67,10 @@ remain visible. Builds and package checks wait for the source checks.
 Standalone `build` runs Bun checking first. After an explicit successful checker,
 CI uses `build:artifacts`; its TypeScript step emits declarations with `--noCheck`
 and does not provide a second semantic check.
+
+## Text-lockfile cache key
+
+The setup action now hashes the committed `bun.lock` with GitHub’s `hashFiles`.
+It no longer shells out to hash files or falls back to the old binary `bun.lockb`
+format. Cache restoration still precedes `bun ci`; it never replaces frozen
+installation. The new key format can cause a one-time cold cache.

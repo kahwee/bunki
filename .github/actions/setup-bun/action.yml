@@ -19,23 +19,11 @@ runs:
       with:
         bun-version: ${{ inputs.bun-version }}
 
-    - name: Hash Bun lockfile
-      id: lockfile
-      shell: bash
-      run: |
-        if [ -f bun.lock ]; then
-          echo "hash=$(sha256sum bun.lock | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
-        elif [ -f bun.lockb ]; then
-          echo "hash=$(sha256sum bun.lockb | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
-        else
-          echo "hash=no-lockfile" >> "$GITHUB_OUTPUT"
-        fi
-
     - name: Cache Bun dependencies
       uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/install/cache
-        key: ${{ runner.os }}-bun-${{ inputs.bun-version }}-${{ steps.lockfile.outputs.hash }}
+        key: ${{ runner.os }}-bun-${{ inputs.bun-version }}-${{ hashFiles('bun.lock') }}
         restore-keys: |
           ${{ runner.os }}-bun-${{ inputs.bun-version }}-
           ${{ runner.os }}-bun-
