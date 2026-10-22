@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Run independent source checks in parallel with Bun; keep build and package validation after successful checks.
+- Avoid repeating semantic type checks during declaration emission; standalone builds still run Bun checking first.
+
 - Use Bun 1.4.4 for formatting and type checking; remove Biome. Keep TypeScript for declaration output.
 - Pin GitHub Actions to verified stable release commits and use `bun ci` for frozen installs.
 

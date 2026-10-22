@@ -19,7 +19,7 @@ jobs:
       - uses: ./.github/actions/setup-bun
 
       # Verify TypeScript compilation
-      - name: TypeScript check
+      - name: Bun check
         run: bun run typecheck
 
       # Run tests with coverage
@@ -28,7 +28,7 @@ jobs:
 
       # Build the project
       - name: Build
-        run: bun run build
+        run: bun run build:artifacts
 
       - name: Verify package artifacts
         run: |

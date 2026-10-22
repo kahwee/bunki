@@ -7,7 +7,7 @@
   "types": "dist/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "bun run build.ts",
+    "build": "bun run typecheck && bun run build:artifacts",
     "dev": "bun run --watch src/index.ts",
     "test": "bun test",
     "test:coverage": "bun test --coverage --coverage-reporter=lcov",
@@ -19,7 +19,10 @@
     "typecheck": "bun --check --tsconfig-override=tsconfig.json",
     "clean": "rm -rf dist coverage",
     "prepack": "bun run clean && bun run build",
-    "prepublishOnly": "bun run clean && bun run build && bun run test && bun run typecheck"
+    "prepublishOnly": "bun run clean && bun run check",
+    "check:source": "bun run --parallel format:check typecheck test",
+    "build:artifacts": "bun run build.ts",
+    "check": "bun run check:source && bun run build:artifacts"
   },
   "bin": {
     "bunki": "dist/cli.js"

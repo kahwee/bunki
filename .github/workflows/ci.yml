@@ -23,7 +23,7 @@ jobs:
       # Source checks complete before the build and generated-site smoke tests.
       - parallel:
           # Verify TypeScript compilation
-          - name: TypeScript check
+          - name: Bun check
             run: bun run typecheck
 
           # Verify code style and formatting
@@ -35,7 +35,7 @@ jobs:
             run: bun run test:coverage
       # Build the project
       - name: Build
-        run: bun run build
+        run: bun run build:artifacts
 
       - name: Verify package artifacts
         run: |

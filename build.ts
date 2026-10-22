@@ -40,7 +40,7 @@ async function buildProject(): Promise<void> {
 
   await $`chmod +x ${cliPath}`;
   await $`cp -R ${path.join(projectRoot, "src", "fragments")} ${path.join(distDir, "fragments")}`;
-  await $`bun tsc --declaration --emitDeclarationOnly --outDir ${distDir}`;
+  await $`bun tsc --noCheck --declaration --emitDeclarationOnly --outDir ${distDir}`;
 
   console.log("Build completed successfully! ✅");
 }
