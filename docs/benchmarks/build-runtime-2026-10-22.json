@@ -1,0 +1,67 @@
+{
+  "repo": "bunki",
+  "base_commit": "ac6eadbfa9de852c60c319b9d80520dbcd3708c6",
+  "bun": "1.4.4",
+  "node": "v26.11.1",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.41",
+  "scope": "Artifact build only; both cases use the same updated dependencies; declarations included; installed and OS caches warm",
+  "samples": [
+    {
+      "round": 1,
+      "case": "bun_hosted",
+      "seconds": 1.8466,
+      "output_sha256": "4de0d37c5ccbbb6eef8e7d8e72789adc8c8ad1ca5c4b64b35acd8efd393687fb",
+      "matches_reference": true,
+      "files": 46
+    },
+    {
+      "round": 1,
+      "case": "normal",
+      "seconds": 2.5165,
+      "output_sha256": "4de0d37c5ccbbb6eef8e7d8e72789adc8c8ad1ca5c4b64b35acd8efd393687fb",
+      "matches_reference": true,
+      "files": 46
+    },
+    {
+      "round": 2,
+      "case": "normal",
+      "seconds": 2.6686,
+      "output_sha256": "4de0d37c5ccbbb6eef8e7d8e72789adc8c8ad1ca5c4b64b35acd8efd393687fb",
+      "matches_reference": true,
+      "files": 46
+    },
+    {
+      "round": 2,
+      "case": "bun_hosted",
+      "seconds": 1.7697,
+      "output_sha256": "4de0d37c5ccbbb6eef8e7d8e72789adc8c8ad1ca5c4b64b35acd8efd393687fb",
+      "matches_reference": true,
+      "files": 46
+    },
+    {
+      "round": 3,
+      "case": "bun_hosted",
+      "seconds": 1.5978,
+      "output_sha256": "4de0d37c5ccbbb6eef8e7d8e72789adc8c8ad1ca5c4b64b35acd8efd393687fb",
+      "matches_reference": true,
+      "files": 46
+    },
+    {
+      "round": 3,
+      "case": "normal",
+      "seconds": 1.7938,
+      "output_sha256": "4de0d37c5ccbbb6eef8e7d8e72789adc8c8ad1ca5c4b64b35acd8efd393687fb",
+      "matches_reference": true,
+      "files": 46
+    }
+  ],
+  "median_seconds": {
+    "normal": 2.5165,
+    "bun_hosted": 1.7697
+  },
+  "working_tree_modified": true,
+  "baseline_command": "bun run build:artifacts",
+  "candidate_command": "bun --bun run build:artifacts",
+  "measurement_date": "2026-10-22",
+  "note": "Commands reference the baseline script before adding explicit Bun-hosted tool invocations. Runtime comparison used identical updated dependencies in both cases."
+}

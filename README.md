@@ -198,3 +198,6 @@ A local Bun 1.4.4 benchmark using `templates/styles/main.css` measured median CS
 times of 10.2 ms with native Bun and 204.6 ms with the Bun-hosted PostCSS CLI and no
 plugins (one warm-up per engine, then five alternating samples). Native CSS output
 is transformed; this is not an output-identity comparison or a full-site speedup.
+
+See [build performance](docs/build-performance.md) for the Bun-hosted build,
+measured artifact timings, output verification, and benchmark scope.

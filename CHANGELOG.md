@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Host existing artifact-build tools under Bun; preserve emitted package formats and declarations. Record three-run build benchmarks and identical-output fingerprints.
+- Refresh compatible dependencies, including available toolchain security patches.
+
 - Reuse tag slugs within each site model instead of repeating normalization for every post; keep the cache scoped to one build.
 - Include runtime details and final HTML fingerprints in the build benchmark; document Cloudflare Static Assets deployment and Bun/Workers runtime boundaries.
 
@@ -22,5 +25,5 @@
 
 ## 0.21.2 (unreleased)
 
-- Update Marked to 18.1.1, PostCSS to 8.5.30, and sanitize-html to 2.18.1.
+- Update Marked to 18.1.1, PostCSS to 8.5.31, and sanitize-html to 2.18.1.
 - Retain the existing YAML compatibility overrides. The transitive [sprintf-js moderate denial-of-service advisory](https://github.com/advisories/GHSA-hp3w-g68c-fv3c) has no patched npm release and remains deferred.

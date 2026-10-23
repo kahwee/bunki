@@ -21,7 +21,7 @@
     "prepack": "bun run clean && bun run build",
     "prepublishOnly": "bun run clean && bun run check",
     "check:source": "bun run --parallel format:check typecheck test",
-    "build:artifacts": "bun run build.ts",
+    "build:artifacts": "bun --bun build.ts",
     "check": "bun run check:source && bun run build:artifacts"
   },
   "bin": {
@@ -57,7 +57,7 @@
     "marked-alert": "^2.1.2",
     "marked-highlight": "^2.2.4",
     "nunjucks": "^3.2.4",
-    "postcss": "^8.5.30",
+    "postcss": "^8.5.31",
     "postcss-cli": "^12.0.0",
     "sanitize-html": "^2.18.1",
     "slugify": "^1.6.9"

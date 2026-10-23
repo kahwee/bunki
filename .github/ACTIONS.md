@@ -76,3 +76,8 @@ format. Cache restoration still precedes `bun ci`; it never replaces frozen
 installation. The new key format can cause a one-time cold cache.
 
 The generated starter-site smoke test verifies that plain CSS uses Bun’s native bundler and does not fall back to copying raw CSS. Plugin-based PostCSS compatibility is covered by the CSS processor tests.
+
+Package artifact commands host their existing build tools under Bun. Source gates
+still finish before artifact generation; tests and coverage keep their existing
+runtime. Bun package caches use the default `~/.bun/install/cache` directory.
+See [build performance](../docs/build-performance.md) for the controlled comparison.
