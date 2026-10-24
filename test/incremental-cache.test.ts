@@ -11,13 +11,15 @@
  * filePath is always paired with the post derived from that exact file.
  */
 
-import { afterAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { parseMarkdownFiles } from "../src/parser";
 import { createEmptyCache, updateCacheEntry } from "../src/utils/build-cache";
 import { ensureDir } from "../src/utils/file-utils";
 
-const TMP_DIR = path.join(import.meta.dir, "tmp-cache-test");
+let TMP_DIR: string;
 
 // Markdown files are named so that alphabetical order ≠ date order.
 // Alphabetical:  a-zebra.md  b-middle.md  c-alpha.md
@@ -62,10 +64,12 @@ Content for ${f.title}.
   return paths;
 }
 
+beforeAll(async () => {
+  TMP_DIR = await mkdtemp(path.join(tmpdir(), "bunki-cache-test-"));
+});
+
 afterAll(async () => {
-  // Clean up temp files
-  const { rmdir } = await import("node:fs/promises");
-  await rmdir(TMP_DIR, { recursive: true }).catch(() => {});
+  await rm(TMP_DIR, { recursive: true, force: true });
 });
 
 describe("incremental cache: full-rebuild cache-write correctness", () => {

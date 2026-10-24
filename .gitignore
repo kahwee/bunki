@@ -21,6 +21,10 @@ dist/
 coverage/
 test/test-output/
 test/temp-dir/
+test/temp-cli-init/
+test/tmp-cache-test/
+test/test-config-creation/
+test/test-save-config/
 test/temp-config.json
 fixtures/test-output/
 fixtures/dist/

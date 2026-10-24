@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Remove obsolete tracked `temp-cli-init` fixtures left behind before init tests moved to `os.tmpdir`, ignore leftover in-repo test temp dirs, and keep the incremental cache regression fixtures off the worktree.
 - Host existing artifact-build tools under Bun; preserve emitted package formats and declarations. Record three-run build benchmarks and identical-output fingerprints.
 - Refresh compatible dependencies, including available toolchain security patches.
 
