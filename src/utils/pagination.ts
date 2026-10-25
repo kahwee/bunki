@@ -3,6 +3,12 @@
  */
 import type { PaginationData } from "../types";
 
+function validatePageSize(pageSize: number): void {
+  if (!Number.isSafeInteger(pageSize) || pageSize <= 0) {
+    throw new RangeError("pageSize must be a positive safe integer");
+  }
+}
+
 /**
  * Create pagination data for a list of items
  * @param items - Array of items to paginate
@@ -18,7 +24,7 @@ export function createPagination<T>(
   pagePath: string,
 ): PaginationData {
   const totalItems = items.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
+  const totalPages = getTotalPages(totalItems, pageSize);
 
   return {
     currentPage,
@@ -41,6 +47,7 @@ export function createPagination<T>(
  * @returns Slice of items for the requested page
  */
 export function getPaginatedItems<T>(items: readonly T[], page: number, pageSize: number): T[] {
+  validatePageSize(pageSize);
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   return items.slice(startIndex, endIndex);
@@ -53,5 +60,6 @@ export function getPaginatedItems<T>(items: readonly T[], page: number, pageSize
  * @returns Total number of pages
  */
 export function getTotalPages(totalItems: number, pageSize: number): number {
+  validatePageSize(pageSize);
   return Math.ceil(totalItems / pageSize);
 }

@@ -2,6 +2,15 @@ import { describe, expect, test } from "bun:test";
 import { createPagination, getPaginatedItems, getTotalPages } from "../../src/utils/pagination";
 
 describe("Pagination Utilities", () => {
+  test.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    "rejects invalid page size %s consistently",
+    (pageSize) => {
+      expect(() => createPagination([1, 2, 3], 1, pageSize, "/")).toThrow(RangeError);
+      expect(() => getPaginatedItems([1, 2, 3], 1, pageSize)).toThrow(RangeError);
+      expect(() => getTotalPages(3, pageSize)).toThrow(RangeError);
+    },
+  );
+
   describe("createPagination", () => {
     test("should create pagination data for first page", () => {
       const items = Array.from({ length: 25 }, (_, i) => i);
