@@ -8,7 +8,7 @@ Bunki turns Markdown into a blog, a collection of notes, or a documentation site
 
 ![Bunki — Your words, on your own site.](docs/assets/bunki-banner.svg)
 
-[Get started](#quick-start) · [Read the reference](docs/reference.md) · [Contribute](CONTRIBUTING.md)
+[Get started](#quick-start) · [Read the reference](docs/reference.md) · [Migration guide](docs/migration.md) · [Contribute](CONTRIBUTING.md)
 
 ## Quick start
 

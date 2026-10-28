@@ -1,6 +1,6 @@
 {
   "name": "bunki",
-  "version": "0.21.2",
+  "version": "0.22.0",
   "packageManager": "bun@1.4.4",
   "description": "Your words, on your own site. A Bun-powered static site generator for Markdown blogs, notes, and documentation.",
   "main": "dist/index.js",
@@ -72,6 +72,7 @@
   "files": [
     "dist",
     "docs/assets",
+    "docs/migration.md",
     "LICENSE",
     "README.md"
   ],

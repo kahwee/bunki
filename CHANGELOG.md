@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.22.0 (unreleased candidate)
+
+- Require Bun 1.4.4 or newer. Plain CSS now uses Bun’s native bundler by default; existing PostCSS configurations remain supported. Review generated CSS and asset URLs or select `css.processor: "postcss"`.
+- Repair the package import mapping to the shipped `dist/index.js`; the 0.21.1 archive did not contain the mapped `dist/index.mjs`. Public API additions are additive. See the [migration guide](docs/migration.md).
 
 - Run independent publishing preflight type checks and coverage tests in parallel, while keeping artifact generation and publication behind both checks.
 - Clarify the aggregate local verification command and the tag-only publishing trigger in the contributor guidance.
