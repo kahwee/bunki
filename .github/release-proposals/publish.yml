@@ -6,7 +6,8 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: npm-release-${{ github.ref_name }}
+  group: npm-release-bunki
+  queue: max
   cancel-in-progress: false
 jobs:
   publish:
@@ -27,13 +28,12 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
           bun-version: 1.4.4
-      - name: Validate metadata and registry state
-        id: metadata
+      - name: Validate release metadata
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           node --test scripts/check-release-guard.mjs
-          node scripts/release-check.mjs "$RELEASE_TAG" --registry
+          node scripts/release-check.mjs "$RELEASE_TAG"
       - name: Require successful CI on this exact source
         env:
           GH_TOKEN: ${{ github.token }}
@@ -66,6 +66,11 @@ jobs:
           path: ${{ runner.temp }}/release-assets/
           if-no-files-found: error
           retention-days: 7
+      - name: Check registry and archive identity
+        id: metadata
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/release-check.mjs "$RELEASE_TAG" --archive-registry "$RUNNER_TEMP/release/package.tgz"
       - name: Publish checked tarball with npm OIDC
         if: steps.metadata.outputs.should_publish == 'true'
         working-directory: ${{ runner.temp }}
@@ -76,6 +81,10 @@ jobs:
           dist_tag=latest
           if [ "$PRERELEASE" = true ]; then dist_tag=next; fi
           npm publish "$RUNNER_TEMP"/release/*.tgz --ignore-scripts --access public --tag "$dist_tag"
+      - name: Verify published archive and dist-tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/release-check.mjs "$RELEASE_TAG" --verify-archive "$RUNNER_TEMP/release/package.tgz"
   github-release:
     needs: publish
     runs-on: ubuntu-latest
