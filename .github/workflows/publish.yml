@@ -18,13 +18,12 @@ jobs:
 
       - uses: ./.github/actions/setup-bun
 
-      # Verify TypeScript compilation
-      - name: Bun check
-        run: bun run typecheck
-
-      # Run tests with coverage
-      - name: Run tests with coverage
-        run: bun run test:coverage
+      # Independent source checks must both pass before package artifacts are built.
+      - parallel:
+          - name: Bun check
+            run: bun run typecheck
+          - name: Run tests with coverage
+            run: bun run test:coverage
 
       # Build the project
       - name: Build

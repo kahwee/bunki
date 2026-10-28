@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Run independent publishing preflight type checks and coverage tests in parallel, while keeping artifact generation and publication behind both checks.
+- Clarify the aggregate local verification command and the tag-only publishing trigger in the contributor guidance.
+
 - Remove obsolete tracked `temp-cli-init` fixtures left behind before init tests moved to `os.tmpdir`, ignore leftover in-repo test temp dirs, and keep the incremental cache regression fixtures off the worktree.
 - Host existing artifact-build tools under Bun; preserve emitted package formats and declarations. Record three-run build benchmarks and identical-output fingerprints.
 - Refresh compatible dependencies, including available toolchain security patches.
@@ -26,5 +29,5 @@
 
 ## 0.21.2 (unreleased)
 
-- Update Marked to 18.1.1, PostCSS to 8.5.31, and sanitize-html to 2.18.1.
-- Retain the existing YAML compatibility overrides. The transitive [sprintf-js moderate denial-of-service advisory](https://github.com/advisories/GHSA-hp3w-g68c-fv3c) has no patched npm release and remains deferred.
+- Update Marked to 18.1.2, PostCSS to 8.5.32, and sanitize-html to 2.18.1.
+- Retain the existing YAML compatibility overrides. The previously deferred [sprintf-js advisory](https://github.com/advisories/GHSA-hp3w-g68c-fv3c) was withdrawn upstream on October 22, 2026; the current dependency audit reports no advisories.

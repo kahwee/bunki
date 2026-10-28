@@ -6,7 +6,7 @@ Bunki is a TypeScript static site generator built with Bun. Use Bun 1.4.4+ for d
 
 Use your judgment on implementation and verification. Follow nearby code and the repository's tooling; prefer Bun APIs where practical. Keep changes focused and update documentation when user-facing behavior changes.
 
-`package.json` defines the commands. The main checks are `bun test`, `bun run typecheck`, `bun run format:check`, and `bun run build`. Run the checks relevant to the change and report any failures or checks you couldn't run.
+`package.json` defines the commands. Run `bun run check` for the full local gate: formatting, type checking, and tests run in parallel before package artifacts are built. Use `bun test <path>` for focused tests and `bun run test:coverage` for coverage. `build:artifacts` does not validate source; run it only after successful source checks. Report any failures or checks you couldn't run.
 
 ## Where to look
 
