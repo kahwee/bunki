@@ -40,7 +40,7 @@ def hashes(dist):
         if not f.is_file():
             continue
         data = f.read_bytes()
-        if f.name == 'sitemap.xml':
+        if f.name in ('sitemap.xml', 'sitemap_index.xml'):
             # Dynamic lastmod timestamps change between runs; preserve paths and all other bytes.
             data = re.sub(rb'(<lastmod>)\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z(</lastmod>)', rb'\1TIME\2', data)
         result[str(f.relative_to(dist))] = hashlib.sha256(data).hexdigest()
@@ -88,7 +88,7 @@ with tempfile.TemporaryDirectory(prefix='bunki-aot-bench-') as tmp:
     for name in names:
         for label, results in [('generate', samples[name]), ('startup', startups[name])]:
             print(name, label, 'median_seconds', round(statistics.median(r['seconds'] for r in results), 4), 'median_peak_kib', statistics.median(r['peak_kib'] for r in results), flush=True)
-    print('Equivalent files:', len(expected), '(sitemap lastmod normalized); config and plugin markers present')
+    print('Equivalent files:', len(expected), '(sitemap and sitemap index lastmod normalized); config and plugin markers present')
     for name, command in commands.items():
         (site / 'postcss.config.cjs').write_text('throw new Error("synthetic plugin failure");\n')
         failed = run(command + ['generate', '-c', 'config.ts'], site)
