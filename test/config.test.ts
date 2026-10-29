@@ -172,13 +172,12 @@ describe("Configuration - Default Config Creation", () => {
     expect(config.site).toHaveProperty("author");
   });
 
-  test("loadConfig returns default config for invalid config file", async () => {
+  test("loadConfig rejects an invalid config export", async () => {
     // Create an invalid config file
     await ensureDir(testConfigDir);
     await Bun.write(testConfigPath, "export default null;");
 
-    const config = await loadConfig(testConfigPath);
-    expect(config.title).toBe("My Blog");
+    await expect(loadConfig(testConfigPath)).rejects.toThrow("Error loading config file");
 
     // Cleanup
     try {
@@ -191,26 +190,24 @@ describe("Configuration - Default Config Creation", () => {
     const funcConfigPath = path.join(testConfigDir, "func-config.js");
     await Bun.write(
       funcConfigPath,
-      `export default defineConfig() { return { title: "Function Config", description: "Test", baseUrl: "https://test.com", domain: "test" }; }`,
+      `export default function defineConfig() { return { title: "Function Config", description: "Test", baseUrl: "https://test.com", domain: "test" }; }`,
     );
 
     const config = await loadConfig(funcConfigPath);
     // Should call the function and use the returned config
-    expect(config).toHaveProperty("title");
+    expect(config.title).toBe("Function Config");
 
     try {
       await Bun.file(funcConfigPath).unlink();
     } catch {}
   });
 
-  test("loadConfig falls back to default for unparseable config", async () => {
+  test("loadConfig rejects an unparseable config", async () => {
     await ensureDir(testConfigDir);
     const badPath = path.join(testConfigDir, "bad-config.js");
     await Bun.write(badPath, "this is not valid javascript !!!!");
 
-    const config = await loadConfig(badPath);
-    // Should return default config
-    expect(config.title).toBe("My Blog");
+    await expect(loadConfig(badPath)).rejects.toThrow("Error loading config file");
 
     try {
       await Bun.file(badPath).unlink();

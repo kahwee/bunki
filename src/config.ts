@@ -96,7 +96,7 @@ export async function loadConfig(
       cfg = await cfg();
     }
     if (!cfg || typeof cfg !== "object") {
-      return getDefaultConfig();
+      throw new Error("Config must export an object or a function returning an object");
     }
 
     return {
@@ -113,8 +113,7 @@ export async function loadConfig(
       },
     };
   } catch (error) {
-    console.error(`Error loading config file ${resolved}:`, error);
-    return getDefaultConfig();
+    throw new Error(`Error loading config file ${resolved}`, { cause: error });
   }
 }
 

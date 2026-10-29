@@ -6,7 +6,7 @@ import path from "node:path";
 import { Glob } from "bun";
 import type { CSSConfig, SiteConfig } from "../types";
 import { mapConcurrent } from "../utils/concurrency";
-import { getDefaultCSSConfig, processCSS } from "../utils/css-processor";
+import { getDefaultCSSConfig, PostCSSProcessingError, processCSS } from "../utils/css-processor";
 import { copyFile, ensureDir, isDirectory } from "../utils/file-utils";
 
 /**
@@ -36,6 +36,7 @@ export async function generateStylesheet(
     });
   } catch (error) {
     console.error("Error processing CSS:", error);
+    if (error instanceof PostCSSProcessingError) throw error;
 
     // Fallback to simple file copying if CSS processing fails
     console.log("Falling back to simple CSS file copying...");

@@ -3,18 +3,20 @@
  * Centralizes Nunjucks configuration and custom filters
  */
 
-import { existsSync } from "node:fs";
-import path from "node:path";
 import nunjucks from "nunjucks";
 import { DATE } from "../constants";
 import { toPacificTime } from "./date-utils";
+import jsonLd from "../fragments/json-ld.njk" with { type: "text" };
+import ogImage from "../fragments/og-image.njk" with { type: "text" };
+import pagination from "../fragments/pagination.njk" with { type: "text" };
+import shareButtons from "../fragments/share-buttons.njk" with { type: "text" };
 
-// In the built bundle (dist/cli.js), import.meta.dir is the dist/ directory and
-// fragments live at dist/fragments/. When running tests directly from source,
-// import.meta.dir is src/utils/ so we fall back to src/fragments/.
-const _distFragments = path.join(import.meta.dir, "fragments");
-const _srcFragments = path.join(import.meta.dir, "../fragments");
-const BUNKI_FRAGMENTS_DIR = existsSync(_distFragments) ? _distFragments : _srcFragments;
+const fragments: Record<string, string> = {
+  "json-ld.njk": jsonLd,
+  "og-image.njk": ogImage,
+  "pagination.njk": pagination,
+  "share-buttons.njk": shareButtons,
+};
 
 /**
  * Create and configure Nunjucks template engine with custom filters
@@ -33,10 +35,16 @@ export function createTemplateEngine(
   templatesDir: string,
   watch: boolean = false,
 ): nunjucks.Environment {
-  const env = nunjucks.configure([templatesDir, BUNKI_FRAGMENTS_DIR], {
-    autoescape: true,
-    watch,
+  const FragmentLoader = nunjucks.Loader.extend({
+    getSource(name: string) {
+      const src = Object.hasOwn(fragments, name) ? fragments[name] : undefined;
+      return src === undefined ? (null as never) : { src, path: name, noCache: false };
+    },
   });
+  const env = new nunjucks.Environment(
+    [new nunjucks.FileSystemLoader(templatesDir, { watch }), new FragmentLoader() as never],
+    { autoescape: true },
+  );
 
   // Add date filter for Pacific timezone formatting
   env.addFilter("date", formatDate);

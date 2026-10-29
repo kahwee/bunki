@@ -104,18 +104,14 @@ body {
       watch: false,
     };
 
-    // PostCSS will try to use default config, which should work
-    // Only fail if PostCSS actually fails (not just missing config)
-    const result = await processCSS({
-      css: cssConfig,
-      projectRoot: TEST_DIR,
-      outputDir: OUTPUT_DIR,
-      verbose: false,
-    });
-
-    // Should return result with outputPath
-    expect(result).toHaveProperty("outputPath");
-    expect(result.outputPath).toInclude("style.css");
+    await expect(
+      processCSS({
+        css: cssConfig,
+        projectRoot: TEST_DIR,
+        outputDir: OUTPUT_DIR,
+        verbose: false,
+      }),
+    ).rejects.toThrow("PostCSS processing failed");
   });
 
   test("should create output directory if it doesn't exist", async () => {
@@ -464,7 +460,7 @@ body {
     const cssConfig = {
       input: "preserve.css",
       output: "preserve-output.css",
-      postcssConfig: "nonexistent-config.js",
+      postcssConfig: "postcss.config.js",
       enabled: true,
       watch: false,
     };
@@ -760,27 +756,22 @@ describe("CSS Processor - Error Handling & Validation", () => {
     expect(errors).toHaveLength(0);
   });
 
-  test("should handle fallback copy when no PostCSS config", async () => {
+  test("should reject an explicit missing PostCSS config", async () => {
     await fs.promises.writeFile(path.join(TEST_DIR, "simple.css"), "body { color: red; }");
-
-    const cssConfig = {
-      input: "simple.css",
-      output: "output.css",
-      postcssConfig: "missing.config.js",
-      enabled: true,
-      watch: false,
-    };
-
-    await processCSS({
-      css: cssConfig,
-      projectRoot: TEST_DIR,
-      outputDir: OUTPUT_DIR,
-      verbose: false,
-    });
-
-    const outputPath = path.join(OUTPUT_DIR, "output.css");
-    const content = await fs.promises.readFile(outputPath, "utf-8");
-    expect(content).toInclude("body");
+    await expect(
+      processCSS({
+        css: {
+          input: "simple.css",
+          output: "output.css",
+          postcssConfig: "missing.config.js",
+          enabled: true,
+          watch: false,
+        },
+        projectRoot: TEST_DIR,
+        outputDir: OUTPUT_DIR,
+        verbose: false,
+      }),
+    ).rejects.toThrow("PostCSS processing failed");
   });
 
   test("should support content-based hashing for cache busting", async () => {

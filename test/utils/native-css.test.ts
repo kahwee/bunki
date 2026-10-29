@@ -83,3 +83,24 @@ test("site generation preserves raw CSS when native bundling fails", async () =>
   );
   expect(await Bun.file(path.join(opts.outputDir, opts.css.output)).text()).toBe(css);
 });
+
+test("site generation fails when a configured PostCSS plugin throws", async () => {
+  await Bun.write(
+    path.join(root, "postcss.config.js"),
+    `export default { plugins: [{ postcssPlugin: 'broken', Once() { throw new Error('plugin failed'); } }] };`,
+  );
+  const opts = options();
+  await expect(
+    generateStylesheet(
+      {
+        title: "CSS",
+        description: "Test",
+        baseUrl: "https://example.com",
+        domain: "example.com",
+        css: opts.css,
+      },
+      opts.outputDir,
+      root,
+    ),
+  ).rejects.toThrow("PostCSS processing failed");
+});

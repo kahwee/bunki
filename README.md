@@ -191,8 +191,11 @@ Set `css.processor` to `"bun"` or `"postcss"` to select an engine explicitly.
 Bun does not compile Tailwind directives or run arbitrary PostCSS plugins. Those
 projects still need PostCSS and their own plugins; see [CSS configuration](docs/reference.md#css-configuration).
 The repository’s unused Tailwind and Autoprefixer development setup has been removed.
-PostCSS and its CLI remain installed for existing plugin-based sites. Both engines
-retain content hashing and the site generator’s raw-CSS fallback on failure.
+PostCSS and its CLI remain installed for existing plugin-based sites. The PostCSS
+path needs `bun` on PATH, including when using a compiled executable. A failed
+PostCSS plugin stops generation so its transformation is not silently omitted;
+plain CSS retains the raw-CSS fallback. Both engines support content hashing.
+Existing configuration files that cannot be loaded also stop generation.
 
 A local Bun 1.4.4 benchmark using `templates/styles/main.css` measured median CSS-phase
 times of 10.2 ms with native Bun and 204.6 ms with the Bun-hosted PostCSS CLI and no
@@ -201,3 +204,9 @@ is transformed; this is not an output-identity comparison or a full-site speedup
 
 See [build performance](docs/build-performance.md) for the Bun-hosted build,
 measured artifact timings, output verification, and benchmark scope.
+
+To experiment locally with the same canary for source, bundled and AOT builds, run
+`python3 scripts/benchmark-aot.py /absolute/path/to/bun 5` on Linux after installing
+dependencies. The benchmark uses temporary synthetic fixtures and checks output,
+config, plugin and failure behavior. AOT is experimental; the benchmark enables
+disk-code loading for user configs and plugins and does not change the stable runtime.

@@ -4,6 +4,13 @@ import { hash } from "bun";
 import type { CSSConfig } from "../types";
 import { ensureDir } from "./file-utils";
 
+export class PostCSSProcessingError extends Error {
+  constructor(cause: unknown) {
+    super("PostCSS processing failed", { cause });
+    this.name = "PostCSSProcessingError";
+  }
+}
+
 export interface CSSProcessorOptions {
   /** CSS configuration */
   css: CSSConfig;
@@ -81,7 +88,14 @@ export async function processCSS(options: CSSProcessorOptions): Promise<CSSProce
   }
 
   if (usePostCSS) {
-    await runPostCSS(inputPath, tempOutputPath, postcssConfigPath, projectRoot, verbose);
+    try {
+      if (css.postcssConfig && !fs.existsSync(postcssConfigPath)) {
+        throw new Error(`PostCSS config not found: ${postcssConfigPath}`);
+      }
+      await runPostCSS(inputPath, tempOutputPath, postcssConfigPath, projectRoot, verbose);
+    } catch (error) {
+      throw new PostCSSProcessingError(error);
+    }
   } else {
     const result = await Bun.build({
       entrypoints: [inputPath],
@@ -139,18 +153,10 @@ async function runPostCSS(
   projectRoot: string,
   verbose: boolean,
 ): Promise<void> {
+  const bunRuntime = Bun.which("bun");
+  if (!bunRuntime) throw new Error("PostCSS requires a Bun executable on PATH");
   const subprocess = Bun.spawn(
-    [
-      process.execPath,
-      "x",
-      "--bun",
-      "postcss",
-      inputPath,
-      "-o",
-      outputPath,
-      "--config",
-      configPath,
-    ],
+    [bunRuntime, "x", "--bun", "postcss", inputPath, "-o", outputPath, "--config", configPath],
     {
       cwd: projectRoot,
       stdin: "ignore",
