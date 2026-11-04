@@ -13,6 +13,15 @@ const FIXTURES_DIR = path.join(import.meta.dir, "../../fixtures");
 const SAMPLE_FILE = path.join(FIXTURES_DIR, "content", "2025", "test-post-1.md");
 
 describe("Markdown Utilities", () => {
+  test("renders Setext headings with trailing tabs and keeps unmatched emphasis as text", () => {
+    const html = convertMarkdownToHtml(
+      "Heading\n---\t\n\nA *broken marker and <script>alert(1)</script>",
+    );
+    expect(html).toContain("<h2");
+    expect(html).toContain("Heading</h2>");
+    expect(html).toContain("*broken marker");
+    expect(html).not.toContain("<script");
+  });
   test("extractExcerpt should create a plain text excerpt", () => {
     const markdown = `
 # Heading
