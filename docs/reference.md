@@ -174,3 +174,25 @@ For upload failures, check the configured source directory, supported file exten
 See [Cloudflare Workers and Bun](cloudflare.md) for serving generated files with
 Workers Static Assets. Bunki runs at build time; its Bun APIs do not run inside
 Worker request handlers.
+
+### Content and preview safety
+
+The preview server listens only on `127.0.0.1`. Files and directories reached through
+symlinks must remain inside the resolved output directory.
+
+Builds reject duplicate final post URLs, empty tag slugs, and distinct tag names
+that normalize to the same slug. Rename conflicting posts or tags rather than
+relying on output write order. Tag names are case-sensitive.
+
+Raw HTML iframes may load only HTTPS URLs on `www.youtube.com` or
+`www.youtube-nocookie.com`; relative, protocol-relative, and other origins are
+removed during sanitization.
+
+Content-assets uploads include only files under `content/{year}/{assetsDir}/`,
+where the year is four digits and `assetsDir` is one directory name. Other images
+under `content/` are not uploaded in this mode. All uploads check transformed
+object keys for collisions before writing any objects.
+
+Structured data uses `serialize-javascript` in JSON mode with HTML-safe escaping.
+JSON-LD remains valid JSON and preserves metadata values without allowing them
+to close the surrounding script element.

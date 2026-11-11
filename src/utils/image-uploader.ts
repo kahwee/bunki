@@ -59,6 +59,13 @@ export async function uploadImages(
     // Resolve the assets directory name: CLI flag > config > default "_assets"
     const assetsDir = options.contentAssetsDir || config.contentAssets?.assetsDir || "_assets";
 
+    if (
+      contentAssetsMode &&
+      (!assetsDir || /[\\/]/.test(assetsDir) || assetsDir === "." || assetsDir === "..")
+    ) {
+      throw new Error("Content assets directory must be a single directory name");
+    }
+
     if (contentAssetsMode) {
       // In content-assets mode, prefer the dedicated S3 config if provided in bunki.config.ts
       if (config.contentAssets?.s3) {
@@ -96,6 +103,12 @@ export async function uploadImages(
       options.minYear,
       keyTransform,
       options.maxYear,
+      contentAssetsMode
+        ? (filePath: string) => {
+            const parts = filePath.split("/");
+            return /^\d{4}$/.test(parts[0]) && parts[1] === assetsDir && parts.length > 2;
+          }
+        : undefined,
     );
 
     const orderedImageUrlMap = Object.fromEntries(

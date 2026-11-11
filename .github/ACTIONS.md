@@ -4,20 +4,20 @@ This guide describes the checked-in workflows. Follow each linked YAML file for 
 
 ## Workflows
 
-| Workflow                                         | Events                                      | Jobs                        |
-| ------------------------------------------------ | ------------------------------------------- | --------------------------- |
-| [ci.yml](workflows/ci.yml)                       | `push`, `pull_request`                      | `build`                     |
-| [compatibility.yml](workflows/compatibility.yml) | `push`, `pull_request`, `workflow_dispatch` | `test-bun-versions`         |
-| [coverage.yml](workflows/coverage.yml)           | `push`, `pull_request`                      | `coverage`                  |
-| [pr-coverage.yml](workflows/pr-coverage.yml)     | `pull_request`                              | `coverage-comment`          |
-| [publish.yml](workflows/publish.yml)             | `push` to `v*` tags                         | `test-and-build`, `publish` |
+| Workflow                                         | Events                                      | Jobs                                                    |
+| ------------------------------------------------ | ------------------------------------------- | ------------------------------------------------------- |
+| [ci.yml](workflows/ci.yml)                       | `push`, `pull_request`                      | `build`                                                 |
+| [compatibility.yml](workflows/compatibility.yml) | `push`, `pull_request`, `workflow_dispatch` | `test-bun-versions`                                     |
+| [coverage.yml](workflows/coverage.yml)           | `push`, `pull_request`                      | `coverage`                                              |
+| [pr-coverage.yml](workflows/pr-coverage.yml)     | `pull_request`                              | `coverage-comment`                                      |
+| [publish.yml](workflows/publish.yml)             | `push` to `v*` tags                         | `test-and-build`, `publish`, `verify`, `github-release` |
 
 ## Parallel steps
 
 Independent checks use GitHub Actions [native parallel steps](https://github.blog/changelog/2026-06-25-actions-steps-can-now-be-run-in-parallel/). The following groups run concurrently within a job:
 
 - [ci.yml](workflows/ci.yml), job `build`: `Bun check`; `Check code style`; `Run tests with coverage`.
-- [publish.yml](workflows/publish.yml), job `test-and-build`: `Bun check`; `Run tests with coverage`. Artifact generation and the starter-site smoke test run after both pass; publication waits for that job.
+- [publish.yml](workflows/publish.yml), job `test-and-build`: `Bun check`; `Check code style`; `Run tests with coverage`. Artifact generation and the starter-site smoke test run after all pass; publication waits for that job.
 
 Steps after a group wait for it to finish. Keep prerequisites before the group and dependent build, package, or deployment work afterward. Do not run commands that overwrite the same build directory or coverage output together. Parallel steps share the job workspace; they do not provide separate machines.
 
@@ -82,3 +82,25 @@ Package artifact commands host their existing build tools under Bun. Source gate
 still finish before artifact generation; tests and coverage keep their existing
 runtime. Bun package caches use the default `~/.bun/install/cache` directory.
 See [build performance](../docs/build-performance.md) for the controlled comparison.
+
+## Release credential boundary
+
+The active npm workflow requires a version tag on `main` ancestry and a successful
+`ci.yml` main-branch push run for that exact commit. Read-only jobs check, build,
+and pack the expected `bunki` package. Registry checks compare immutable archive
+integrity and refuse older versions from taking over `latest`.
+
+The npm token is exposed only to one `npm publish` command on a fresh runner. That
+runner does not check out source, install dependencies, run local actions, or run
+package lifecycle scripts. It verifies the transferred archive digest and publishes
+that exact archive with `--ignore-scripts`. Registry readback runs separately
+without npm credentials; GitHub release creation runs without repository code.
+
+These source checks are defense in depth, not a replacement for repository controls.
+An actor who can push arbitrary tags can also select a modified workflow. Before
+considering release authorization fully protected, an administrator must restrict
+`v*` tag creation/updates and protect `main`, and restrict the release credential
+through a protected environment or appropriately bound npm trusted publishing.
+Repository-wide `NPM_TOKEN` access must not remain available to arbitrary workflow
+revisions. This change does not create environments, change rulesets, move secrets,
+or enable the inactive OIDC proposal. Those changes require explicit access approval.

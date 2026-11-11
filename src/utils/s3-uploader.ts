@@ -3,6 +3,8 @@ import { S3Client } from "bun";
 import type { ImageUploader, S3Config, SiteConfig, Uploader } from "../types";
 import { mapConcurrent } from "./concurrency";
 
+class UploadKeyCollisionError extends Error {}
+
 interface S3FileLike {
   write(file: Bun.BunFile): Promise<number>;
 }
@@ -106,6 +108,7 @@ export class S3Uploader implements Uploader, ImageUploader {
     minYear?: number,
     keyTransform?: (relativePath: string) => string,
     maxYear?: number,
+    includeFile?: (relativePath: string) => boolean,
   ): Promise<Record<string, string>> {
     console.log(`[S3] Uploading all images from ${imagesDir} to bucket ${this.s3Config.bucket}...`);
 
@@ -131,6 +134,7 @@ export class S3Uploader implements Uploader, ImageUploader {
           cwd: imagesDir,
           absolute: false,
         })) {
+          if (includeFile && !includeFile(file)) continue;
           // If minYear or maxYear is specified, filter by year directory
           if (minYear || maxYear) {
             const yearMatch = file.match(/^(\d{4})\//);
@@ -152,6 +156,19 @@ export class S3Uploader implements Uploader, ImageUploader {
 
       // The files are already filtered by glob pattern and year (if specified)
       const imageFiles = files;
+      // Validate the complete upload plan before any remote writes.
+      const keys = new Map<string, string>();
+      const keysByFile = new Map<string, string>();
+      for (const file of imageFiles) {
+        const key = keyTransform ? keyTransform(file) : file;
+        if (keys.has(key)) {
+          throw new UploadKeyCollisionError(
+            `Conflicting upload key "${key}": ${keys.get(key)} and ${file}`,
+          );
+        }
+        keys.set(key, file);
+        keysByFile.set(file, key);
+      }
 
       if (imageFiles.length === 0) {
         console.warn(`No image files found in ${imagesDir}`);
@@ -173,7 +190,7 @@ export class S3Uploader implements Uploader, ImageUploader {
             const imagePath = path.join(imagesDir, imageFile);
 
             // Apply key transform if provided (e.g. strip _assets/ for content-assets mode)
-            const s3Key = keyTransform ? keyTransform(imageFile) : imageFile;
+            const s3Key = keysByFile.get(imageFile)!;
 
             const file = Bun.file(imagePath);
 
@@ -207,6 +224,7 @@ export class S3Uploader implements Uploader, ImageUploader {
       );
       return imageUrls;
     } catch (error) {
+      if (error instanceof UploadKeyCollisionError) throw error;
       console.error(`Error uploading images:`, error);
       return imageUrls;
     }

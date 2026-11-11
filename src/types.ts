@@ -310,6 +310,7 @@ export interface ImageUploader {
     minYear?: number,
     keyTransform?: (relativePath: string) => string,
     maxYear?: number,
+    includeFile?: (relativePath: string) => boolean,
   ): Promise<Record<string, string>>;
 }
 

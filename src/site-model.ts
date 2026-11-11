@@ -8,7 +8,15 @@ export function createSiteModel(
   config: SiteConfig,
   tagDescriptions: Readonly<Record<string, string>> = {},
 ): Site {
-  const tags: Record<string, TagData> = {};
+  const tags: Record<string, TagData> = Object.create(null);
+  const postRoutes = new Set<string>();
+  for (const post of posts) {
+    if (postRoutes.has(post.url)) {
+      throw new Error(`Conflicting post route: ${post.url}`);
+    }
+    postRoutes.add(post.url);
+  }
+  const tagsBySlug = new Map<string, string>();
   // Repeated tags share a slug for this model; release the cache after the build.
   const slugsByTag = new Map<string, string>();
   const enrichedPosts = posts.map((post) => {
@@ -17,6 +25,10 @@ export function createSiteModel(
         let slug = slugsByTag.get(tagName);
         if (slug === undefined) {
           slug = slugify(tagName, { lower: true, strict: true });
+          if (!slug || (tagsBySlug.has(slug) && tagsBySlug.get(slug) !== tagName)) {
+            throw new Error(`Conflicting or empty tag slug for "${tagName}": "${slug}"`);
+          }
+          tagsBySlug.set(slug, tagName);
           slugsByTag.set(tagName, slug);
         }
         return [tagName, slug];

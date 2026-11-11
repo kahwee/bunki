@@ -324,13 +324,87 @@ describe("JSON-LD Utilities", () => {
   });
 
   describe("toScriptTag", () => {
+    test("keeps hostile metadata inside the JSON-LD script without changing its value", () => {
+      for (const value of [
+        '</script><script>alert("xss")</script>',
+        "</ScRiPt ><img src=x onerror=alert(1)>",
+        "</script\n><svg onload=alert(1)>",
+        "</script/><script>alert(1)</script>",
+        "\u2028\u2029",
+        "<!--<script>nested</script>",
+        '< > & \\" \\u2028 \\u2029',
+      ]) {
+        const schema = generatePersonSchema(value, value);
+        const scriptTag = toScriptTag(schema);
+        const json = scriptTag.slice(
+          scriptTag.indexOf(">") + 1,
+          scriptTag.lastIndexOf("</script>"),
+        );
+
+        expect(json).not.toInclude("<");
+        expect(scriptTag.match(/<\/script\s*>/gi)).toHaveLength(1);
+        expect(JSON.parse(json)).toEqual(schema);
+      }
+    });
+
+    test("renders one inert JSON-LD element with hostile keys and nested values", async () => {
+      const payload = '</script><script>alert("xss")</script><img src=x>';
+      const schema = {
+        ...generatePersonSchema(payload),
+        [payload]: { nested: [payload, "\u2028\u2029"] },
+      };
+      const html = toScriptTag(schema);
+      let scripts = 0;
+      let images = 0;
+      await new HTMLRewriter()
+        .on("script", {
+          element(element) {
+            scripts++;
+            expect(element.getAttribute("type")).toBe("application/ld+json");
+          },
+        })
+        .on("img", {
+          element() {
+            images++;
+          },
+        })
+        .transform(new Response(html))
+        .text();
+
+      expect(scripts).toBe(1);
+      expect(images).toBe(0);
+      expect(JSON.parse(html.slice(html.indexOf(">") + 1, html.lastIndexOf("</script>")))).toEqual(
+        schema,
+      );
+      expect(html).not.toInclude("\u2028");
+      expect(html).not.toInclude("\u2029");
+    });
+
+    test("escapes nested post metadata in every rendered schema", () => {
+      const value = "</script><img src=x onerror=alert(1)>";
+      const schemas = generatePostPageSchemas({
+        post: { ...mockPost, title: value, excerpt: value },
+        site: { ...mockSite, title: value, description: value, authorName: value },
+      });
+      const html = schemasToHtml(schemas);
+      const scripts = [
+        ...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g),
+      ];
+
+      expect(scripts).toHaveLength(schemas.length);
+      expect(scripts.map((match) => JSON.parse(match[1]))).toEqual(schemas);
+      expect(html).not.toInclude("<img");
+    });
+
     test("should convert JSON-LD to script tag", () => {
       const schema = generatePersonSchema("John Doe");
       const scriptTag = toScriptTag(schema);
 
       expect(scriptTag).toStartWith('<script type="application/ld+json">');
       expect(scriptTag).toEndWith("</script>");
-      expect(scriptTag).toInclude('"@context": "https://schema.org"');
+      expect(
+        JSON.parse(scriptTag.slice(scriptTag.indexOf(">") + 1, scriptTag.lastIndexOf("</script>"))),
+      ).toEqual(schema);
       expect(scriptTag).toInclude('"@type": "Person"');
       expect(scriptTag).toInclude('"name": "John Doe"');
     });

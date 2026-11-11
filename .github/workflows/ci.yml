@@ -16,7 +16,7 @@ jobs:
       - name: Test immutable release asset recovery
         run: python3 scripts/test_release_assets.py -v
       - name: Test release metadata guard
-        run: node --test scripts/check-release-guard.mjs
+        run: node --test scripts/check-release-guard.mjs scripts/check-release-source.mjs scripts/check-release-workflow.mjs
 
       - uses: ./.github/actions/setup-bun
 

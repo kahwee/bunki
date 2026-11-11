@@ -8,8 +8,8 @@ import { pathToFileURL } from "node:url";
 
 export function validateRelease(pkg, tag, lock) {
   if (pkg.private) throw new Error("Private packages cannot be published");
-  if (!pkg.name || !/^\d+\.\d+\.\d+$/.test(pkg.version)) {
-    throw new Error("A stable package name and version are required");
+  if (pkg.name !== "bunki" || !/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(pkg.version)) {
+    throw new Error("The bunki package and a stable version are required");
   }
   if (tag !== `v${pkg.version}`) {
     throw new Error("Release tag must match package.json version");

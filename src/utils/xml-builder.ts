@@ -16,6 +16,10 @@ export function escapeXml(text: string): string {
     .replace(/'/g, "&apos;");
 }
 
+export function cdata(text: string): string {
+  return `<![CDATA[${text.replace(/\]\]>/g, "]]]]><![CDATA[>")}]]>`;
+}
+
 /**
  * Build XML sitemap URL entry
  * @param loc - URL location
@@ -31,9 +35,9 @@ export function buildSitemapUrl(
   priority: number,
 ): string {
   return `  <url>
-    <loc>${loc}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>${changefreq}</changefreq>
+    <loc>${escapeXml(loc)}</loc>
+    <lastmod>${escapeXml(lastmod)}</lastmod>
+    <changefreq>${escapeXml(changefreq)}</changefreq>
     <priority>${priority.toFixed(1)}</priority>
   </url>
 `;
@@ -90,14 +94,14 @@ export function buildRSSItem(params: RSSItemParams): string {
     tags?.map((tag) => `      <category>${escapeXml(tag)}</category>`).join("\n") || "";
 
   let itemXml = `    <item>
-      <title><![CDATA[${title}]]></title>
-      <link>${link}</link>
-      <guid isPermaLink="true">${link}</guid>
-      <pubDate>${pubDate}</pubDate>`;
+      <title>${cdata(title)}</title>
+      <link>${escapeXml(link)}</link>
+      <guid isPermaLink="true">${escapeXml(link)}</guid>
+      <pubDate>${escapeXml(pubDate)}</pubDate>`;
 
   // Add author if provided
   if (author) {
-    itemXml += `\n      <author>${author}</author>`;
+    itemXml += `\n      <author>${escapeXml(author)}</author>`;
   }
 
   // Add description (with inline image if available)
@@ -105,7 +109,7 @@ export function buildRSSItem(params: RSSItemParams): string {
   if (image) {
     fullDescription = `<img src="${escapeXml(image)}" alt="" style="max-width:100%; height:auto;" /><br/><br/>${description}`;
   }
-  itemXml += `\n      <description><![CDATA[${fullDescription}]]></description>`;
+  itemXml += `\n      <description>${cdata(fullDescription)}</description>`;
 
   // Add categories from tags
   if (categoryTags) {
@@ -113,7 +117,7 @@ export function buildRSSItem(params: RSSItemParams): string {
   }
 
   // Add full content
-  itemXml += `\n      <content:encoded><![CDATA[${content}]]></content:encoded>`;
+  itemXml += `\n      <content:encoded>${cdata(content)}</content:encoded>`;
 
   // Add media thumbnail and enclosure if image exists
   if (image) {

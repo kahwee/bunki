@@ -16,6 +16,7 @@
  * @see https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data
  */
 
+import serialize from "serialize-javascript";
 import type { JsonObject, Post, SiteConfig } from "../types.js";
 
 /**
@@ -376,8 +377,9 @@ export function generateCollectionPageSchema(options: CollectionPageOptions): Sc
  * // Returns: '<script type="application/ld+json">{"@context":"https://schema.org",...}</script>'
  */
 export function toScriptTag(jsonLd: SchemaOrgThing): string {
-  // Use JSON.stringify with 2-space indentation for readability
-  const json = JSON.stringify(jsonLd, null, 2);
+  // JSON mode keeps strict JSON semantics; the library's default HTML escaping
+  // protects script raw text, including nested values and property names.
+  const json = serialize(jsonLd, { isJSON: true, space: 2 });
   return `<script type="application/ld+json">\n${json}\n</script>`;
 }
 
