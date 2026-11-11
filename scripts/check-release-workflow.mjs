@@ -18,13 +18,16 @@ test("npm credentials are isolated from all repository code and package lifecycl
   assert.match(build, /--archive-registry/);
   assert.doesNotMatch(
     publish,
-    /checkout@|uses: \.\/|bun |npm (?:ci|install)|node scripts\/|id-token:\s*write/,
+    /checkout@|uses: \.\/|bun |npm (?:ci|install)|node scripts\/|secrets\./,
   );
   assert.match(publish, /sha256sum --check --strict/);
   assert.match(
     publish,
     /npm publish "\$RUNNER_TEMP\/release\/package\.tgz" --ignore-scripts --access public --tag latest --registry https:\/\/registry\.npmjs\.org/,
   );
-  assert.equal((workflow.match(/secrets\.NPM_TOKEN/g) ?? []).length, 1);
+  assert.doesNotMatch(workflow, /secrets\.NPM_TOKEN/);
+  assert.match(publish, /environment: npm-release/);
+  assert.match(publish, /id-token:\s*write/);
+  assert.equal((workflow.match(/id-token:\s*write/g) ?? []).length, 1);
   assert.match(verify, /--verify-archive/);
 });
