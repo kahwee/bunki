@@ -184,13 +184,17 @@ test("inactive proposal preserves trigger, permissions and upload gate", () => {
   assert.match(workflow, /--archive-registry/);
   assert.match(workflow, /--verify-archive/);
 });
-test("active token publisher does not activate new OIDC authority", () => {
+test("active publisher binds OIDC authority to the release environment", () => {
   const workflow = readFileSync(
     new URL("../.github/workflows/publish.yml", import.meta.url),
     "utf8",
   );
-  assert.doesNotMatch(workflow, /id-token:\s*write/);
-  assert.equal((workflow.match(/secrets\.NPM_TOKEN/g) ?? []).length, 1);
+  assert.doesNotMatch(workflow, /secrets\.NPM_TOKEN/);
+  assert.equal((workflow.match(/id-token:\s*write/g) ?? []).length, 1);
+  const publish = workflow.split("\n  publish:\n")[1]?.split("\n  verify:\n")[0];
+  assert.ok(publish);
+  assert.match(publish, /environment: npm-release/);
+  assert.match(publish, /id-token:\s*write/);
   assert.match(workflow, /--archive-registry/);
   assert.match(workflow, /--verify-archive/);
 });
