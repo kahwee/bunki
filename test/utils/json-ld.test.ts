@@ -324,6 +324,42 @@ describe("JSON-LD Utilities", () => {
   });
 
   describe("toScriptTag", () => {
+    test("keeps hostile metadata inside the JSON-LD script without changing its value", () => {
+      for (const value of [
+        '</script><script>alert("xss")</script>',
+        "</ScRiPt ><img src=x onerror=alert(1)>",
+        "<!--<script>nested</script>",
+        '< > & \\" \\u2028 \\u2029',
+      ]) {
+        const schema = generatePersonSchema(value, value);
+        const scriptTag = toScriptTag(schema);
+        const json = scriptTag.slice(
+          scriptTag.indexOf(">") + 1,
+          scriptTag.lastIndexOf("</script>"),
+        );
+
+        expect(json).not.toInclude("<");
+        expect(scriptTag.match(/<\/script\s*>/gi)).toHaveLength(1);
+        expect(JSON.parse(json)).toEqual(schema);
+      }
+    });
+
+    test("escapes nested post metadata in every rendered schema", () => {
+      const value = "</script><img src=x onerror=alert(1)>";
+      const schemas = generatePostPageSchemas({
+        post: { ...mockPost, title: value, excerpt: value },
+        site: { ...mockSite, title: value, description: value, authorName: value },
+      });
+      const html = schemasToHtml(schemas);
+      const scripts = [
+        ...html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g),
+      ];
+
+      expect(scripts).toHaveLength(schemas.length);
+      expect(scripts.map((match) => JSON.parse(match[1]))).toEqual(schemas);
+      expect(html).not.toInclude("<img");
+    });
+
     test("should convert JSON-LD to script tag", () => {
       const schema = generatePersonSchema("John Doe");
       const scriptTag = toScriptTag(schema);

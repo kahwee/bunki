@@ -8,11 +8,13 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { registryState, validateRelease } from "./release-check.mjs";
 
-const pkg = { name: "example-package", version: "1.2.3" };
+const pkg = { name: "bunki", version: "1.2.3" };
 test("matches tag, rejects private, prerelease, mismatched tag and lock", () => {
   assert.equal(validateRelease(pkg, "v1.2.3"), "1.2.3");
   for (const [candidate, tag, lock] of [
     [{ ...pkg, private: true }, "v1.2.3"],
+    [{ ...pkg, name: "other-package" }, "v1.2.3"],
+    [{ ...pkg, version: "01.2.3" }, "v01.2.3"],
     [{ ...pkg, version: "1.2.3-rc.1" }, "v1.2.3-rc.1"],
     [pkg, "v1.2.4"],
     [pkg, "main"],

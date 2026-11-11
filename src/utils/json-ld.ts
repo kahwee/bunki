@@ -376,8 +376,10 @@ export function generateCollectionPageSchema(options: CollectionPageOptions): Sc
  * // Returns: '<script type="application/ld+json">{"@context":"https://schema.org",...}</script>'
  */
 export function toScriptTag(jsonLd: SchemaOrgThing): string {
-  // Use JSON.stringify with 2-space indentation for readability
-  const json = JSON.stringify(jsonLd, null, 2);
+  // JSON escaping alone does not protect HTML's script raw-text context. Escape
+  // every '<' so metadata cannot close the element or enter a script comment.
+  // JSON.parse still recovers the original strings, including nested values.
+  const json = JSON.stringify(jsonLd, null, 2).replace(/</g, "\\u003c");
   return `<script type="application/ld+json">\n${json}\n</script>`;
 }
 

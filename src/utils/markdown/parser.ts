@@ -296,6 +296,11 @@ export function convertMarkdownToHtml(markdownContent: string, cdnConfig?: CDNCo
   const html = marked.parse(markdownContent, { async: false }) as string;
 
   let sanitized = sanitizeHtml(html, {
+    allowedIframeHostnames: ["www.youtube.com", "www.youtube-nocookie.com"],
+    allowIframeRelativeUrls: false,
+    allowedSchemesByTag: { iframe: ["https"] },
+    exclusiveFilter: (frame) =>
+      frame.tag === "iframe" && !frame.attribs.src?.startsWith("https://"),
     allowedTags: sanitizeHtml.defaults.allowedTags.concat([
       "img",
       "h1",

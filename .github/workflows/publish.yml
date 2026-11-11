@@ -5,123 +5,179 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
 concurrency:
-  group: npm-release-${{ github.ref }}
+  group: npm-release-bunki
   cancel-in-progress: false
 
 jobs:
-  # First run tests and build
+  # No npm token, OIDC authority, or repository write token is available here.
   test-and-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      package_version: ${{ steps.metadata.outputs.package_version }}
+      should_publish: ${{ steps.metadata.outputs.should_publish }}
+      archive_sha256: ${{ steps.pack.outputs.archive_sha256 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+
+      - name: Require reviewed main source and exact-source CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node --test scripts/check-release-source.mjs scripts/check-release-guard.mjs scripts/check-release-workflow.mjs
+          node scripts/release-source.mjs "$RELEASE_TAG"
+          node scripts/release-check.mjs "$RELEASE_TAG"
 
       - uses: ./.github/actions/setup-bun
 
-      # Independent source checks must both pass before package artifacts are built.
       - parallel:
           - name: Bun check
             run: bun run typecheck
+          - name: Check code style
+            run: bun run format:check
           - name: Run tests with coverage
             run: bun run test:coverage
 
-      # Build the project
       - name: Build
         run: bun run build:artifacts
 
-      - name: Verify package artifacts
+      - name: Verify package artifacts and starter site
         run: |
           test -f dist/index.js
           test -f dist/index.d.ts
           test -x dist/cli.js
           bun -e 'await import("./dist/index.js")'
-
-      # Create and verify example site
-      - name: Create and verify example site
-        run: |
           mkdir -p test-site
           cd test-site
           ../dist/cli.js init
           ../dist/cli.js generate
+          test -f dist/index.html
 
-          # Verify site generation
-          if [ ! -f "dist/index.html" ]; then
-            echo "Site generation failed"
-            exit 1
-          fi
+      - name: Pack the checked output without lifecycle scripts
+        id: pack
+        run: |
+          mkdir -p "$RUNNER_TEMP/release"
+          bun pm pack --ignore-scripts --filename "$RUNNER_TEMP/release/package.tgz"
+          tar -xOf "$RUNNER_TEMP/release/package.tgz" package/package.json > "$RUNNER_TEMP/packed-package.json"
+          node --input-type=module -e 'import { readFileSync } from "node:fs"; const source = JSON.parse(readFileSync("package.json")); const packed = JSON.parse(readFileSync(process.env.RUNNER_TEMP + "/packed-package.json")); if (packed.name !== "bunki" || packed.name !== source.name || packed.version !== source.version || packed.private) throw new Error("Packed package identity differs from checked source")'
+          echo "archive_sha256=$(sha256sum "$RUNNER_TEMP/release/package.tgz" | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
 
-      # Upload build artifacts for the publish job
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      - name: Check immutable registry archive identity
+        id: metadata
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/release-check.mjs "$RELEASE_TAG" --archive-registry "$RUNNER_TEMP/release/package.tgz"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: dist
-          path: dist/
+          name: npm-package
+          path: ${{ runner.temp }}/release/package.tgz
+          if-no-files-found: error
+          retention-days: 7
 
-  # Then publish to npm if tests pass
+      - name: Preserve top-level distribution assets
+        run: |
+          mkdir -p "$RUNNER_TEMP/release-assets"
+          find dist -maxdepth 1 -type f -exec cp {} "$RUNNER_TEMP/release-assets/" \;
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-assets
+          path: ${{ runner.temp }}/release-assets/
+          if-no-files-found: error
+          retention-days: 7
+
+  # Fresh runner: no checkout, dependency install, local action, or package script.
+  # Repository rules must separately protect release tags and the npm credential.
   publish:
     needs: test-and-build
     runs-on: ubuntu-latest
-    # Skip this job if a PR (not needed for PRs)
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: ./.github/actions/setup-bun
-        with:
-          install: "false"
-
-      # Download the previously built artifacts
-      - name: Download build artifacts
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: dist
-          path: dist/
-
-      - name: Set up Node for release metadata checks
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 26
+          registry-url: https://registry.npmjs.org
 
-      # A rerun cannot overwrite an existing version; errors stop publication.
-      - name: Check version and registry state
-        id: check
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: npm-package
+          path: ${{ runner.temp }}/release/
+
+      - name: Verify checked archive digest
+        env:
+          EXPECTED_SHA256: ${{ needs.test-and-build.outputs.archive_sha256 }}
+        run: |
+          test "${#EXPECTED_SHA256}" = 64
+          printf '%s  %s\n' "$EXPECTED_SHA256" "$RUNNER_TEMP/release/package.tgz" | sha256sum --check --strict
+
+      - name: Publish only the checked archive
+        if: needs.test-and-build.outputs.should_publish == 'true'
+        working-directory: ${{ runner.temp }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish "$RUNNER_TEMP/release/package.tgz" --ignore-scripts --access public --tag latest --registry https://registry.npmjs.org
+
+  # Registry verification executes source only after the credential runner ends.
+  verify:
+    needs: [test-and-build, publish]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 26
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: npm-package
+          path: ${{ runner.temp }}/release/
+      - name: Verify published bytes and dist-tag
         env:
           RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          node --test scripts/check-release-guard.mjs
-          node scripts/release-check.mjs "$RELEASE_TAG" --registry
+        run: node scripts/release-check.mjs "$RELEASE_TAG" --verify-archive "$RUNNER_TEMP/release/package.tgz"
 
-      # Setup npm authentication
-      - name: Setup npm authentication
-        if: steps.check.outputs.should_publish == 'true'
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-
-      # Publish to npm
-      - name: Publish to npm
-        if: steps.check.outputs.should_publish == 'true'
-        run: |
-          # Ensure dist directory is ready for publishing
-          find dist -type f | sort
-
-          # Use Bun to publish instead of npm
-          bun install && bun publish --access public
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      # Create GitHub Release for tags
+  github-release:
+    needs: [test-and-build, verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: release-assets
+          path: release-assets/
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
-          name: Release ${{ steps.check.outputs.package_version }}
+          name: Release ${{ needs.test-and-build.outputs.package_version }}
           body: |
-            Release of version ${{ steps.check.outputs.package_version }}
+            Release of version ${{ needs.test-and-build.outputs.package_version }}
 
             Please see the [changelog](https://github.com/kahwee/bunki/blob/main/CHANGELOG.md) for details.
           draft: false
           prerelease: false
-          files: |
-            dist/*
+          overwrite_files: false
+          files: release-assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

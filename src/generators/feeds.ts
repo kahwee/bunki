@@ -5,7 +5,13 @@
 import { CACHE, PAGINATION, SEO } from "../constants";
 import type { Site, SiteConfig } from "../types";
 import { toPacificTime } from "../utils/date-utils";
-import { buildRSSItem, buildSitemapUrl, calculateFreshnessPriority } from "../utils/xml-builder";
+import {
+  buildRSSItem,
+  buildSitemapUrl,
+  calculateFreshnessPriority,
+  cdata,
+  escapeXml,
+} from "../utils/xml-builder";
 
 /**
  * Make image URL absolute if it's relative
@@ -71,36 +77,36 @@ export function generateRSSFeed(site: Site, config: SiteConfig): string {
 
   // Build channel-level metadata
   let channelXml = `  <channel>
-    <title><![CDATA[${config.title}]]></title>
-    <link>${config.baseUrl}/</link>
-    <description><![CDATA[${config.description}]]></description>`;
+    <title>${cdata(config.title)}</title>
+    <link>${escapeXml(`${config.baseUrl}/`)}</link>
+    <description>${cdata(config.description)}</description>`;
 
   // Add language (default: en-US)
   const language = config.rssLanguage || "en-US";
-  channelXml += `\n    <language>${language}</language>`;
+  channelXml += `\n    <language>${escapeXml(language)}</language>`;
 
   // Add managingEditor if configured
   if (config.authorEmail && config.authorName) {
-    channelXml += `\n    <managingEditor>${config.authorEmail} (${config.authorName})</managingEditor>`;
+    channelXml += `\n    <managingEditor>${escapeXml(config.authorEmail)} (${escapeXml(config.authorName)})</managingEditor>`;
   } else if (config.authorEmail) {
-    channelXml += `\n    <managingEditor>${config.authorEmail}</managingEditor>`;
+    channelXml += `\n    <managingEditor>${escapeXml(config.authorEmail)}</managingEditor>`;
   }
 
   // Add webMaster if configured
   if (config.webMaster) {
-    channelXml += `\n    <webMaster>${config.webMaster}</webMaster>`;
+    channelXml += `\n    <webMaster>${escapeXml(config.webMaster)}</webMaster>`;
   }
 
   // Add copyright if configured
   if (config.copyright) {
-    channelXml += `\n    <copyright><![CDATA[${config.copyright}]]></copyright>`;
+    channelXml += `\n    <copyright>${cdata(config.copyright)}</copyright>`;
   }
 
   // Add feed discovery links
   channelXml += `
     <pubDate>${formatRSSDate(latestPostDate)}</pubDate>
     <lastBuildDate>${lastBuildDate}</lastBuildDate>
-    <atom:link href="${config.baseUrl}/feed.xml" rel="self" type="application/rss+xml" />`;
+    <atom:link href="${escapeXml(`${config.baseUrl}/feed.xml`)}" rel="self" type="application/rss+xml" />`;
 
   // Build final RSS document with all namespaces
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -195,7 +201,7 @@ export function generateSitemapIndex(config: SiteConfig): string {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <sitemap>
-    <loc>${config.baseUrl}/sitemap.xml</loc>
+    <loc>${escapeXml(`${config.baseUrl}/sitemap.xml`)}</loc>
     <lastmod>${currentDate}</lastmod>
   </sitemap>
 </sitemapindex>`;

@@ -1,4 +1,5 @@
 import path from "node:path";
+import { realpath } from "node:fs/promises";
 import { DEFAULT_OUTPUT_DIR } from "./config";
 import { isDirectory } from "./utils/file-utils";
 
@@ -41,7 +42,14 @@ async function resolveStaticFile(outputDir: string, pathname: string): Promise<B
     if (!isWithinDirectory(outputDir, candidate)) {
       continue;
     }
-    const file = Bun.file(candidate);
+    let resolvedCandidate: string;
+    try {
+      resolvedCandidate = await realpath(candidate);
+    } catch {
+      continue;
+    }
+    if (!isWithinDirectory(outputDir, resolvedCandidate)) continue;
+    const file = Bun.file(resolvedCandidate);
     if (await file.exists()) {
       const stat = await file.stat();
       if (stat?.isFile()) {
@@ -61,11 +69,12 @@ export async function startServer(outputDir: string = DEFAULT_OUTPUT_DIR, port: 
     throw new Error(msg);
   }
 
-  const resolvedOutputDir = path.resolve(outputDir);
+  const resolvedOutputDir = await realpath(outputDir);
   console.log(`Starting server for site in ${resolvedOutputDir}...`);
 
   const server = Bun.serve({
     port,
+    hostname: "127.0.0.1",
     async fetch(req) {
       try {
         const { pathname } = new URL(req.url);

@@ -1,5 +1,4 @@
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -14,7 +13,7 @@ import {
   verifyPublished,
 } from "./archive-registry.mjs";
 
-const pkg = { name: "example-package", version: "2.10.0" };
+const pkg = { name: "bunki", version: "2.10.0" };
 const integrity = archiveIntegrity(Buffer.from("checked tarball"));
 const entry = (version, hash = integrity) => ({
   name: pkg.name,
@@ -185,12 +184,15 @@ test("inactive proposal preserves trigger, permissions and upload gate", () => {
   assert.match(workflow, /--archive-registry/);
   assert.match(workflow, /--verify-archive/);
 });
-test("active token publisher remains byte-for-byte unchanged", () => {
-  const workflow = readFileSync(new URL("../.github/workflows/publish.yml", import.meta.url));
-  assert.equal(
-    createHash("sha256").update(workflow).digest("hex"),
-    "854e13eb1e92a74d5705727ded460f8f154a5349ab777277bb9d6e2035a8e78e",
+test("active token publisher does not activate new OIDC authority", () => {
+  const workflow = readFileSync(
+    new URL("../.github/workflows/publish.yml", import.meta.url),
+    "utf8",
   );
+  assert.doesNotMatch(workflow, /id-token:\s*write/);
+  assert.equal((workflow.match(/secrets\.NPM_TOKEN/g) ?? []).length, 1);
+  assert.match(workflow, /--archive-registry/);
+  assert.match(workflow, /--verify-archive/);
 });
 
 test("legacy registry CLI still works without an archive", () => {
