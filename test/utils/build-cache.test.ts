@@ -80,6 +80,21 @@ describe("createEmptyCache", () => {
 });
 
 describe("saveCache and loadCache", () => {
+  test.each([{ files: undefined }, { files: null }, { files: [] }, { files: "invalid" }])(
+    "rebuilds when the file table is invalid: %j",
+    async ({ files }) => {
+      const dir = path.join(TMP, "invalid-files");
+      await mkdir(dir, { recursive: true });
+      await Bun.write(
+        path.join(dir, ".bunki-cache.json"),
+        JSON.stringify({ version: createEmptyCache().version, files }),
+      );
+      const loaded = await loadCache(dir);
+      expect(loaded).toEqual(createEmptyCache());
+      expect(await hasFileChanged(path.join(dir, "post.md"), loaded)).toBe(true);
+    },
+  );
+
   test("roundtrip: save then load returns the same data", async () => {
     const cacheDir = path.join(TMP, "cache-roundtrip");
     await mkdir(cacheDir, { recursive: true });

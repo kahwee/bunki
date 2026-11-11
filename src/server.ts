@@ -21,27 +21,20 @@ async function resolveStaticFile(outputDir: string, pathname: string): Promise<B
   }
 
   const relativePath = decodedPathname.replace(/^\/+/, "");
-  const directPath = path.resolve(outputDir, relativePath || "index.html");
+  const directPath = path.resolve(outputDir, relativePath);
 
   if (!isWithinDirectory(outputDir, directPath)) {
     return null;
   }
 
-  const candidates = new Set<string>();
+  const candidates: string[] = [];
   if (relativePath === "" || decodedPathname.endsWith("/")) {
-    candidates.add(path.join(directPath, relativePath === "" ? "" : "index.html"));
+    candidates.push(path.join(directPath, "index.html"));
   } else {
-    candidates.add(directPath);
+    candidates.push(directPath);
     if (!path.extname(relativePath)) {
-      candidates.add(`${directPath}.html`);
-      candidates.add(path.join(directPath, "index.html"));
+      candidates.push(`${directPath}.html`, path.join(directPath, "index.html"));
     }
-  }
-
-  // Root resolves to outputDir/index.html rather than outputDir itself.
-  if (relativePath === "") {
-    candidates.clear();
-    candidates.add(path.join(outputDir, "index.html"));
   }
 
   for (const candidate of candidates) {

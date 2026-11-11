@@ -2,6 +2,19 @@ import { describe, expect, test } from "bun:test";
 import { createPagination, getPaginatedItems, getTotalPages } from "../../src/utils/pagination";
 
 describe("Pagination Utilities", () => {
+  test.each([
+    0,
+    -1,
+    1.5,
+    Number.NaN,
+    Number.NEGATIVE_INFINITY,
+    Number.POSITIVE_INFINITY,
+    Number.MAX_SAFE_INTEGER + 1,
+  ])("rejects invalid page number %s consistently", (page) => {
+    expect(() => createPagination([1, 2, 3, 4, 5, 6], page, 2, "/")).toThrow(RangeError);
+    expect(() => getPaginatedItems([1, 2, 3, 4, 5, 6], page, 2)).toThrow(RangeError);
+  });
+
   test.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
     "rejects invalid page size %s consistently",
     (pageSize) => {

@@ -9,6 +9,12 @@ function validatePageSize(pageSize: number): void {
   }
 }
 
+function validatePage(page: number): void {
+  if (!Number.isSafeInteger(page) || page <= 0) {
+    throw new RangeError("page must be a positive safe integer");
+  }
+}
+
 /**
  * Create pagination data for a list of items
  * @param items - Array of items to paginate
@@ -23,6 +29,7 @@ export function createPagination<T>(
   pageSize: number,
   pagePath: string,
 ): PaginationData {
+  validatePage(currentPage);
   const totalItems = items.length;
   const totalPages = getTotalPages(totalItems, pageSize);
 
@@ -47,6 +54,7 @@ export function createPagination<T>(
  * @returns Slice of items for the requested page
  */
 export function getPaginatedItems<T>(items: readonly T[], page: number, pageSize: number): T[] {
+  validatePage(page);
   validatePageSize(pageSize);
   const startIndex = (page - 1) * pageSize;
   const endIndex = startIndex + pageSize;

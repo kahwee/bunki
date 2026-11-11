@@ -71,8 +71,15 @@ export async function loadCache(cwd: string): Promise<BuildCache> {
       const cache = JSON.parse(content) as BuildCache;
 
       // Validate cache version
-      if (cache.version !== CACHE_VERSION) {
-        console.log(`Cache version mismatch (${cache.version} vs ${CACHE_VERSION}), rebuilding...`);
+      if (cache?.version !== CACHE_VERSION) {
+        console.log(
+          `Cache version mismatch (${cache?.version} vs ${CACHE_VERSION}), rebuilding...`,
+        );
+        return createEmptyCache();
+      }
+
+      if (!cache.files || typeof cache.files !== "object" || Array.isArray(cache.files)) {
+        console.warn("Invalid cache file table, rebuilding...");
         return createEmptyCache();
       }
 

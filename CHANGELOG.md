@@ -2,6 +2,10 @@
 
 ## 0.22.0 (unreleased candidate)
 
+- Rebuild disposable caches with malformed file tables instead of failing during change detection.
+- Reject zero, negative, fractional, and unsafe page numbers in pagination helpers; retain empty results for positive pages past the end.
+- Simplify preview-server file lookup while retaining root, directory-index, and extensionless routes.
+
 - Require Bun 1.4.4 or newer. Plain CSS now uses Bun’s native bundler by default; existing PostCSS configurations remain supported. Review generated CSS and asset URLs or select `css.processor: "postcss"`.
 - Repair the package import mapping to the shipped `dist/index.js`; the 0.21.1 archive did not contain the mapped `dist/index.mjs`. Public API additions are additive. See the [migration guide](docs/migration.md).
 

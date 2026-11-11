@@ -56,7 +56,7 @@ HTML pages, feeds, and static assets are regenerated or copied on every build. I
 
 Plain CSS is bundled with Bun by default; existing PostCSS configurations select the plugin engine automatically. Plain-file copying remains the site generator's fallback for Bun CSS errors; PostCSS errors stop generation so plugin transformations are not silently omitted. The standalone `css` command reports processing failures instead of applying that fallback. Unchanged CSS can be skipped in incremental mode; content and config changes invalidate it. The CSS cache does not track a complete dependency graph: use a full build after changing imported styles, referenced assets, PostCSS config files or dependencies, or template utility classes. A fallback copy does not compile Tailwind directives.
 
-`.bunki-cache.json` is disposable local state. Ignore it in Git. Delete that file to reset incremental parsing, or omit `--incremental` for a full parse. A full parse still does not clean the output directory.
+`.bunki-cache.json` is disposable local state. Ignore it in Git. Missing, unreadable, or incompatible caches and malformed file tables trigger a rebuild. Delete that file to reset incremental parsing, or omit `--incremental` for a full parse. A full parse still does not clean the output directory.
 
 ## Media uploads
 
