@@ -108,8 +108,10 @@ jobs:
     needs: test-and-build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    environment: npm-release
     permissions:
       contents: read
+      id-token: write
     steps:
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -131,8 +133,6 @@ jobs:
       - name: Publish only the checked archive
         if: needs.test-and-build.outputs.should_publish == 'true'
         working-directory: ${{ runner.temp }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish "$RUNNER_TEMP/release/package.tgz" --ignore-scripts --access public --tag latest --registry https://registry.npmjs.org
 
   # Registry verification executes source only after the credential runner ends.
