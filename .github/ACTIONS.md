@@ -90,17 +90,12 @@ The active npm workflow requires a version tag on `main` ancestry and a successf
 and pack the expected `bunki` package. Registry checks compare immutable archive
 integrity and refuse older versions from taking over `latest`.
 
-The npm token is exposed only to one `npm publish` command on a fresh runner. That
+The `publish` job obtains short-lived npm authority through GitHub OIDC in the protected `npm-release` environment. It runs `npm publish` on a fresh runner. That
 runner does not check out source, install dependencies, run local actions, or run
 package lifecycle scripts. It verifies the transferred archive digest and publishes
 that exact archive with `--ignore-scripts`. Registry readback runs separately
 without npm credentials; GitHub release creation runs without repository code.
 
-These source checks are defense in depth, not a replacement for repository controls.
-An actor who can push arbitrary tags can also select a modified workflow. Before
-considering release authorization fully protected, an administrator must restrict
-`v*` tag creation/updates and protect `main`, and restrict the release credential
-through a protected environment or appropriately bound npm trusted publishing.
-Repository-wide `NPM_TOKEN` access must not remain available to arbitrary workflow
-revisions. This change does not create environments, change rulesets, move secrets,
-or enable the inactive OIDC proposal. Those changes require explicit access approval.
+These source checks are defense in depth, not a replacement for repository controls. Protect `main` with pull requests and required CI, and restrict `v*` tag creation and updates. Configure `npm-release` to allow only `v*` tags, require approval from `kahwee`, and disallow administrator bypass. Self-review remains allowed so the sole maintainer can approve their own releases.
+
+The npm trusted publisher must match owner `kahwee`, repository `bunki`, workflow `publish.yml`, and environment `npm-release`, with `npm publish` allowed. Restrict npm publishing access to require two-factor authentication and disallow bypass tokens. Remove the repository-wide `NPM_TOKEN` secret after migration; the workflow no longer uses it. External settings and trust must be verified separately before tagging. The inactive OIDC proposal remains unused.
