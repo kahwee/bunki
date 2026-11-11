@@ -9,6 +9,11 @@ updates:
         patterns:
           - "*"
   - package-ecosystem: "bun"
+    open-pull-requests-limit: 3
+    groups:
+      compatible-dependencies:
+        patterns: ['*']
+        update-types: [minor, patch]
     directory: "/"
     schedule:
       interval: "weekly"
