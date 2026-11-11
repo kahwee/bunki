@@ -16,6 +16,7 @@
  * @see https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data
  */
 
+import serialize from "serialize-javascript";
 import type { JsonObject, Post, SiteConfig } from "../types.js";
 
 /**
@@ -376,10 +377,9 @@ export function generateCollectionPageSchema(options: CollectionPageOptions): Sc
  * // Returns: '<script type="application/ld+json">{"@context":"https://schema.org",...}</script>'
  */
 export function toScriptTag(jsonLd: SchemaOrgThing): string {
-  // JSON escaping alone does not protect HTML's script raw-text context. Escape
-  // every '<' so metadata cannot close the element or enter a script comment.
-  // JSON.parse still recovers the original strings, including nested values.
-  const json = JSON.stringify(jsonLd, null, 2).replace(/</g, "\\u003c");
+  // JSON mode keeps strict JSON semantics; the library's default HTML escaping
+  // protects script raw text, including nested values and property names.
+  const json = serialize(jsonLd, { isJSON: true, space: 2 });
   return `<script type="application/ld+json">\n${json}\n</script>`;
 }
 

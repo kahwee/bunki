@@ -100,8 +100,9 @@ describe("generateHomeBreadcrumbs", () => {
 
   test("includes Home as the breadcrumb item", () => {
     const html = generateHomeBreadcrumbs(config);
-    expect(html).toInclude("Home");
-    expect(html).toInclude("https://example.com/");
+    const schema = JSON.parse(html.slice(html.indexOf(">") + 1, html.lastIndexOf("</script>")));
+    expect(schema.itemListElement[0].name).toBe("Home");
+    expect(schema.itemListElement[0].item).toBe("https://example.com/");
   });
 
   test("uses the site baseUrl in the breadcrumb", () => {
@@ -110,6 +111,7 @@ describe("generateHomeBreadcrumbs", () => {
       baseUrl: "https://myblog.io",
     };
     const html = generateHomeBreadcrumbs(customConfig);
-    expect(html).toInclude("https://myblog.io/");
+    const schema = JSON.parse(html.slice(html.indexOf(">") + 1, html.lastIndexOf("</script>")));
+    expect(schema.itemListElement[0].item).toBe("https://myblog.io/");
   });
 });

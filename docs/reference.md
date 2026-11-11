@@ -192,3 +192,7 @@ Content-assets uploads include only files under `content/{year}/{assetsDir}/`,
 where the year is four digits and `assetsDir` is one directory name. Other images
 under `content/` are not uploaded in this mode. All uploads check transformed
 object keys for collisions before writing any objects.
+
+Structured data uses `serialize-javascript` in JSON mode with HTML-safe escaping.
+JSON-LD remains valid JSON and preserves metadata values without allowing them
+to close the surrounding script element.
